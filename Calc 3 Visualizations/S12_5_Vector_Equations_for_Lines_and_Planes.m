@@ -124,7 +124,7 @@ u_Vector_Label = text(u(1)+labelOffset, u(2)+labelOffset, u(3)+labelOffset, ...
 view(app.ax(1), 7, 32);
 
 %% Precompute math for updates
-% Skipped as light weight
+% Light weight so skip
 
 %% Build UI
 num_GUI = 4;

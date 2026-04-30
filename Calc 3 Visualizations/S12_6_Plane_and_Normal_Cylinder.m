@@ -14,10 +14,12 @@ close all
 % Points defining the cylinder. Values below are for a nice triagle
 x = [0,                   -0.5,            0.5];
 y = [1/sqrt(3), -1/(2*sqrt(3)), -1/(2*sqrt(3))];
+
 % For any curve x(t), y(t) you can use/modify the below
  t = linspace(0,1,50);
  x = cos(2*pi*t);
  y = sin(2*pi*t);
+
 % initial angles
 theta0 = 0;
 phi0   = 0;
@@ -27,7 +29,7 @@ phi0   = 0;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure("Mixed Controls",1);
+app = uiFigure("Cylinder with Normal Plan",1);
 
 %% Optional math functions for plot computations
 view(app.ax,65,40);
@@ -48,7 +50,7 @@ v = linspace(-2, 2, 2);
 
 
 %% Build UI
-title(app.ax,'Cylinder with Normal Plane')
+title(app.ax,app.fig.Name)
 NumControls = 2; % maximum number of controls
 % Theta
 thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls,  @update,...
