@@ -26,7 +26,7 @@ Min_dt = 1e-8;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure('3D Visualization of the Definition for $\vec r\,''(t)$',1); % Plots_to_test is an optional argument to allow for more subplots
+app = uiFigure('3D Visualization of the Definition for $\vec r\,''(t)$. Rotate for 3D',1); % Plots_to_test is an optional argument to allow for more subplots
 title(app.ax,app.fig.Name,'Interpreter','latex')
 
 %% Optional math functions for plot computations
@@ -129,7 +129,7 @@ zlim(app.ax,[min(curve(3,:))-0.25 max(curve(3,:))+0.25]);
 % Light weight so skip
 
 %% Build UI
-NumControls = 2; % maximum number of controls
+NumControls = 3; % maximum number of controls
 
 % Slider for dt
 [dtSlider, dtLabel] = app.addControl('slider', '$\Delta t = $', 1, NumControls, @updatePlot_dt,...
@@ -139,9 +139,9 @@ NumControls = 2; % maximum number of controls
         % If sufficiently small say it is the limit
         if abs(dtSlider.Value) < Min_dt*10
             if dtSlider.Max > 0 % if positive
-                dtSlider.Value = dtSlider.Min;
+                app.UpdateUISlider(dtSlider, dtSlider.Min)
             else
-                dtSlider.Value = dtSlider.Max;
+                app.UpdateUISlider(dtSlider, dtSlider.Max)
             end
             dtSlider.UserData.label.String = '$\Delta t \to 0$'; % update string
 
@@ -149,8 +149,7 @@ NumControls = 2; % maximum number of controls
         updatePlot()
     end
 % Button for sign swap
-
-btn_Swap_dt = app.addControl('button', 'Change Sign of $\Delta t$', 2, NumControls,  @updatePlot_btn_Swap_dt);
+app.addControl('button', 'Change Sign of $\Delta t$', 2, NumControls,  @updatePlot_btn_Swap_dt);
 
     function updatePlot_btn_Swap_dt(~,~)
         % Swap the sign of dt
@@ -162,6 +161,20 @@ btn_Swap_dt = app.addControl('button', 'Change Sign of $\Delta t$', 2, NumContro
             dtSlider.Value = dt0;
             dtSlider.Max   = dt0;
             dtSlider.Min   = Min_dt;
+        end
+        updatePlot()
+    end
+
+% Button for nice 3D view
+btn_view = app.addControl('button', 'Change to a 3D view', 3, NumControls,  @updatePlot_btn_view,'ColorChange',1);
+
+    function updatePlot_btn_view(~,~)
+        if btn_view.Value
+            view(app.ax,-12,55)
+            btn_view.String = "Change to a 2D view";
+        else
+            view(app.ax,0,90)
+            btn_view.String = "Change to a 3D view";
         end
         updatePlot()
     end

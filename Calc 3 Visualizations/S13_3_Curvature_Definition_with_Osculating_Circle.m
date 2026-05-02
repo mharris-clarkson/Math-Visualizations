@@ -97,7 +97,7 @@ function updatePlot_s(~,~)
     yCircle = C(2) + R*sin(theta);
     set(hCircle,'XData',xCircle,'YData',yCircle);
 
-    title(app.ax, ['Curvature $\kappa = $', num2str(kappa,'%.3f')], 'Interpreter','latex');
+    title(app.ax, [app.fig.Name, ': $\kappa = $', num2str(kappa,'%.3f')], 'Interpreter','latex');
 
     Pretty_Plot(app.ax)
     xlim(app.ax,[-5,5])
@@ -116,7 +116,7 @@ function updatePlot_switchCurve(~,~)
     % Update derivatives
     % Swap over
     r_prime  = @(t) Diff_f(r_fun,t);%r_fun(t+1e-6)-r_fun(t-1e-6))/(2e-6);
-    r_double = @(t) Diff2_f(r_fun,t);(r_fun(t+1e-6)-2*r_fun(t)+r_fun(t-1e-6))/(1e-6)^2;
+    r_double = @(t) Diff2_f(r_fun,t);
 
     % Recompute arc-length
     [s_samples, sMax] = arclength_param(r_fun, t_samples);
@@ -127,9 +127,8 @@ function updatePlot_switchCurve(~,~)
     set(hCurve,'XData',r(1,:),'YData',r(2,:));
 
     % Update slider
-    sSlider.Max = sMax;
-    sSlider.Value = 0;
-
+    app.UpdateUISlider(sSlider,0,'Max',sMax);
+  
     updatePlot_s();
 end
 

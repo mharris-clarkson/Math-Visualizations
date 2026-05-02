@@ -5,7 +5,7 @@
 %% Wipe curent state
 clear
 close all
-clc
+
 
 %% Load helper functions for cleaner code
 run('setup.m')

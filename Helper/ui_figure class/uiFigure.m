@@ -1,21 +1,21 @@
 classdef uiFigure < handle
-%% Class for creating nice figure objects for dynamic plots.
-%  It returns a figure handle, axes handles and button/slider handles for 
-%  modifying the data. 
-%  app = UIApplet(name, numSubPlots) initalizes the object with some
-%  subplots (default is 1)
-%
-%  addControl adds a button or slider on a grid decided by uiGrid. Can 
-%  do rows and cols with equal or min size spacing. The data of these 
-%  items are modifiable if needed as noted in demo()
-%
-%% Author Info
-%
-% This function was written by Dr Matthew Harris an assistant professor at
-% Clarkson university for visually teaching MA 231: Calculus 3.
-% Copyright (c) 2026 Matthew Harris
-% Licensed under the MIT License.
-% See LICENSE file in the project root for full license information.
+    %% Class for creating nice figure objects for dynamic plots.
+    %  It returns a figure handle, axes handles and button/slider handles for
+    %  modifying the data.
+    %  app = UIApplet(name, numSubPlots) initalizes the object with some
+    %  subplots (default is 1)
+    %
+    %  addControl adds a button or slider on a grid decided by uiGrid. Can
+    %  do rows and cols with equal or min size spacing. The data of these
+    %  items are modifiable if needed as noted in demo()
+    %
+    %% Author Info
+    %
+    % This function was written by Dr Matthew Harris an assistant professor at
+    % Clarkson university for visually teaching MA 231: Calculus 3.
+    % Copyright (c) 2026 Matthew Harris
+    % Licensed under the MIT License.
+    % See LICENSE file in the project root for full license information.
     properties
         fig
         ax = gobjects(0)
@@ -177,7 +177,7 @@ classdef uiFigure < handle
                 options.Number_format char    = '%.2f'
                 options.AddToEnd      char    = ''
                 options.FontSize      double  = 18
-                
+
             end
 
             % Grab Slider/Label pos to split for label/slider
@@ -218,6 +218,7 @@ classdef uiFigure < handle
                 'FontSize',            options.FontSize,...
                 'VerticalAlignment',   'middle',...
                 'HitTest',             'off', ...
+                'Visible',  options.Visible,...
                 'PickableParts',       'none');
 
             %% Make slider object
@@ -233,24 +234,47 @@ classdef uiFigure < handle
 
             % Store name and label on the slider handle
             Slider.UserData.name  = Name;
-            label    = Slider_label;
-            Slider.UserData.label = label;
+            Slider.UserData.label = Slider_label;
             Slider.UserData.ax_label = ax_label;        % not used
 
             %% Listener that auto-updates label whenever Value changes
             addlistener(Slider, 'Value', 'PostSet', @(~,~) updateLabel(Slider.Value));
+
+            updateLabel(options.Default) % Force update 
 
             function updateLabel(val)
                 if strcmp(options.Number_format, '%d')
                     set(Slider.UserData.label, 'String', sprintf('%s%d%s', Name, round(val), options.AddToEnd));
                 else
                     fmt = ['%s' options.Number_format '%s'];
-                    set(label, 'String', sprintf(fmt, Name, val, options.AddToEnd));
+                    set(Slider.UserData.label, 'String', sprintf(fmt, Name, val, options.AddToEnd));
                 end
+                set(Slider_label, 'Visible', Slider.Visible)
             end
 
         end
+        % ============================================
+        % LATEX SLIDER FORCE UPDATE
+        % ============================================
+        function UpdateUISlider(app, Slider, Value, options)
+            arguments
+                app
+                Slider
+                Value double
+                options.Min double = Slider.Min
+                options.Max double = Slider.Max
+            end
 
+            % --- Update limits FIRST ---
+            set(Slider, 'Min', options.Min);
+            set(Slider, 'Max', options.Max);
+
+            % --- Force value refresh (needed for MATLAB 2025) ---
+            set(Slider, 'Value', options.Max);
+            set(Slider, 'Value', Value);
+
+            drawnow
+        end
 
 
         % ============================================

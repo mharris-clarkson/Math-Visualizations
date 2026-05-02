@@ -15,14 +15,14 @@ close all % Close all Windows
 % Starting values for sliders. Must be in chosen range or else you will get
 % and error. Forcing this check manually is tedious so the check might not
 % be done. An error on the user's part should not be fatal
-omega0 = 1;
+f0 = 1;
 amp0 = 1;
 xmax = 10; % Maximum value for x
 
 % Slider limits. These pick the ranges for any given sliders. See warning
 % above regarding the initial values.
-omegaMin = 0;
-omegaMax = 2;
+f0Min = 1/xmax;
+f0Max = 2;
 ampMin = -2;
 ampMax = 2;
 
@@ -44,11 +44,11 @@ app = uiFigure("Demo/Test",Plots_to_test); % 3 is an optional argument to allow 
 
 %% Make the initial plots
 % Store default values for reset button made later
-amp = amp0; omega = omega0;
+amp = amp0; f = f0;
 
 % Compute initial (x,y) data
 x = linspace(0, xmax, 500);
-y = amp*mysin(omega*x);
+y = amp*mysin(f*x);
 
 % Plot the objects on plot app.ax(1) -- the first subplot
 Curve = plot(app.ax(1),x,y, 'LineWidth',2');  % main curve
@@ -58,7 +58,7 @@ plot(app.ax(1),x,0*x,'--k','LineWidth',2);  % reference line
 ylim(app.ax(1),ampMax*[-1,1])
 
 % Add a title to axis 1
-title(app.ax(1),'Explore the Function: $A\sin(\omega x)$',...
+title(app.ax(1),'Explore the Function: $A\sin\left(2\pi f x\right)$',...
     'Interpreter','latex')
 
 
@@ -103,9 +103,9 @@ end
 NumControls = 10; % maximum number of controls
 CorOrRow = 'col'; % options 'row' and 'col'
 
-sliderFreq = app.addControl('slider', 'Frequency $\omega = $', 1, NumControls,  @SliderOmega,...
-    'colOrRow', CorOrRow,'Default',omega0,...
-    'Min',omegaMin,'Max',omegaMax);
+sliderFreq = app.addControl('slider', 'Frequency $f = $', 1, NumControls,  @Sliderfreq,...
+    'colOrRow', CorOrRow,'Default',f0,...
+    'Min',f0Min,'Max',f0Max);
 
 sliderAmp = app.addControl('slider', 'Amplitude $A = $', 2, NumControls,  @sliderA,...
     'colOrRow', CorOrRow,'Default',amp0,...
@@ -137,32 +137,22 @@ update();
 
 %% Functions for UI elements
 % Update function for omega slider
-    function SliderOmega(src,~)
-        % Update omega value
-        omega = src.Value;
+    function Sliderfreq(~,~)
 
-        % Update the plot
         update();
     end
 
 % Update function for amp slider
-    function sliderA(src,~)
-        % Update amp value
-        amp = src.Value;
-
-        % Update the plot
+    function sliderA(~,~)
         update();
     end
 
 % Update function for reset slider. This sets the sliders to their default
 % position and value and updates the labels
     function reset(~,~)
-        % Reset  to default values
-        amp = amp0; omega = omega0;
-
-        % update UI elements. Sliders auto change position
-        sliderFreq.Value = omega0;
-        sliderAmp.Value = amp0;
+        % Reset Slider values
+        app.UpdateUISlider(sliderFreq,f0);
+        app.UpdateUISlider(sliderAmp,amp0);
 
         % Update the plot
         update();
@@ -218,7 +208,8 @@ update();
 %  data is annoying to implement in practice.
     function update(~,~)
         % Compute things or ideally look up/interoperate known lookup values.
-        y = amp*mysin(omega*x);
+
+        y = sliderAmp.Value*mysin(2*pi*sliderFreq.Value*x);
 
         % Update plot item
         set(Curve,'YData',y)

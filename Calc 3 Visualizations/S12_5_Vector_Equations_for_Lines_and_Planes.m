@@ -26,6 +26,8 @@ run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure("Vector Equations for Lines and Planes",1);
+title(app.ax,app.fig.Name,'Interpreter','latex')
+hold(app.ax,'on')
 
 %% Optional math functions for plot computations
 % None as we are just updating a line
@@ -149,10 +151,10 @@ app.addControl('button', 'Show Plane', 3, num_GUI,  @updatePlot_btn_Swap_Plane_L
     function updatePlot_btn_Swap_Plane_Line(src,~)
         % Change strings
         if src.Value
-            src.String='Line Mode';
+            src.String='Show Line';
             set(Point_Label, 'String', '$\vec r(t,s) = \vec r_0 + t\vec{v} + s\vec{u}$');
         else
-            src.String='Plane Mode';
+            src.String='Show Plane';
             set(Point_Label, 'String', '$\vec r(t,s) = \vec r_0 + t\vec{v}$');
         end
         % Toggle view states
@@ -161,11 +163,15 @@ app.addControl('button', 'Show Plane', 3, num_GUI,  @updatePlot_btn_Swap_Plane_L
         flip_state(Plane_dir_line);
         flip_state(u_Vector_Label);
         flip_state(btn_Normal_View);
-        flip_state(sliderS); sliderS.Value=0.0;
+        flip_state(sliderS); 
         flip_state(Normal_vector_Label)
         flip_state(Plane_Normal_Vec)
 
-        %update plot
+        % Update s Slider
+        app.UpdateUISlider(sliderS,0);
+
+
+        % Update plot
         update(sliderT.Value, sliderS.Value)
     end
 

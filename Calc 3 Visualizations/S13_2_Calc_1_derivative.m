@@ -10,17 +10,17 @@ close all;
 %% User parameters for math objects. 
 % Adjust these to modify selected math objects below.
 % Vector function
-r = @(t) [-cos(t); sin(t); 0.5*t];
+r = @(t) [t; sqrt(1-t.^2); 0*t];
 
 % Initial parameters
-t0 = pi/2;
+t0 = 0;
 dt0 = 1;   % also sets dt0 and dt max.
 
 % Scale for secant line
 Sec_Line_Scale = 1;
 
 % Plot limits
-t_Plot_range = [0, pi];
+t_Plot_range = [-1, 1];
 Min_dt = 1e-8; % min dt before we call it 0.
 
 
@@ -37,7 +37,7 @@ title(app.ax,app.fig.Name,'Interpreter','latex')
 
 %% ============== Make the initial plots =================================
 % Function initiation
-tPlot = linspace(t_Plot_range(1), t_Plot_range(2), 50);
+tPlot = linspace(t_Plot_range(1), t_Plot_range(2), 500);
 curve = r(tPlot);
 % Initial points
 p1 = r(t0);
@@ -93,7 +93,7 @@ leg = legend(app.ax,'Curve $y = f(x)$','$(x_0 , f(x_0))$','$(x_0 +\Delta x, f(x_
     'Secant Line Segment', 'Secant Chord','Tangent Line','$\Delta x$','$\Delta y$');
 set(leg, 'Interpreter','latex')
 leg.Location ="best";
-set(leg,'FontSize',24)
+set(leg,'FontSize',18)
 
 Pretty_Plot(app.ax);
 
@@ -101,7 +101,6 @@ Pretty_Plot(app.ax);
 xlim(app.ax,[min(curve(1,:))-0.25 max(curve(1,:))+0.25]);
 ylim(app.ax,[min(curve(2,:))-0.1 max(curve(2,:))+0.25]);
 zlim(app.ax,[min(curve(3,:))-0.25 max(curve(3,:))+0.25]);
-
 %% Precompute math for updates
 % Light weight so skip
 
@@ -116,9 +115,9 @@ dtSlider = app.addControl('slider', '$\Delta x = $', 1, NumControls, @updatePlot
         % If sufficiently small say it is the limit
         if abs(dtSlider.Value) < Min_dt*1e2
             if dtSlider.Max > 0 % if positive
-                dtSlider.Value = dtSlider.Min;
+                app.UpdateUISlider(dtSlider, dtSlider.Min)
             else
-                dtSlider.Value = dtSlider.Max;
+                app.UpdateUISlider(dtSlider, dtSlider.Max)
             end
             dtSlider.UserData.label.String = '$\Delta x \to 0$'; % update string
         end
@@ -132,13 +131,11 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
     function updatePlot_btn_Swap_dt(~,~)
         % Swap the sign of dt
         if dtSlider.Max > 0 % if positive
-            dtSlider.Value  = -dt0;
-            dtSlider.Min    = -dt0;
-            dtSlider.Max    = -Min_dt;
+            app.UpdateUISlider(dtSlider, -dt0,...
+                "Min",-dt0,"Max",-Min_dt)
         else
-            dtSlider.Value = dt0;
-            dtSlider.Max   = dt0;
-            dtSlider.Min   = Min_dt;
+            app.UpdateUISlider(dtSlider, dt0,...
+                "Min",Min_dt,"Max",dt0)
         end
         updatePlot()
     end
@@ -147,13 +144,14 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
 % none
 
 
+ updatePlot()
 
 %% Main Draw update function. All initial plot functions are updated below.
     function updatePlot(~,~)
 
         % Update data
         dt = dtSlider.Value;
-        p2 = r(t0 + dt);
+        p2 = r(t0 + dt)
 
         %% Update plots
         % Vector and point on curve
@@ -173,6 +171,10 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
         % update dx and dy lines
         set(hdx_Line,'xdata',Chord_DAT(1,:),'ydata',[1,1]*Chord_DAT(2,2));
         set(hdy_Line,'ydata',Chord_DAT(2,:));
+
+        % % update legend text
+        % leg.String{7} = sprintf('$\\Delta x = $ %.2f', p2(1)-p1(1));
+        % leg.String{8} = sprintf('$\\Delta y = $ %.2f', p2(2)-p1(2));
     end
 end
  
