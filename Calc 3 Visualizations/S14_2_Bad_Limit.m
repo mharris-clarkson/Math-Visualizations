@@ -17,7 +17,7 @@ N       = 5000; % Number of points on the spiral
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
-% run('setup.m')
+run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Example of a Nasty Limit', 1);

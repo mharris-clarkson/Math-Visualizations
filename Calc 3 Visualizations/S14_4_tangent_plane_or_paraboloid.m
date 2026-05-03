@@ -25,7 +25,7 @@ useParaboloid = false; % true = tangent paraboloid, false = tangent plane
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
-% run('setup.m')
+run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Tangent Plane vs Tangent Paraboloid', 1);

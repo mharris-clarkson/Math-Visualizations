@@ -19,7 +19,7 @@ m0   = 0;  % Initial slope
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
-% run('setup.m')
+run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Path-Dependent Limit: $xy/(x^2+y^2)$', 1);
