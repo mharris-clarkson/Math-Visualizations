@@ -23,7 +23,6 @@ Sec_Line_Scale = 1;
 t_Plot_range = [-1, 1];
 Min_dt = 1e-8; % min dt before we call it 0.
 
-
 %% ==== Below this we build the UI, compute the needed math functions for future updates and update ================
 %% Load libraries
 run('setup.m')
@@ -143,7 +142,6 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
 %% Functions for UI elements
 % none
 
-
  updatePlot()
 
 %% Main Draw update function. All initial plot functions are updated below.
@@ -151,7 +149,7 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
 
         % Update data
         dt = dtSlider.Value;
-        p2 = r(t0 + dt)
+        p2 = r(t0 + dt);
 
         %% Update plots
         % Vector and point on curve
