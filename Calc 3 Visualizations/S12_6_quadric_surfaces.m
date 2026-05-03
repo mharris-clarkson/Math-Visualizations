@@ -1,4 +1,4 @@
-function quadric_surfaces()
+function S12_6_quadric_surfaces()
 %% This function plots %   A x^2 + B y^2 + C z^2 + D xy + I z + J = 0
 % with sliders for all coefficents
 %
@@ -200,7 +200,16 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
             % ============================================================
             % Linear in z — one sheet, solve z = f(x,y) on fixed grid
             % ============================================================
-            title_val = '. Type: Parabolic sheet';
+             nPos = (A>0) + (B>0);
+             nNeg = (A<0) + (B<0);
+             nZero = (A==0) + (B==0);
+            if (nPos == 2) || (nNeg == 2) || (nZero == 1 && ((nPos + nNeg) == 1))
+                title_val = '. Type: Parabolic sheet';
+            elseif nPos == 1 && nNeg == 1
+                title_val = '. Type: Hyperbolic sheet';
+            else 
+                title_val = '. Type: Plane';
+            end
             [X, Y] = meshgrid(linspace(xrange(1),xrange(2),N), ...
                 linspace(yrange(1),yrange(2),N));
             R = A*X.^2 + B*Y.^2 + D*X.*Y + J;
@@ -293,7 +302,9 @@ update();
         [X, Y, Z, title_val] = quadric_surface_generator(coefficients,xrange, yrange, Resolution);
         set(Surface, 'XData',X, 'YData',Y, 'ZData',Z)
         title(app.ax,[app.fig.Name title_val],'Interpreter','latex')
-
+        
+        if ~ min(Z(:)) == max(Z(:))
         Pretty_Color_Centered(app.ax,Z,'colorbar','off');
+        end
     end
 end
