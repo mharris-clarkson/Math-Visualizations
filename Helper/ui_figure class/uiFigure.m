@@ -177,7 +177,6 @@ classdef uiFigure < handle
                 options.Number_format char    = '%.2f'
                 options.AddToEnd      char    = ''
                 options.FontSize      double  = 18
-
             end
 
             % Grab Slider/Label pos to split for label/slider
@@ -290,7 +289,7 @@ classdef uiFigure < handle
             if strcmpi(colOrRow, 'row')
                 ShiftBy = pos(2) + pos(4) + 0.1;
             else
-                ShiftBy = pos(1) - 0.01;
+                ShiftBy = pos(1) - 0.03;
             end
 
             ax_list = findobj(app.fig, 'Type', 'axes');
