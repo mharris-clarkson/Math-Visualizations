@@ -49,7 +49,7 @@ hImgVort = [];
 %% Build UI first — so Subplot_Mover runs and reserves the bottom strip
 NumControls = 2;
 
-tSlider = app.addControl('slider', '$t = $', 1, NumControls, @updatePlot, ...
+tSlider = app.addControl('slider', '$t$ Index $ = $', 1, NumControls, @updatePlot, ...
     'Default', 1, 'Min', 1, 'Max', num_snapshots, 'Number_format', '%d', 'colOrRow', 'row');
 
 btnVort = app.addControl('button', 'Vorticity: OFF', 2, NumControls, ...
@@ -93,7 +93,7 @@ updatePlot()
         % --- Velocity panel ---
         hImgVel = pcolor(ax_vel, x, y, VEL_store(:,:,idx));
         shading(ax_vel,'interp')
-        Pretty_Color_Positive(ax_vel, [0,3])
+        Pretty_Color_Positive(ax_vel, [0,3]);
         hold(ax_vel, 'on')
         hQuiver = quiver(ax_vel, ...
             x(1:stride:end), y(1:stride:end), ...
@@ -108,7 +108,7 @@ updatePlot()
         if plotVorticity
             hImgVort = pcolor(ax_vort, x, y, VORT_store(:,:,idx));
             shading(ax_vort,'interp')
-        Pretty_Color_Centered(ax_vort, VORT_store(:,:,end))
+        Pretty_Color_Centered(ax_vort, VORT_store(:,:,end));
             title(ax_vort, 'Vorticity', 'Interpreter', 'latex')
             Pretty_Plot(ax_vort)
             ylabel(ax_vort,'')         
