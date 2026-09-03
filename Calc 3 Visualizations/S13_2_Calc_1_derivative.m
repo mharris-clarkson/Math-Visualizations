@@ -14,7 +14,7 @@ r = @(t) [t; sqrt(1-t.^2); 0*t];
 
 % Initial parameters
 t0 = 0;
-dt0 = 1;   % also sets dt0 and dt max.
+dt0 = 0.5;   % also sets dt0 and dt max.
 
 % Scale for secant line
 Sec_Line_Scale = 1;
