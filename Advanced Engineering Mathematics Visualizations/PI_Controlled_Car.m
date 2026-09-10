@@ -19,6 +19,8 @@ mu = 0.5;
 t=linspace(0,50,5000);
 Desired_Path = 60 * (t > 1);
 
+% Desired_Path = 30*(erf(0.1*(t-20))+1)
+
 % Controller parameters
 kp = 1;
 ki = 0;

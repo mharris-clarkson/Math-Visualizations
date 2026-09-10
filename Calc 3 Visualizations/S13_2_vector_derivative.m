@@ -15,7 +15,7 @@ r = @(t) [cos(t); sin(t); 0.5*t];
 
 % Initial parameters
 t0 = pi/2;
-dt0 = 1;   % sets dt0 and dt max.
+dt0 = 0.5;   % sets dt0 and dt max.
 
 % Plot limits
 t_Plot_range = [0, pi-.25];
