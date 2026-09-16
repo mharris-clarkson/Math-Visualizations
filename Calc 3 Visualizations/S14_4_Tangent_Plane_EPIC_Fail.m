@@ -1,4 +1,4 @@
-function S14_2_Tangent_Plane_EPIC_Fail()
+function S14_4_Tangent_Plane_EPIC_Fail()
 %% Shows an extreme case where the tangent plane fails catastrophically.
 %  The function f(x,y) = 1 when x=0 or y=0 (the axes), and 0 elsewhere.
 %  Both partial derivatives at (0,0) are zero, yet the "tangent plane"
