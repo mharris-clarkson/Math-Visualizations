@@ -41,7 +41,7 @@ matrixNames = {'Shear basis (\lambda = 2, 3)', ...
 'Orthogonal basis (\lambda = 2, 1)', ...
 'Random symmetric matrix'};
 
-N            = 80;   % number of points on the unit circle
+N            = 100;   % number of points on the unit circle
 nFramesApply = 60;   % frames for the "Apply A" animation
 nFramesEigen = 50;   % frames for the eigenvector-stretch animation
 

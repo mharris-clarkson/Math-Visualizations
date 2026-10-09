@@ -26,10 +26,11 @@ classdef uiFigure < handle
         % ============================================
         % Initalize applet and apply Pretty_Plot for nice labels
         % ============================================
-        function app = uiFigure(name, numSubPlots)
+        function app = uiFigure(name, numSubPlots, RowOrCol)
             arguments
                 name
                 numSubPlots (1,1) double = 1
+                RowOrCol    (1,1) string = "row"
             end
 
             % Initalize the figure
@@ -39,7 +40,11 @@ classdef uiFigure < handle
 
             % Create subplots
             for i = 1:numSubPlots
-                app.ax(i) = subplot(1, numSubPlots, i);
+                if strcmpi(RowOrCol, "col")
+                    app.ax(i) = subplot(numSubPlots, 1, i);
+                else
+                    app.ax(i) = subplot(1, numSubPlots, i);
+                end
                 hold(app.ax(i), 'on')
                 Pretty_Plot(app.ax(i));
                 %% add manual? etc?
