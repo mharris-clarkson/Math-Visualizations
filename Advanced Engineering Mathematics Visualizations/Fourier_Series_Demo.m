@@ -1,4 +1,4 @@
-function Fourier_Series()
+function Fourier_Series_Demo()
 %% Plots a function along with fourier sum approximations of it 
 %
 %% Author Info

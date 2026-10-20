@@ -23,6 +23,8 @@ zoomMaxHz = 1000;     % zoomed upper frequency limit
 dispRate  = 30;       % max display refresh (frames/s)
 colDecim  = 3;        % audio frames merged into one waterfall column
 
+In_CAMP177 = false; % boost the output for a bad mic
+
 showWaveform0 = false;   % bottom (waveform) plot starts hidden
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
@@ -35,7 +37,7 @@ binHz   = fs/fftSize;
 nBins   = floor(fullMaxHz/binHz) + 1;           % only keep bins up to fullMaxHz
 
 reader     = audioDeviceReader('SampleRate', fs, 'SamplesPerFrame', hop);
-cleanupObj = onCleanup(@() release(reader)); 
+cleanupObj = onCleanup(@() release(reader));
 
 buffer        = zeros(fftSize, 1);
 waterfallData = -120*ones(nBins, history, 'single');
@@ -77,9 +79,9 @@ title(axS, 'Real Time Audio');
 %% Build UI
 NumControls = 2;
 btnFreq = app.addControl('button', 'Show 0-1000 Hz', 1, NumControls, @onFreqToggle, ...
-'ColorChange', true, 'colOrRow', 'row');
+    'ColorChange', true, 'colOrRow', 'row');
 btnWave = app.addControl('button', 'Hide Waveform', 2, NumControls, @onWaveToggle, ...
-'ColorChange', true, 'colOrRow', 'row');
+    'ColorChange', true, 'colOrRow', 'row');
 
 % Capture the subplot positions now that uiFigure has finished laying out
 % the axes around both buttons, and compute the "waterfall only" position
@@ -87,7 +89,7 @@ btnWave = app.addControl('button', 'Hide Waveform', 2, NumControls, @onWaveToggl
 posWaterWithWave = axW.Position;
 posWave          = axS.Position;
 posWaterNoWave   = [posWaterWithWave(1), posWave(2), ...
-                     posWaterWithWave(3), sum(posWaterWithWave([2 4])) - posWave(2)];
+    posWaterWithWave(3), sum(posWaterWithWave([2 4])) - posWave(2)];
 
 % Waveform plot starts hidden, per showWaveform0.
 if ~showWaveform0
@@ -99,29 +101,30 @@ if ~showWaveform0
 end
 
 %% Callbacks
-function onFreqToggle(~, ~)
-    if logical(btnFreq.Value)
-        set(axW, 'YLim', [0 zoomMaxHz])
-        btnFreq.String = 'Show Full Range';
-    else
-        set(axW, 'YLim', [0 fullMaxHz])
-        btnFreq.String = 'Show 0-1000 Hz';
+    function onFreqToggle(~, ~)
+        if logical(btnFreq.Value)
+            set(axW, 'YLim', [0 zoomMaxHz])
+            btnFreq.String = 'Show Full Range';
+        else
+            set(axW, 'YLim', [0 fullMaxHz])
+            btnFreq.String = 'Show 0-1000 Hz';
+        end
     end
-end
 
-function onWaveToggle(~, ~)
-    if logical(btnWave.Value)
-        set(axS, 'Visible', 'off')
-        set(hSample, 'Visible', 'off')
-        axW.Position = posWaterNoWave;
-        btnWave.String = 'Show Waveform';
-    else
-        set(axS, 'Visible', 'on')
-        set(hSample, 'Visible', 'on')
-        axW.Position = posWaterWithWave;
-        btnWave.String = 'Hide Waveform';
+    function onWaveToggle(~, ~)
+        if logical(btnWave.Value)
+            set(axS, 'Visible', 'off')
+            set(hSample, 'Visible', 'off')
+            axW.Position = posWaterNoWave;
+            btnWave.String = 'Show Waveform';
+        else
+            set(axS, 'Visible', 'on')
+            set(hSample, 'Visible', 'on')
+            axW.Position = posWaterWithWave;
+            btnWave.String = 'Hide Waveform';
+        end
     end
-end
+
 
 %% Main loop (runs until the figure is closed)
 lastDraw = tic;
@@ -133,6 +136,9 @@ while ishandle(app.fig)
 
     % FFT -> dBFS, with max-hold accumulated into the pending column.
     Y       = fft(buffer .* w);
+    if In_CAMP177
+        Y = 100*Y;
+    end
     mag     = abs(Y(1:nBins)) / winGain;
     pending = max(pending, single(20*log10(mag + 1e-6)));
 
@@ -149,7 +155,11 @@ while ishandle(app.fig)
         lastDraw = tic;
         set(hWater, 'CData', waterfallData(:, order(histIdx:histIdx+history-1)))
         if btnWave.Value == 0
-            set(hSample, 'YData', buffer)
+            if In_CAMP177
+                set(hSample, 'YData', 100*buffer)
+            else
+                set(hSample, 'YData', buffer)
+            end
         end
         drawnow limitrate
     end
