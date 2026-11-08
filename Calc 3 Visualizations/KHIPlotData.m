@@ -1,4 +1,4 @@
-function S14_1_KHIPlotData()
+function KHIPlotData()
 %% Visualizes Kelvin-Helmholtz instability simulation data. Shows velocity
 %  magnitude with quiver arrows and (optionally) vorticity side-by-side.
 %  A slider scrubs through time snapshots. A toggle button adds/removes

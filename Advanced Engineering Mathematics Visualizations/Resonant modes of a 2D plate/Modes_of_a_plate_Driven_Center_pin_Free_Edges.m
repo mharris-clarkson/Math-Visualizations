@@ -133,7 +133,7 @@ mode_number = 4;
 A_or_B = "A";
 
 % playback params
-playbackHz  = 0.1;
+playbackHz  = 0.5;
 duration    = 60; % Time in s
 
 % Process choice
@@ -150,11 +150,12 @@ figure
 ax = axes;
 % plot wave object
 ani_wave_plot = surf(ax, x, x, modeShape);
-view(0,90)
+view(-20,25)
 set(gca, 'CLim', [-1 1])
 set(gca, 'ZLim', [-1.5 1.5])
 shading interp
 colormap(ax, cmocean('balance'))
+
 
 
 % Animation
