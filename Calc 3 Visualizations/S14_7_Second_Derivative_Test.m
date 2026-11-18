@@ -79,9 +79,9 @@ Pretty_Plot(app.ax)
 updateTitle()
 
 %% Precompute critical points for snap buttons
-% Local max / min via image processing
-localMaxMask = imregionalmax(Z);
-localMinMask = imregionalmin(Z);
+% Local max / min: grid points that beat all 8 neighbours.
+% Local_Extrema_2D is base MATLAB (no Image Processing Toolbox needed).
+[localMaxMask, localMinMask] = Local_Extrema_2D(Z);
 maxList = [X(localMaxMask), Y(localMaxMask)];
 minList = [X(localMinMask), Y(localMinMask)];
 maxList(any(abs(maxList) > 1.9, 2), :) = [];
@@ -99,8 +99,11 @@ fxy_g = (circshift(circshift(Z,[-1 0]),[0 -1]) ...
        + circshift(circshift(Z,[ 1 0]),[0  1])) / (4*h_fd^2);
 gradMag   = sqrt(fx_g.^2 + fy_g.^2);
 detH      = fxx_g.*fyy_g - fxy_g.^2;
-saddleMask = (gradMag < 0.05) & (detH < 0);
-saddleList = unique(round([X(saddleMask), Y(saddleMask)], 3), 'rows');
+% Keep only the grid point where |grad f| is smallest in each cluster, so
+% each saddle appears once (the old version listed 5 points for 3 saddles)
+[~, gradMin] = Local_Extrema_2D(gradMag);
+saddleMask = gradMin & (gradMag < 0.05) & (detH < 0);
+saddleList = [X(saddleMask), Y(saddleMask)];
 
 maxIndex    = 1;
 minIndex    = 1;

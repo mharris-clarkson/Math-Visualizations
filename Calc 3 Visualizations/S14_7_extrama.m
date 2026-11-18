@@ -1,7 +1,7 @@
 function S14_7_extrama()
-%% Visualizes all local maxima and minima of the peaks function using
-%  neighborhood filtering. Red markers show local maxima, cyan markers
-%  show local minima.
+%% Visualizes all local maxima and minima of the peaks function by
+%  comparing each grid point with its 8 neighbours. Red markers show local
+%  maxima, cyan markers show local minima.
 %
 %% Author Info
 %
@@ -13,7 +13,6 @@ close all
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
 resolution  = 400;   % grid resolution for peaks function
-nhood       = true(3); % 3x3 neighborhood for local extrema detection
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -26,13 +25,14 @@ view(app.ax, 3)
 %% Precompute math for updates
 [x, y, z] = peaks(resolution);
 
-localMax = z == ordfilt2(z, 9, nhood);
-localMin = z == ordfilt2(z, 1, nhood);
+% A point is a local max (min) if it beats all 8 neighbours.
+% Local_Extrema_2D is base MATLAB (no Image Processing Toolbox needed).
+[localMax, localMin] = Local_Extrema_2D(z);
 
 %% Make the initial plots
 surf(app.ax, x, y, z)
 shading(app.ax, 'interp')
-Pretty_Color_Centered(app.ax,7*[-1,1])
+Pretty_Color_Centered(app.ax,7*[-1,1]);
 hold(app.ax, 'on')
 plot3(app.ax, x(localMax), y(localMax), z(localMax), ...
     'ko', 'MarkerFaceColor', 'r', 'MarkerSize', 8)
