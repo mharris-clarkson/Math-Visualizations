@@ -80,8 +80,8 @@ zlim(app.ax, [0, 0.6])
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
 surf(app.ax, X, Y, Z,'FaceAlpha', 0.9)
-Pretty_Plot(app.ax)
-        Pretty_Color_Positive(app.ax, Z,'colorbar','off')
+Pretty_Plot(app.ax);
+Pretty_Color_Positive(app.ax, Z,'colorbar','off');
 
 
 [hPt, hVx, hVy, hTp] = plot_geometry(x0, y0);

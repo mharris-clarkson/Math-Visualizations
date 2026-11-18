@@ -1,4 +1,3 @@
-clear all
 %% Runs several tests for the waterfall plot analyser. Just run two copies 
 % of matlab, one with the waterfall plot and one with this code. Laptops 
 % with sound cancelation might have issues with this code. 

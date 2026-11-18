@@ -51,7 +51,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 surf(ax_left, X, Y, Z)
                 shading(ax_left, 'flat')
                 contour3(ax_left, X, Y, Z, levels, 'k', 'LineWidth', 1.5)
-                Pretty_Color_Positive(ax_left, Z)
+                Pretty_Color_Positive(ax_left, Z);
                 plot_xyz_axis(ax_left, 5, 5, 24)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)
@@ -70,7 +70,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 surf(ax_left, X, Y, Z)
                 shading(ax_left, 'flat')
                 contour3(ax_left, X, Y, Z, levels, 'k', 'LineWidth', 1.5)
-                Pretty_Color_Positive(ax_left, Z)
+                Pretty_Color_Positive(ax_left, Z);
                 view(ax_left, -72, 20)
                 plot_xyz_axis(ax_left, 2, 2, 25)
                 Pretty_Plot(ax_left)
@@ -89,7 +89,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 surf(ax_left, X, Y, Z)
                 shading(ax_left, 'flat')
                 contour3(ax_left, X, Y, Z, levels, 'k', 'LineWidth', 1.5)
-                Pretty_Color_Centered(ax_left, Z)
+                Pretty_Color_Centered(ax_left, Z);
                 plot_xyz_axis(ax_left, 5, 5, 24)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)
@@ -114,7 +114,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 surf(ax_left, X, Y, Z)
                 shading(ax_left, 'flat')
                 contour3(ax_left, X, Y, Z, levels, 'k', 'LineWidth', 1.5)
-                Pretty_Color_Centered(ax_left, Z)
+                Pretty_Color_Centered(ax_left, Z);
                 plot_xyz_axis(ax_left, 5, 5, 5)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)

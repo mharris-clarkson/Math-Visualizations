@@ -78,8 +78,9 @@ animTimer = timer('ExecutionMode', 'fixedRate', ...
     'TimerFcn',     @timerStep, ...
     'StopFcn',      @timerStopped);
 
-% Clean up timer when figure is closed
-app.fig.DeleteFcn = @(~,~) stopTimer();
+% Stop AND delete the timer when the figure is closed. Without the delete,
+% every run leaves an orphan timer behind (see timerfindall).
+app.fig.DeleteFcn = @(~,~) cleanupTimer();
 
 %% Precompute math for updates
 % (curves are fast to compute on demand)
@@ -96,7 +97,7 @@ btnCurve = app.addControl('button', ...
         if isPlaying
             stopTimer();
             btnPlay.String = 'Play';
-        else
+        elseif isvalid(animTimer)
             isPlaying = true;
             btnPlay.String = 'Pause';
             start(animTimer);
@@ -119,7 +120,7 @@ btnCurve = app.addControl('button', ...
         title(app.ax, curveNames{curveIdx}, 'Interpreter', 'latex')
         btnCurve.String = ['Curve: ' curveNames{curveIdx}];
 
-        if wasPlaying
+        if wasPlaying && isvalid(animTimer)
             isPlaying = true;
             btnPlay.String = 'Pause';
             start(animTimer);
@@ -138,9 +139,19 @@ btnCurve = app.addControl('button', ...
         isPlaying = false;
     end
 
+    % The timer may already be gone (e.g. a test teardown ran
+    % delete(timerfindall) before closing the figure), so check isvalid first.
     function stopTimer()
-        if strcmp(animTimer.Running, 'on')
+        if isvalid(animTimer) && strcmp(animTimer.Running, 'on')
             stop(animTimer);
+        end
+        isPlaying = false;
+    end
+
+    function cleanupTimer()
+        if isvalid(animTimer)
+            stop(animTimer);
+            delete(animTimer);
         end
         isPlaying = false;
     end

@@ -36,13 +36,13 @@ view(app.ax, 0, 90)
                 [x, y] = meshgrid(linspace(0, 1, 40));
                 Z = (sinh(pi*y) / sinh(pi)) .* sin(pi*x);
                 pcolor(app.ax, x, y, Z)
-                Pretty_Color_Positive(app.ax,Z)
+                Pretty_Color_Positive(app.ax,Z);
                 axis(app.ax, 'xy')
 
             case 2  % peaks
                 [x,y,Z] = peaks(100);
                 pcolor(app.ax, x, y, Z)
-                Pretty_Color_Centered(app.ax,Z)
+                Pretty_Color_Centered(app.ax,Z);
                 colorbar(app.ax)
                 axis(app.ax, 'xy')
 

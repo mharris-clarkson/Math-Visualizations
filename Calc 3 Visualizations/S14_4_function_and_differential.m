@@ -35,7 +35,7 @@ fy = @(x,y) Diffy_f(f,x,y);
 
 %% Make the initial plots
 pSurf = surf(app.ax, xg, yg, zg, 'EdgeColor', 'none', 'FaceAlpha', 0.6);
-Pretty_Color_Positive(app.ax,zg)
+Pretty_Color_Positive(app.ax,zg);
 p0    = plot3(app.ax, x0, y0, f(x0,y0), 'ro', ...
     'MarkerSize', 8, 'MarkerFaceColor', 'r');
 plane = drawDifferential(x0, y0);

@@ -1,4 +1,4 @@
-clc; clear; close all;
+close all;
 
 
 %% Animation for cats sending the message with sin wave

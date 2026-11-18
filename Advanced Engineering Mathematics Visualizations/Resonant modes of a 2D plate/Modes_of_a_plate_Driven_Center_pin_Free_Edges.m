@@ -20,8 +20,6 @@
 %% =========================================================================
 
 close all
-clear
-clc
 setup
 %% -- physical parameters --------------------------------------------------
 
@@ -134,7 +132,7 @@ A_or_B = "A";
 
 % playback params
 playbackHz  = 0.5;
-duration    = 60; % Time in s
+duration    = 5; % Time in s
 
 % Process choice
 if upper(A_or_B) == "A"
