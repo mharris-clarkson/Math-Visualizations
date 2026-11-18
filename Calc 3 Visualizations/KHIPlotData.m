@@ -20,8 +20,17 @@ scale  = 0.15;  % quiver arrow scale factor
 %% Load libraries
 run('setup.m')
 
-%% Load data
-data          = load('KH_data.mat');
+%% Load data or if it does not exist, create it
+
+if isfile('KH_data.mat')
+     data = load('KH_data.mat');
+else 
+    fprintf('KH_data.mat not found. Running fluids simulation.\n This will take a while.\n')
+    Run_KHI_Sim.m
+    clear
+    data = load('KH_data.mat');
+end
+    
 x             = data.x;
 y             = data.y;
 U_store       = data.U_store;

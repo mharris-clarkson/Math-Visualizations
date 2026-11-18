@@ -46,7 +46,11 @@ delta = 0.01 / k0;  % Shear-layer thickness (thin -> fast KHI onset)
 amp = 1e-3;         % Amplitude of vortex-sheet perturbation
 
 % --- I/O ---
-save_data = false;
+if isfile('KH_data.mat') % if there is no data then save 
+    save_data = false;
+else 
+    save_data = true;
+end
 plot_data = true;
 filename  = 'KH_data.mat';
 
