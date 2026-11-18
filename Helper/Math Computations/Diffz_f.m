@@ -9,6 +9,6 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function fz = Diffz_f(f,x,y,z)
-h = 1e-10;
+h = 1e-6;   % ~optimal for central differences (1e-10 gives ~1e-6 rounding noise)
 fz = (f(x,y,z+h) - f(x,y,z-h))/(2*h);
 end

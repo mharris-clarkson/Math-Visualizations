@@ -26,7 +26,7 @@ Plots_to_test = 1;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = UIApplet("Mixed Controls",Plots_to_test); % Plots_to_test is an optional argument to allow for more subplots
+app = uiFigure("Mixed Controls",Plots_to_test); % Plots_to_test is an optional argument to allow for more subplots
 title(app.ax,app.fig.Name,'Interpreter','latex')
 
 %% Optional math functions for plot computations

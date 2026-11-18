@@ -1,6 +1,11 @@
 %% Function that computes the fontsize needed for text to fit in that width.
 % Has a hard coded max of 18.
-
+%
+%% Author Info
+%
+% This function was written by Dr Matthew Harris an assistant professor at
+% Clarkson university for visually teaching MA 231: Calculus 3.
+%
 function fs = fit_fontsize(fig, text, norm_width)
     fs = 18;
     if false % Work in progress

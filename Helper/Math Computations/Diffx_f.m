@@ -9,7 +9,7 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function fx = Diffx_f(f,x,y,z)
-h = 1e-10;
+h = 1e-6;   % ~optimal for central differences (1e-10 gives ~1e-6 rounding noise)
 if nargin < 4
     fx = (f(x+h,y) - f(x-h,y))/(2*h);
 else

@@ -3,6 +3,13 @@ function [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(xi, yj, zij, dx,
 % Each prism has base [xi-dx/2,xi+dx/2] x [yj-dy/2,yj+dy/2] and height
 % zij. Vectorized across all n prisms at once (no per-prism loop), for
 % use with patch(). Shared by the Cartesian Riemann-prism demos.
+%
+%% Author Info
+%
+% Ported/cleaned up by Claude from original visualizations written by
+% Dr Matthew Harris, assistant professor at Clarkson University,
+% for MA 231: Calculus 3.
+
 xi = xi(:); yj = yj(:); zij = zij(:);
 n = numel(xi);
 cornerDX = dx/2*[-1, 1, 1, -1];

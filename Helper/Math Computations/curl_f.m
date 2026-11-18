@@ -1,7 +1,14 @@
 % A function that takes in:
-% - A function handle f and 
-% - A scalar or vector of times t
-% and returns an approximate  tangent vector at the time(s) t
+% - Function handles F1, F2, F3 for the components of a vector field
+%   F(x,y,z) = <F1, F2, F3> and
+% - Scalars or arrays of points x, y, z
+% and returns the approximate components of curl F at the point(s)
+%
+%% Author Info
+%
+% This function was written by Dr Matthew Harris an assistant professor at
+% Clarkson university for visually teaching MA 231: Calculus 3.
+%
 function [X_curl,Y_curl,Z_curl] = curl_f(F1,F2,F3,x,y,z,options)
 arguments
     F1            function_handle
@@ -10,7 +17,7 @@ arguments
     x             double
     y             double
     z             double
-    options.Dt   double =1e-10
+    options.Dt   double = 1e-6  % ~optimal for central differences
 end
 
 h = options.Dt;
