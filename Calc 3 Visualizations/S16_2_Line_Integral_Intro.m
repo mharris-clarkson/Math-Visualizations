@@ -1,4 +1,4 @@
-function L27_S16_2_Integral()
+function S16_2_Line_Integral_Intro()
 %% Line Integral of a Scalar Function: 2D "Normal Integral" vs 3D Picture
 % Evaluates  int_C f ds  along a curve C in the xy-plane. Two views, with a
 % button to switch between them:
