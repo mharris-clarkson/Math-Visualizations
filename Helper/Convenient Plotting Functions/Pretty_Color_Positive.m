@@ -3,7 +3,7 @@
 %   current_axis  - axis to apply to
 %   cdata         - colour data used to set the colour limits
 %   cb            - Returned colorbar
-function cb = Pretty_Color_Positive(current_axis,cdata,options)
+function varargout = Pretty_Color_Positive(current_axis,cdata,options)
 % Pretty_Color_Positive is a helper function for changing to a sequential
 % color map (provided by Kristen Thyng's cmocean function), setting the
 % color limits to [0, max(cdata)] and optionally adding a color bar.
@@ -52,5 +52,10 @@ if strcmpi(options.colorbar, 'on')
 else
     colorbar(current_axis, 'off');
     cb = gobjects(0);
+end
+% Only hand back the colorbar when asked for it, so a call without a
+% semicolon does not print "ans = 0x0 empty GraphicsPlaceholder array"
+if nargout > 0
+    varargout{1} = cb;
 end
 end

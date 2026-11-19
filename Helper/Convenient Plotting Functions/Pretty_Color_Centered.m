@@ -3,7 +3,7 @@
 %   current_axis  - axis to apply to
 %   current_axis  - colour data to balance out
 %   cb            - Returned colorbar
-function cb = Pretty_Color_Centered(current_axis,cdata,options)
+function varargout = Pretty_Color_Centered(current_axis,cdata,options)
 % Pretty_Color_Centered is a helper function for changing to a divergence
 % frees color map (provided by Kristen Thyng's cmocean function, centering
 % it, adding a color bar and shifting the colorbar for better 3D function
@@ -48,5 +48,10 @@ if strcmpi(options.colorbar, 'on')
     cb = colorbar(current_axis,'Location', 'eastoutside');
 else
     cb = gobjects(0); % nothing to return in the 'off' case
+end
+% Only hand back the colorbar when asked for it, so a call without a
+% semicolon does not print "ans = 0x0 empty GraphicsPlaceholder array"
+if nargout > 0
+    varargout{1} = cb;
 end
 end
