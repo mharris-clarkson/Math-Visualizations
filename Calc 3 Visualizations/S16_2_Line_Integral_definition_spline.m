@@ -80,7 +80,7 @@ ax2.OuterPosition = posSplit2;
 %% Static graphics in the 3D axes
 [xg, yg] = meshgrid(linspace(-bound, bound, nGrid));
 surf(ax3, xg, yg, f(xg,yg), 'EdgeColor', 'none', 'FaceAlpha', 0.8, 'FaceColor', 'interp');
-colormap(ax3,cmocean('amp'));
+colormap(ax3,Pretty_Colormap('amp'));
 clim(ax3,max(max(f(xg,yg)))*[0,1])
 surf(ax3, xg, yg, zeros(size(xg)), 'FaceColor', [0.88 0.88 0.88], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
 xlabel(ax3, 'x'); ylabel(ax3, 'y'); zlabel(ax3, 'z = f(x,y)')
@@ -289,9 +289,9 @@ function redraw(n)
         set(hPan2, 'Faces', faces, 'Vertices', V2, 'FaceVertexCData', cdata)
         set(hDots2, 'XData', sm, 'YData', fm)
 
-        title(ax2, sprintf('Riemann Sum on Arc-Length Axis\nApprox = %.5f    Line integral = %.5f', approx, I_exact))
+        title(ax2, splitlines(sprintf('Riemann Sum on Arc-Length Axis\nApprox = %.5f    Line integral = %.5f', approx, I_exact)))
     else
-        title(ax2, sprintf('f along the arc-length axis\nLine integral = %.5f', I_exact))
+        title(ax2, splitlines(sprintf('f along the arc-length axis\nLine integral = %.5f', I_exact)))
     end
     title(ax3, '$\int_C f(x,y)ds= \lim_{n\to\infty}\sum_{i=1}^n f(x_i^*,y_i^*)\Delta s_i$ $\\$ Drag the red dots to change C','Interpreter','latex')
     
@@ -311,13 +311,5 @@ if abs(dz) < 1e-10
     P = [];
 else
     P = cp(1,1:2) - cp(1,3)/dz*(cp(2,1:2) - cp(1,1:2));
-end
-end
-
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
 end
 end
