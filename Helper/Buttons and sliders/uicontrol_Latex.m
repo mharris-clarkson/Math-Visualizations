@@ -17,6 +17,9 @@ function Button = uicontrol_Latex(fig, options)
 %           'CallbackFcn' - A local function to define the behaviour of the
 %                           button.
 %           Options.Color_change  - A bool for enabling color change when clicked
+%           'Toggle_strings' - Optional ["text when off","text when on"]. The
+%                           text swaps on every click and whenever
+%                           Button.Value is set from code.
 %
 % Outputs:
 %
@@ -34,6 +37,7 @@ arguments
     options.Visible   string   = "on"
     options.Callback          = @(~,~) []
     options.Color_change logical = false % need extra class to 
+    options.Toggle_strings string = string.empty
 
 end
 
@@ -58,6 +62,7 @@ Button = uicontrol(fig, ...
     ax = axes(fig, ...
         'Units',    'normalized', ...
         'Position', Button_Position, ...
+        'Tag',      'uiFigureControl', ... % marks it as a control, not a plot
         'XLim',     [0 1],...
         'YLim',     [0 1], ...
         'Visible',  'on', ...
@@ -110,6 +115,14 @@ Button.UserData.setColor = @(state) setButtonColor(Button, state);
 btn_text.String = Button_Name;
 
 
+%% Toggle text / highlight follow Button.Value, also when a script sets
+%  Button.Value from code (e.g. a Reset button), so the label and colour
+%  can never disagree with the state.
+Button.UserData.Toggle_strings = options.Toggle_strings;
+if numel(options.Toggle_strings) == 2 || options.Color_change
+    addlistener(Button, 'Value', 'PostSet', @(~,~) syncState(Button));
+end
+
 %% Initial visible check
 syncVisible(Button, ax)
 
@@ -141,6 +154,18 @@ end
 ud.callback(btn, []);
 end
 
+
+%% -----------------------------------------------------------------------
+% Keep toggle text and highlight in step with Button.Value
+function syncState(btn)
+ts = btn.UserData.Toggle_strings;
+if numel(ts) == 2
+    btn.String = ts(logical(btn.Value) + 1);
+end
+if btn.UserData.Color_change
+    setButtonColor(btn, btn.Value);
+end
+end
 
 %% -----------------------------------------------------------------------
 % Button string update function
