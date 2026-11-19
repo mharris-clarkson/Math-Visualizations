@@ -473,14 +473,25 @@ classdef uiFigure < handle
             ax_list = findobj(app.fig, 'Type', 'axes', '-not', 'Tag', 'uiFigureControl');
 
             if isRow
-                % Lift the bottom of every plot above the row of controls
-                new_bottom = pos(2) + pos(4) + 0.1;
+                % Lift the bottom of every plot above the row of controls.
+                % Leave room for that plot's own tick labels and x label
+                % (TightInset(2) = space they need below the axes box), plus
+                % a small gap, so the x label never sits on the controls.
+                gap = 0.03;
+                controlsTop = pos(2) + pos(4);
+                drawnow limitrate   % make sure label sizes are up to date
                 for i = 1:numel(ax_list)
-                    axPos = ax_list(i).Position;
+                    ax = ax_list(i);
+                    below = 0.07;                       % fallback label space
+                    if strcmp(ax.Units, 'normalized')
+                        below = max(below, ax.TightInset(2));
+                    end
+                    new_bottom = controlsTop + gap + below;
+                    axPos = ax.Position;
                     if axPos(2) < new_bottom
                         shrink = new_bottom - axPos(2);
-                        ax_list(i).Position(2) = new_bottom;
-                        ax_list(i).Position(4) = max(0.05, axPos(4) - shrink);
+                        ax.Position(2) = new_bottom;
+                        ax.Position(4) = max(0.05, axPos(4) - shrink);
                     end
                 end
             else
