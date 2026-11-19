@@ -56,7 +56,7 @@ zPlaneMax   = max(gHigh);
 
 %% Static graphics
 surf(app.ax, X, Y, Z, 'EdgeColor', 'none', 'FaceAlpha', 0.75)
-cmocean('amp')
+Pretty_Colormap('amp')
 Pretty_Plot(app.ax)
 
 ypoints = [ylims(1), ylims(1), ylims(2), ylims(2)];
@@ -124,32 +124,11 @@ function toggleGreenArea(~, ~)
 end
 
 function rotateToSideView(~, ~)
-    [az0, el0] = view(app.ax);
-    azs = linspace(az0, 90, 50);
-    els = linspace(el0, 0, 50);
-    for k = 1:numel(azs)
-        view(app.ax, azs(k), els(k))
-        drawnow
-        pause(0.02)
-    end
+    Animate_View(app.ax, 90, 0)   % smooth turn to the side view
 end
 
 end
 
 %% Small stateless helpers (kept as ordinary local functions, not nested,
 % since they don't need access to the app's shared workspace).
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
-end
 
-function s = toggleLabel(tf, name)
-if tf
-    s = ['Hide ', name];
-else
-    s = ['Show ', name];
-end
-end
