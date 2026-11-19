@@ -46,7 +46,7 @@ surfHandle = surf(ax,x,y,z,1+0*C, ...
     'FaceColor','interp');
 hold(ax,'on')
 
-colormap(ax,cmocean('amp'))
+colormap(ax,Pretty_Colormap('amp'))
 cb = colorbar(ax);
 cb.Label.String = 'f(x,y)';
 
