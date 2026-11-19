@@ -32,7 +32,6 @@ ylims = [-0.01, 1.01]; Ny = 300;
 
 Ncurves  = 40;         % number of black running-integral curves
 tailLen  = 0.001;       % how far the black curves stick out past the region's end (at t = 100%)
-exactVal = 5/48;       % exact volume, shown for comparison
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -78,14 +77,14 @@ zcRed  = [zeros(1, numel(xc)); xc.*sqrt(xc)];
 zcBlue = [zeros(1, numel(xc)); xc.*xc.^3];
 yRed  = sqrt(xc);
 yBlue = xc.^3;
-surf(app.ax, [xc; xc], [yRed; yRed],   zcRed, 'FaceColor', 'b', ...
+surf(app.ax, [xc; xc], [yRed; yRed],   zcRed, 'FaceColor', 'r', ...
     'FaceAlpha', 0.1, 'EdgeColor', 'none');
-surf(app.ax, [xc; xc], [yBlue; yBlue], zcBlue, 'FaceColor', 'r', ...
+surf(app.ax, [xc; xc], [yBlue; yBlue], zcBlue, 'FaceColor', 'b', ...
     'FaceAlpha', 0.1, 'EdgeColor', 'none');
-plot3(app.ax, xc, yRed,  zeros(size(xc)), 'b', 'LineWidth', 2)
-plot3(app.ax, xc, yBlue, zeros(size(xc)), 'r', 'LineWidth', 2)
-plot3(app.ax, xc, yRed,  zcRed(2, :), 'b', 'LineWidth', 1)
-plot3(app.ax, xc, yBlue, zcBlue(2, :), 'r', 'LineWidth', 1)
+plot3(app.ax, xc, yRed,  zeros(size(xc)), 'r', 'LineWidth', 2)
+plot3(app.ax, xc, yBlue, zeros(size(xc)), 'b', 'LineWidth', 2)
+plot3(app.ax, xc, yRed,  zcRed(2, :), 'r', 'LineWidth', 1)
+plot3(app.ax, xc, yBlue, zcBlue(2, :), 'b', 'LineWidth', 1)
 
 hPlane  = patch(app.ax, NaN, NaN, NaN, 'k', 'FaceAlpha', 0.25, 'EdgeColor', 'k');
 hCurves = plot3(app.ax, NaN, NaN, NaN, 'k', 'LineWidth', 1.5);   % one object, NaN-separated
@@ -93,7 +92,6 @@ hWall   = plot3(app.ax, NaN, NaN, NaN, 'Color', purple, 'LineWidth', 3, 'Visible
 hGreen  = patch(app.ax, NaN, NaN, NaN, 'g', 'FaceAlpha', 0.35, ...
     'EdgeColor', 'none', 'Visible', 'off');
 
-title('Iterated integral over non-square domain')
 setOrder(true)
 
 %% Build UI
@@ -161,6 +159,7 @@ function setOrder(tf)
     vp = [v(vi(1)), v(vi(1)), v(vi(end)), v(vi(end))];
     zp = [0, max(g), max(g), 0];
 
+    updateTitle()
     redraw(currentIndex())
 end
 
@@ -201,8 +200,15 @@ function redraw(i)
                  'ZData', reshape(Zmat.', 1, []))
 end
 
+% Title: which order is shown
 function updateTitle()
-    title(app.ax, 'Iterated integral over non-square domains', 'Interpreter', 'none')
+    if xInner
+        orderStr = 'dx dy  (inner integral in x)';
+    else
+        orderStr = 'dy dx  (inner integral in y)';
+    end
+    title(app.ax, sprintf('Iterated integral over a non-rectangular region, order %s', ...
+        orderStr), 'Interpreter', 'none')
 end
 
 function toggleWallCurve(~, ~)
@@ -219,36 +225,7 @@ function toggleGreenArea(~, ~)
 end
 
 function rotateToSideView(~, ~)
-    [az0, el0] = view(app.ax);
-    if xInner
-        azTarget = 90;     % look along the x-axis: plane at fixed x is edge-on
-    else
-        azTarget = 180;    % look along the y-axis from the +y side (the wall faces you)
-    end
-    azs = linspace(az0, azTarget, 50);
-    els = linspace(el0, 0, 50);
-    for k = 1:numel(azs)
-        view(app.ax, azs(k), els(k))
-        drawnow
-        pause(0.02)
-    end
+    Animate_View(app.ax, 90, 0)   % smooth turn to the side view
 end
 
-end
-
-%% Small stateless helpers
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
-end
-
-function s = toggleLabel(tf, name)
-if tf
-    s = ['Hide ', name];
-else
-    s = ['Show ', name];
-end
 end
