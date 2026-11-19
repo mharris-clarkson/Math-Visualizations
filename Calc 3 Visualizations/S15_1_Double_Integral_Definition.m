@@ -38,7 +38,7 @@ res = 140;
 [xs, ys] = meshgrid(linspace(a, b, res), linspace(c, d, res));
 zs = f(xs, ys);
 surf(app.ax, xs, ys, zs, zs, 'EdgeColor', 'none', 'FaceAlpha', 0.95)
-cmocean('amp')
+Pretty_Colormap('amp')
 colorbar(app.ax)
 Pretty_Plot(app.ax)
 zlabel(app.ax, 'f(x,y)')
@@ -93,37 +93,4 @@ function redraw(Nside)
         Nside^2, integral_approx, exactIntegral))
 end
 
-end
-
-%% Stateless helper (ordinary local function, not nested -- it only needs
-% its inputs, not the app's shared workspace).
-%
-% Builds the vertex/face arrays for a grid of n axis-aligned prisms, each
-% with base [xi-dx/2,xi+dx/2] x [yj-dy/2,yj+dy/2] and height zij. Each
-% prism contributes 8 vertices (4 bottom, 4 top) stored as one contiguous
-% 8-row block, so prism k's vertices are rows 8*(k-1)+1 : 8*(k-1)+8 --
-% that's what lets the face index arrays below be built with plain
-% vectorized arithmetic instead of a loop.
-function [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(xi, yj, zij, dx, dy)
-n = numel(xi);
-cornerDX = dx/2*[-1, 1, 1, -1];
-cornerDY = dy/2*[-1, -1, 1, 1];
-
-Xb = xi + cornerDX;     % n x 4: corner x-coords (same at bottom and top)
-Yb = yj + cornerDY;     % n x 4: corner y-coords (same at bottom and top)
-Zb = zeros(n, 4);
-Zt = repmat(zij, 1, 4);
-
-Vx = reshape([Xb, Xb].', [], 1);
-Vy = reshape([Yb, Yb].', [], 1);
-Vz = reshape([Zb, Zt].', [], 1);
-V  = [Vx, Vy, Vz];       % 8n x 3
-
-base        = 8*(0:n-1).';
-bottomFaces = base + (1:4);
-topFaces    = base + (5:8);
-sideFaces   = [base + [1 2 6 5]; ...
-               base + [2 3 7 6]; ...
-               base + [3 4 8 7]; ...
-               base + [4 1 5 8]];
 end
