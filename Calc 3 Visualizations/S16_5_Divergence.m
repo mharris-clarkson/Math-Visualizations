@@ -56,7 +56,7 @@ ymin = min(min(yg)); ymax = max(max(yg));
 
 hImg = imagesc(ax, linspace(xmin,xmax,60), linspace(ymin, ymax,60), divF);
 set(ax,'YDir','normal')
-colormap(ax, cmocean('balance'));
+colormap(ax, Pretty_Colormap('balance'));
 colorbar(ax);
 set(hImg,'AlphaData',0.55);
 
