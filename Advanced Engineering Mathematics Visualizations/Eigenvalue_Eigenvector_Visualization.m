@@ -37,8 +37,8 @@ end
 
 
 matrices    = {A1, A2, A3};
-matrixNames = {'Shear basis (\lambda = 2, 3)', ...
-'Orthogonal basis (\lambda = 2, 1)', ...
+matrixNames = {'Shear basis ($\lambda = 2, 3$)', ...
+'Orthogonal basis ($\lambda = 2, 1$)', ...
 'Random symmetric matrix'};
 
 N            = 100;   % number of points on the unit circle
@@ -197,7 +197,7 @@ function applyAxesAndLabels()
         set(EigRef(i), 'XData', [0, Vnorm(1,i)], 'YData', [0, Vnorm(2,i)])
         set(EigVec(i), 'UData', Vnorm(1,i), 'VData', Vnorm(2,i))
         set(EigText(i), 'Position', 1.08*[Vnorm(1,i), Vnorm(2,i), 0], ...
-            'String', sprintf('\\lambda = %.2f', lambda(i)))
+            'String', sprintf('$\\lambda = %.2f$', lambda(i)))
     end
 
     title(app.ax(1), sprintf('Unit Circle -- %s', matrixNames{matIdx}))
@@ -216,12 +216,4 @@ end
 
 function s = smoothstep(t)
 s = 3*t.^2 - 2*t.^3;
-end
-
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
 end
