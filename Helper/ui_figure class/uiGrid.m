@@ -24,7 +24,7 @@ arguments
 end
 % Check for valid colOrRow values
 if ~(strcmpi(options.colOrRow,'row') || strcmpi(options.colOrRow,'col'))
-    error('UIApplet - addControl: colOrRow should be ''row'' or ''col'' but was %s', options.colOrRow);
+    error('uiGrid: colOrRow should be ''row'' or ''col'' but was %s', options.colOrRow);
 end
 
 % Compute spacing
