@@ -33,23 +33,17 @@ xlim(app.ax, max_val*[-1, 1])
 ylim(app.ax, max_val*[-1, 1])
 zlim(app.ax, [0, 0.6])
 %% Optional math functions for plot computations
-function grad = numerical_gradient(xPoint)
-        h = 1e-5;
-        x = xPoint(1); y = xPoint(2);
-        grad = [(f(x+h,y) - f(x-h,y))/(2*h); ...
-                (f(x,y+h) - f(x,y-h))/(2*h)];
-end
 function redraw(x, y, theta)
         delete(findall(app.ax, 'Tag', 'dirPt'));
         delete(findall(app.ax, 'Tag', 'dirVec'));
         z    = f(x,y);
-        grad = numerical_gradient([x; y]);
+        grad = Grad_f(f, [x; y]);
         R      = [cos(theta) -sin(theta); sin(theta) cos(theta)];
         dirRot = R*grad;                                   % gradient, rotated by theta
         dz     = grad(1)*dirRot(1) + grad(2)*dirRot(2);     % directional derivative
         plot3(app.ax, x, y, z, 'bo', 'MarkerFaceColor', 'b', ...
 'MarkerSize', 8, 'LineWidth', 2, 'Tag', 'dirPt');
-        cmocean('amp')
+        Pretty_Colormap('amp')
         quiver3(app.ax, x, y, z, dirRot(1), dirRot(2), dz, 1, ...
 'Color', 'b', 'LineWidth', 2, 'MaxHeadSize', 0.5, 'Tag', 'dirVec');
         zlim(app.ax, [0, 0.6])
@@ -74,7 +68,7 @@ xSlider = app.addControl('slider', '$x = $', 1, NumControls, @updatePlot, ...
 ySlider = app.addControl('slider', '$y = $', 2, NumControls, @updatePlot, ...
 'colOrRow', 'row', 'Default', y0, 'Min', -max_val, 'Max', max_val, 'Number_format', '%.2f');
 thetaSlider = app.addControl('slider', '$\theta = $', 3, NumControls, @updatePlot, ...
-'colOrRow', 'row', 'Default', theta0, 'Min', 0, 'Max', 2*pi, 'Number_format', '%.2f');
+'colOrRow', 'row', 'Default', theta0, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
 %% Functions for UI elements
 function updatePlot(~, ~)
         redraw(xSlider.Value, ySlider.Value, thetaSlider.Value)
