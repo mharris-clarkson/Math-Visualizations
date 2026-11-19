@@ -60,7 +60,7 @@ end
 climAll = 1.125*max(climAll, 1);
 hImg = imagesc(ax, xvec, yvec, zeros(300));
 set(ax, 'YDir', 'normal');
-colormap(ax, cmocean('balance'));
+colormap(ax, Pretty_Colormap('balance'));
 cb = colorbar(ax, 'Location', 'eastoutside');
 cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
 cb.Label.Interpreter = 'latex';
@@ -243,3 +243,4 @@ end
             pts(dragIdx, :) = min(max(cp, lims(1)), lims(2)); % stay inside the axes
         end
     end
+end
