@@ -25,7 +25,7 @@ fy = @(x,y) (f(x,y+h) - f(x,y-h)) / (2*h);
 xlims = [-1 1]; ylims = [-1 1];
 resHigh = 200;      % resolution of the reference surface / "true" area
 resLow0 = 1;        % initial N
-resMax  = 100;       % largest N on the slider
+resMax  = 25;       % largest N on the slider
 arrowLen = 0.2;     % length of the normal / fx / fy arrows
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
@@ -35,7 +35,7 @@ ax = app.ax(1);
 
 Pretty_Plot(ax)
 axis(ax, 'equal')
-xlabel(ax, 'x'); ylabel(ax, 'y'); zlabel(ax, 'z')
+xlabel(ax, '$x$'); ylabel(ax, '$y$'); zlabel(ax, '$z$')
 xlim(ax, xlims); ylim(ax, ylims)
 view(ax, -38, 20)
 
@@ -69,7 +69,9 @@ setTitle(resLow0, c.SA)
 
 %% Build UI
 sRes = app.addControl('slider', '$N = $', 1, 1, @updateResolution, ...
-    'Default', resLow0, 'Min', 1, 'Max', resMax, 'Number_format', '%d');
+    'Default', resLow0, 'Min', 1, 'Max', resMax, 'Number_format', '%d', ...
+    'Step', 1,'colOrRow','Row');                    % whole numbers only: N x N grid of planes
+setSliderLabel(resLow0)
 
 %% Callback: recompute all cells in one shot and update the 5 objects in place
 function updateResolution(~, ~)
@@ -84,7 +86,13 @@ function updateResolution(~, ~)
     set(fyArrows, 'XData', c.xc, 'YData', c.yc, 'ZData', c.zc, ...
         'UData', c.ty(:,1), 'VData', c.ty(:,2), 'WData', c.ty(:,3))
     setTitle(N, c.SA)
+    setSliderLabel(N)
     drawnow limitrate
+end
+
+% Slider label shows the grid size and the number of planes it gives
+function setSliderLabel(N)
+    sRes.UserData.label.String = sprintf('$N = %d$ (%d planes)', N, N^2);
 end
 
 function setTitle(N, SA)
