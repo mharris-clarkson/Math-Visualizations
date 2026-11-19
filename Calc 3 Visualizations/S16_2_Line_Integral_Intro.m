@@ -84,10 +84,3 @@ end
 end
 
 %% Stateless helper
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
-end
