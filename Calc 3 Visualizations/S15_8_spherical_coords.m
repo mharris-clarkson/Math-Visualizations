@@ -43,10 +43,14 @@ lighting(ax, 'gouraud')
 nC = 6;
 s1 = app.addControl('slider', '$\rho_{min} = $',   1, nC, @updatePlot, 'Default', rhomin,   'Min', 0, 'Max', 5,    'Number_format', '%.2f');
 s2 = app.addControl('slider', '$\rho_{max} = $',   2, nC, @updatePlot, 'Default', rhomax,   'Min', 0, 'Max', 5,    'Number_format', '%.2f');
-s3 = app.addControl('slider', '$\theta_{min} = $', 3, nC, @updatePlot, 'Default', thetamin, 'Min', 0, 'Max', 2*pi, 'Number_format', '%.2f');
-s4 = app.addControl('slider', '$\theta_{max} = $', 4, nC, @updatePlot, 'Default', thetamax, 'Min', 0, 'Max', 2*pi, 'Number_format', '%.2f');
-s5 = app.addControl('slider', '$\phi_{min} = $',   5, nC, @updatePlot, 'Default', phimin,   'Min', 0, 'Max', pi,   'Number_format', '%.2f');
-s6 = app.addControl('slider', '$\phi_{max} = $',   6, nC, @updatePlot, 'Default', phimax,   'Min', 0, 'Max', pi,   'Number_format', '%.2f');
+s3 = app.addControl('slider', '$\theta_{min} = $', 3, nC, @updatePlot, 'Default', thetamin, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
+s4 = app.addControl('slider', '$\theta_{max} = $', 4, nC, @updatePlot, 'Default', thetamax, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
+s5 = app.addControl('slider', '$\phi_{min} = $',   5, nC, @updatePlot, 'Default', phimin,   'Min', 0, 'Max', pi,   'Number_format', 'pi');
+s6 = app.addControl('slider', '$\phi_{max} = $',   6, nC, @updatePlot, 'Default', phimax,   'Min', 0, 'Max', pi,   'Number_format', 'pi');
+% Keep each min slider at or below its max slider (region never turns inside out)
+app.linkMinMax(s1, s2);
+app.linkMinMax(s3, s4);
+app.linkMinMax(s5, s6);
 
 redraw(rhomin, rhomax, thetamin, thetamax, phimin, phimax)
 
@@ -94,10 +98,3 @@ set(h, 'XData', R.*sin(PH).*cos(TH), 'YData', R.*sin(PH).*sin(TH), ...
     'ZData', R.*cos(PH), 'CData', C)
 end
 
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
-end
