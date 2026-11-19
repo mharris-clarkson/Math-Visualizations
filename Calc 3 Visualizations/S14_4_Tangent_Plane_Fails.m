@@ -1,4 +1,4 @@
-function S14_2_Tangent_Plane_Fails()
+function S14_4_Tangent_Plane_Fails()
 %% Shows that partial derivatives can exist at a point (0,0) yet the
 %  tangent plane still fails to describe the surface, because the function
 %  f(x,y) = x^2*y/(x^2+y^2) is not differentiable at the origin.
@@ -66,18 +66,13 @@ btnPlane = app.addControl('button', 'Show Tangent Plane', 2, NumControls, ...
     @updatePlot, 'ColorChange', true);
 
 %% Functions for UI elements
-    function fp = diffF(f, t0)
-        h  = 1e-8;
-        fp = (f(t0+h) - f(t0-h)) / (2*h);
-        fp = fp / norm(fp);
-    end
 
 %% Main Draw update function.
     function updatePlot(~, ~)
         % Tangent lines
         if btnTangent.Value
-            p1 = diffF(C1, 0);
-            p2 = diffF(C2, 0);
+            p1 = Diff_f_unit(C1, 0);
+            p2 = Diff_f_unit(C2, 0);
             s  = [-1 1];
             set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', s*p1(3));
             set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', s*p2(3));
