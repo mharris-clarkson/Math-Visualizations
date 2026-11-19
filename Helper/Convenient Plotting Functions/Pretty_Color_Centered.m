@@ -34,14 +34,19 @@ arguments
 end
 
 % Use the balance colormap
-colormap(current_axis, cmocean('balance'));
-% Center the color axis
-clim(current_axis,max(abs(cdata(:)))*[-1,1]);
+colormap(current_axis, Pretty_Colormap('balance')); % cached copy of cmocean('balance')
+% Center the color axis. Guard against all-zero data, which would give an
+% invalid (non-increasing) color range.
+cmax = max(abs(cdata(:)));
+if isempty(cmax) || ~isfinite(cmax) || cmax <= 0
+    cmax = 1;
+end
+clim(current_axis,cmax*[-1,1]);
 
 % Place a colorbar and adjust its horizontal position
-if strcmp(options.colorbar, 'on')
+if strcmpi(options.colorbar, 'on')
     cb = colorbar(current_axis,'Location', 'eastoutside');
-    ax_pos = current_axis.Position;
-    current_axis.Position = ax_pos;
+else
+    cb = gobjects(0); % nothing to return in the 'off' case
 end
 end
