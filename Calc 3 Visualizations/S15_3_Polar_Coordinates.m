@@ -56,9 +56,12 @@ sRmin = app.addControl('slider', '$r_{\min} = $', 1, NumControls, @updatePlot, .
 sRmax = app.addControl('slider', '$r_{\max} = $', 2, NumControls, @updatePlot, ...
 'Default', rmax0, 'Min', rLims(1), 'Max', rLims(2), 'Number_format', '%.2f');
 sThMin = app.addControl('slider', '$\theta_{\min} = $', 3, NumControls, @updatePlot, ...
-'Default', thetamin0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', '%.2f');
+'Default', thetamin0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', 'pi');
 sThMax = app.addControl('slider', '$\theta_{\max} = $', 4, NumControls, @updatePlot, ...
-'Default', thetamax0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', '%.2f');
+'Default', thetamax0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', 'pi');
+% Keep each min slider at or below its max slider (region never turns inside out)
+app.linkMinMax(sRmin, sRmax);
+app.linkMinMax(sThMin, sThMax);
 
 %% Callback
 function updatePlot(~, ~)
