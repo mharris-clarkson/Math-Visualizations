@@ -8,7 +8,7 @@ function S12_4_Cross_product_and_volumes()
 % This function was written by Dr Matthew Harris an assistant professor at
 % Clarkson university for visually teaching MA 231: Calculus 3.
 % This version of the script was ported to the new framework I am using
-% with the help of Claud Code.
+% with the help of Claude Code.
 %
 close all
 
@@ -95,16 +95,10 @@ btnPara = app.addControl('button', 'Show Parallelepiped', 11, NumControls, @togg
         vis = onoff(btnPara.Value);
         set(s_v3x, 'Visible', vis);
         set(s_v3y, 'Visible', vis);
-        set(s_v3z, 'Visible', vis);
-        set(s_v3x.UserData.label, 'Visible', vis);
-        set(s_v3y.UserData.label, 'Visible', vis);
-        set(s_v3z.UserData.label, 'Visible', vis);
+        set(s_v3z, 'Visible', vis);   % the slider labels follow automatically
         updatePlot()
     end
 
-    function s = onoff(val)
-        if val; s = 'on'; else; s = 'off'; end
-    end
 
 %% Main Draw update function.
     function updatePlot(~, ~)
