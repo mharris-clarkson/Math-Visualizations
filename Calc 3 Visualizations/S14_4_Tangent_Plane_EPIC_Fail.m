@@ -31,7 +31,7 @@ xv = [-1:0.01:-0.01, -1e-4, 0, 1e-4, 0.01:0.01:1];
 [xg, yg] = meshgrid(xv);
 zg = zfun(xg, yg);
 surf(app.ax, xg, yg, zg, 'EdgeColor', 'none');
-cmocean('balance')
+Pretty_Colormap('balance')
 Pretty_Plot(app.ax)
 
 % Base point at origin
@@ -66,18 +66,13 @@ btnPlane = app.addControl('button', 'Show Tangent Plane', 2, NumControls, ...
     @updatePlot, 'ColorChange', true);
 
 %% Functions for UI elements
-    function fp = diffF(f, t0)
-        h  = 1e-8;
-        fp = (f(t0+h) - f(t0-h)) / (2*h);
-        fp = fp / norm(fp);
-    end
 
 %% Main Draw update function.
     function updatePlot(~, ~)
         % Tangent lines (both have zero slope at origin so point along axes)
         if btnTangent.Value
-            p1 = diffF(C1, 0);
-            p2 = diffF(C2, 0);
+            p1 = Diff_f_unit(C1, 0);
+            p2 = Diff_f_unit(C2, 0);
             s  = [-1 1];
             set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', s*p1(3) + 1);
             set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', s*p2(3) + 1);
