@@ -47,8 +47,8 @@ hPoint = plot3(ax, 0, 0, 0, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
 %% Build UI
 nC = 3;
 s_r     = app.addControl('slider', '$r = $',      1, nC, @updatePlot, 'Default', r_val,     'Min', 0, 'Max', 2,   'Number_format', '%.2f');
-s_theta = app.addControl('slider', '$\theta = $', 2, nC, @updatePlot, 'Default', theta_val, 'Min', 0, 'Max', 2*pi, 'Number_format', '%.2f');
-s_phi   = app.addControl('slider', '$\phi = $',   3, nC, @updatePlot, 'Default', phi_val,   'Min', 0, 'Max', pi,  'Number_format', '%.2f');
+s_theta = app.addControl('slider', '$\theta = $', 2, nC, @updatePlot, 'Default', theta_val, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
+s_phi   = app.addControl('slider', '$\phi = $',   3, nC, @updatePlot, 'Default', phi_val,   'Min', 0, 'Max', pi,  'Number_format', 'pi');
 
 redraw(r_val, theta_val, phi_val)
 
