@@ -58,9 +58,11 @@ sx0 = app.addControl('slider', '$x_0 = $', 1, NumControls, @updatePlot, ...
 sy0 = app.addControl('slider', '$y_0 = $', 2, NumControls, @updatePlot, ...
 'Default', y0, 'Min', 0.05, 'Max', 2, 'Number_format', '%.2f');
 sDx = app.addControl('slider', '$\Delta x = $', 3, NumControls, @updatePlot, ...
-'Default', Dx, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f');
+'Default', Dx, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f', ...
+    'LimitLabel', '$\Delta x \to 0$', 'LimitAt', "min");
 sDy = app.addControl('slider', '$\Delta y = $', 4, NumControls, @updatePlot, ...
-'Default', Dy, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f');
+'Default', Dy, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f', ...
+    'LimitLabel', '$\Delta y \to 0$', 'LimitAt', "min");
 btnEdgeVec  = app.addControl('button', 'Show Edge Vectors', 5, NumControls, @updatePlot, 'ColorChange', true);
 btnEdgePara = app.addControl('button', 'Show Edge Parallelogram', 6, NumControls, @updatePlot, 'ColorChange', true);
 btnTanPara  = app.addControl('button', 'Show Tangent Parallelogram', 7, NumControls, @updatePlot, 'ColorChange', true);
@@ -129,10 +131,3 @@ J = 1/(2*h)*[funx(x+h,y)-funx(x-h,y), funx(x,y+h)-funx(x,y-h); ...
              funy(x+h,y)-funy(x-h,y), funy(x,y+h)-funy(x,y-h)];
 end
 
-function s = onoff(tf)
-if tf
-    s = 'on';
-else
-    s = 'off';
-end
-end
