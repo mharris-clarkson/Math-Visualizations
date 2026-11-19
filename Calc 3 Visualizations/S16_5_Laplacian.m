@@ -79,7 +79,7 @@ lapScale = max(abs(lap0(:)));
 % Left: temperature
 h1 = surf(ax1,x,y,f_init);
 shading(ax1,'flat')
-colormap(ax1,cmocean('balance'))
+colormap(ax1,Pretty_Colormap('balance'))
 colorbar(ax1);
 clim(ax1,[-fScale fScale])
 
@@ -91,7 +91,7 @@ q.AutoScale = 'off';
 % Right: Laplacian
 h3 = imagesc(ax3,x,y,lap0);
 set(ax3,'YDir','normal')
-colormap(ax3,cmocean('balance'))
+colormap(ax3,Pretty_Colormap('balance'))
 colorbar(ax3);
 clim(ax3,[-lapScale lapScale])
 
