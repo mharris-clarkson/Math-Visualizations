@@ -62,8 +62,8 @@ hImg = imagesc(ax, xvec, yvec, zeros(300));
 set(ax, 'YDir', 'normal');
 colormap(ax, Pretty_Colormap('balance'));
 cb = colorbar(ax, 'Location', 'eastoutside');
-cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
 cb.Label.Interpreter = 'latex';
+cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
 cb.Label.FontSize = 18;
 
 hField = gobjects(0);                % background field, drawn by buildField
