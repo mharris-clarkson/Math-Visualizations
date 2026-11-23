@@ -1,5 +1,7 @@
 function Code_Template_Blank()
-%% Script showing the idea behind the definition of the calc 1 derivative
+%% Blank template for a new visualization (copy, rename the file and the
+%  function, then replace this paragraph with what the student sees and
+%  controls). See Code_Template.m for a filled-in example.
 %
 %% Author Info
 %

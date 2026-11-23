@@ -78,6 +78,17 @@ sliderAmp = app.addControl('slider', 'Amplitude $A = $', 2, NumControls,  @slide
 app.addControl('button', 'Reset', 3, NumControls,  @reset,...
     'colOrRow', CorOrRow); % no handle as this does not change properties.
 
+% Other addControl options (see uiFigure.m for the full list):
+%   Sliders: 'Number_format','%d' (integers) | 'pi' (multiples of pi, snaps
+%            to pi/12) | 'Step',0.5 (snap) | 'LimitLabel','$n \to \infty$'
+%            with 'LimitAt',"max"/"min"/"zero" and 'LimitValue',1e4, read
+%            with app.getValue(slider) / app.isAtLimit(slider)
+%   Buttons: 'ColorChange',true (highlight when on) |
+%            'Toggle',["Show Plane","Hide Plane"] (text follows btn.Value)
+%   Pairs:   app.linkMinMax(sMin, sMax) keeps sMin <= sMax
+%   Gallery: app.addPrevNext(idx, NumControls, nItems, @drawExample)
+%   Reset a slider (and its range) from code:
+%            app.UpdateUISlider(slider, value, 'Min', a, 'Max', b)
 
 
 % Launch update function
@@ -130,5 +141,7 @@ update();
 
 % How to force change sliders:
 % dtSlider.UserData.label.String = '$\Delta x \to 0$'; % update string
+% (For a label that should show only at the end of the slider, the
+%  'LimitLabel' option above does this automatically.)
 
 end
