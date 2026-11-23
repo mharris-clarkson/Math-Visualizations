@@ -1,5 +1,9 @@
 classdef Test_Math_Helpers < matlab.unittest.TestCase
     %% Numeric checks for the functions in Helper/Math Computations
+    % Test_All_Visualizations only checks that scripts start and that their
+    % controls do not error. This class checks that the helper math is
+    % right, by comparing against answers known in closed form. It runs in
+    % a second or two and opens no figures.
     %
     %% Syntax
     %
