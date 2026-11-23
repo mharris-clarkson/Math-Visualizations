@@ -1,7 +1,7 @@
 function demo()
 %% This demo test shows how the uiFigure class works to update intended
 %  functionality and serves as a psudo unit test (not a real unit test) for
-%  the UIApplet class, the uiGrid function and the Pretty_plot function
+%  the uiFigure class, the uiGrid function and the Pretty_Plot function
 %
 %% Author Info
 %
@@ -48,10 +48,10 @@ amp = amp0; f = f0;
 
 % Compute initial (x,y) data
 x = linspace(0, xmax, 500);
-y = amp*mysin(f*x);
+y = amp*mysin(2*pi*f*x);   % same formula as update() and the title
 
 % Plot the objects on plot app.ax(1) -- the first subplot
-Curve = plot(app.ax(1),x,y, 'LineWidth',2');  % main curve
+Curve = plot(app.ax(1),x,y, 'LineWidth',2);  % main curve
 plot(app.ax(1),x,0*x,'--k','LineWidth',2);  % reference line
 
 % Fix y lims to fit the max amplitude wave.
@@ -123,12 +123,14 @@ btnColorable = app.addControl('button', 'Button with ColorChange on ', 5, NumCon
 app.addControl('button', 'Change Color of Button Below', 6, NumControls,  @ColorToggle,...
     'colOrRow', CorOrRow); % no handle as this does not change properties.
 
-btnSliderLock = app.addControl('button', 'Turn Sliders Off', 7, NumControls,  @SliderToggle,...
+btnSliderLock = app.addControl('button', 'Turn Sliders off', 7, NumControls,  @SliderToggle,...
     'colOrRow', CorOrRow);
 
-% Extra fill buttons to show spacing for large numbers of buttons
+% Extra fill buttons to show spacing for large numbers of buttons. They do
+% nothing when clicked (they used to call SliderToggle, which hid the
+% sliders while the "Turn Sliders off" button still said "off").
 for i=8:NumControls
-    app.addControl('button', ['Filler ' num2str(i)], i, NumControls,  @SliderToggle,...
+    app.addControl('button', ['Filler ' num2str(i)], i, NumControls,  @(~,~) [],...
         'colOrRow', CorOrRow); % no handle as these do not change properties.
 end
 
@@ -136,7 +138,7 @@ end
 update();
 
 %% Functions for UI elements
-% Update function for omega slider
+% Update function for frequency slider
     function Sliderfreq(~,~)
 
         update();
