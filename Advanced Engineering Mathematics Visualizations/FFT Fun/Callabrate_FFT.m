@@ -1,13 +1,16 @@
-%% Runs several tests for the waterfall plot analyser. Just run two copies 
-% of matlab, one with the waterfall plot and one with this code. Laptops 
-% with sound cancelation might have issues with this code. 
+%% Runs several tests for the waterfall plot analyser. Just run two copies
+% of matlab, one with the waterfall plot and one with this code. Laptops
+% with sound cancelation might have issues with this code.
 
 fs = 44100;          % Sampling frequency (Hz)
 t = 0:1/fs:0.5;        % Time vector
 f = 500;             % Frequency (Hz)
 
 %% Test single frequency
-y = 5*sin(2*pi*f*t); % Generate 50 Hz sine wave
+% sound() clips to [-1, 1]: an amplitude of 5 turned the tone into a near
+% square wave whose odd harmonics (1.5, 2.5 kHz, ...) showed up in the
+% waterfall, so the single-frequency test now uses amplitude 1.
+y = sin(2*pi*f*t);   % Generate a 500 Hz sine wave
 sound(y, fs);        % Play the sound
 pause(max(t)*2)
 
@@ -35,7 +38,7 @@ pause(Dt)
 
 
 %% fun
-run('extract mario\Mario.m')
+run(fullfile('extract mario', 'Mario.m'))   % fullfile: works on Windows, Mac and Linux
 Dt = 2;sum(Note_time) + sum(Note_pause); % Time in sec for signal
 t = 0:1/fs:Dt;      % Time vector
 
@@ -122,15 +125,16 @@ pause(Dt);
 
 
 %% make pictures from wav files
-wavFiles = dir('wav files\*.wav');
+wavFiles = dir(fullfile('wav files', '*.wav'));
 if isempty(wavFiles)
     fprintf('No WAV files found in %s\n', pwd);
     return
 end
 for k = 1:numel(wavFiles)
-    wavFile = ['wav files\' wavFiles(k).name];
+    wavFile = fullfile('wav files', wavFiles(k).name);
     [y, Fs] = audioread(wavFile);
     soundsc(y, Fs);
-    pause(0.5)
+    pause(length(y)/Fs + 0.5)   % wait for this file to finish (soundsc does not
+                                % block; pause(0.5) played all files on top of each other)
 end
 
