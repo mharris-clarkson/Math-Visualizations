@@ -19,8 +19,7 @@ function Eigenvalue_Eigenvector_Visualization()
 close all
 
 %% User parameters for math objects
-% A small library of matrices to cycle between with the "Swap Matrix"
-% button. Add more entries here (with a matching label) to extend it.
+% Matrices for the "Swap Matrix" button (add entries with a matching label)
 S1 = [1, 1; 0, sqrt(2)]/sqrt(2);
 A1 = S1 \ diag([2, 3]) * S1;             % non-orthogonal basis, eig = 2,3
 
@@ -30,7 +29,7 @@ A2 = S2 \ diag([2, 1]) * S2;             % orthogonal basis,     eig = 2,1
 
 A3 = rand(2);
 A3 = A3'*A3;                             % random symmetric (positive semidefinite)
-while min(abs(eig(A3)))<0.2   % eig: all eigenvalues of a small dense matrix
+while min(abs(eig(A3)))<0.2   % avoid near-zero eigenvalues
     A3 = rand(2);
     A3 = A3'*A3;
 end
@@ -50,9 +49,9 @@ run('setup.m')
 app = uiFigure("Eigenvalue / Eigenvector Demo", 1);
 axis(app.ax(1), 'equal')
 
-%% Precompute math (unit circle is fixed; everything else depends on A)
+%% Precompute math
 theta = linspace(0, 2*pi, N);
-Pts   = [cos(theta); sin(theta)];   % unit circle points -- never changes
+Pts   = [cos(theta); sin(theta)];   % unit circle
 
 matIdx = 1;
 A      = matrices{matIdx};
@@ -63,7 +62,7 @@ colors = lines(2);
 Pretty_Plot(app.ax)
 set(app.ax(1), 'FontSize', 24)
 
-%% Static graphics (created once; updated in place afterwards, never recreated)
+%% Static graphics
 Transformed = plot(app.ax(1), Pts(1,:), Pts(2,:), '.r', 'MarkerSize', 30, ...
     'Visible', 'off', 'DisplayName', 'A x points');
 plot(app.ax(1), Pts(1,:), Pts(2,:), '.b', 'MarkerSize', 30, 'DisplayName', 'Original points')
@@ -71,8 +70,7 @@ plot(app.ax(1), Pts(1,:), Pts(2,:), '.b', 'MarkerSize', 30, 'DisplayName', 'Orig
 AxLineX = plot(app.ax(1), [0, 0], [0, 0], 'k-', 'LineWidth', 2);
 AxLineY = plot(app.ax(1), [0, 0], [0, 0], 'k-', 'LineWidth', 2);
 
-% All N mapping lines live in ONE line object (segments separated by NaN),
-% so an animation frame is one set() call instead of N.
+% Mapping lines as one NaN-separated line
 MappingLines = plot(app.ax(1), NaN, NaN, 'k-', 'LineWidth', 1.2, 'Visible', 'off');
 mappingLinesOn = false;
 
@@ -89,7 +87,7 @@ for i = 1:2
 end
 eigenvectorsOn = false;
 
-applyAxesAndLabels()   % sets axis limits, coordinate-axis lines, and eigenvector graphics data
+applyAxesAndLabels()
 
 %% Build UI
 numGUI = 4;
@@ -118,7 +116,7 @@ end
 function toggleEigenvectors(~, ~)
     eigenvectorsOn = ~eigenvectorsOn;
     if eigenvectorsOn
-        % Reset to unit length, show, then animate the stretch.
+        % Show at unit length, then animate the stretch
         for i = 1:2
             set(EigVec(i), 'UData', Vnorm(1,i), 'VData', Vnorm(2,i))
             set(EigText(i), 'Position', 1.08*[Vnorm(1,i), Vnorm(2,i), 0])
@@ -141,7 +139,6 @@ function toggleEigenvectors(~, ~)
         title(app.ax(1), 'Eigenvectors and their stretches')
         btnEig.String = 'Hide Eigenvectors';
     else
-        % Every other click: just remove them, no animation.
         set([EigVec, EigRef, EigText], 'Visible', 'off')
         btnEig.String = 'Show Eigenvectors';
         title(app.ax(1), sprintf('Unit Circle -- %s', matrixNames{matIdx}))
@@ -164,7 +161,7 @@ function swapMatrix(~, ~)
     A      = matrices{matIdx};
     [APts, lambda, Vnorm] = computeFromMatrix(A, Pts);
 
-    % A new matrix invalidates anything currently shown -- reset state.
+    % Reset everything for the new matrix
     eigenvectorsOn = false;
     mappingLinesOn = false;
     set(Transformed, 'Visible', 'off', 'XData', Pts(1,:), 'YData', Pts(2,:))
@@ -176,8 +173,8 @@ function swapMatrix(~, ~)
     applyAxesAndLabels()
 end
 
-%% Local helpers (nested so they can update the shared graphics/state above)
-% Segment j goes from Pts(:,j) to (curX(j), curY(j)); NaN breaks the line
+%% Local helpers
+% Segment j goes from Pts(:,j) to (curX(j), curY(j))
 function setMappingLines(curX, curY)
     set(MappingLines, ...
         'XData', reshape([Pts(1,:); curX; NaN(1,N)], 1, []), ...
@@ -203,8 +200,7 @@ end
 
 end
 
-%% Small stateless helpers (kept as ordinary local functions, not nested,
-% since they don't need access to the app's shared workspace).
+%% Stateless helpers
 function [APts, lambda, Vnorm] = computeFromMatrix(A, Pts)
 APts = A*Pts;
 [V, D] = eig(A);
