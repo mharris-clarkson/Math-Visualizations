@@ -40,8 +40,7 @@ app = uiFigure('3D Volume Integral', 1);
 ax = app.ax(1);
 
 Pretty_Plot(ax)
-axis(ax, 'equal')
-xlabel(ax, 'X'); ylabel(ax, 'Y'); zlabel(ax, 'Z');
+axis(ax, 'equal')   % (Pretty_Plot labels the axes $x$, $y$, $z$)
 view(ax, 45, 30)
 
 %% Reference integral and volume (one 2D slab at a time -- no 200^3 arrays in memory)
@@ -78,10 +77,14 @@ voxDots  = plot3(ax, NaN, NaN, NaN, 'ko', 'MarkerFaceColor', 'k', ...
 quad = [-1 -1; 1 -1; 1 1; -1 1]/2;
 
 %% Build UI
+% 'Step',1: every arrow click changes N by one. 'LimitLabel' writes
+% N -> infinity on the label when the slider sits at Nmax.
 sN = app.addControl('slider', 'Voxels per dimension $N = $', 1, 1, @updatePlot, ...
     'Default', N0, 'Min', 1, 'Max', Nmax, 'Number_format', '%d', ...
-    'colOrRow', 'row');
+    'colOrRow', 'row', 'Step', 1, ...
+    'LimitLabel', 'Voxels per dimension $N \to \infty$');
 
+lastN = NaN;   % N currently drawn (dragging repeats the same N many times)
 redraw(N0)
 
 %% Callback
@@ -91,6 +94,8 @@ end
 
 %% Redraw: all voxel math and geometry vectorized (no triple loop)
 function redraw(N)
+    if N == lastN, return, end   % nothing changed: skip the voxel rebuild
+    lastN = N;
     if N >= Nmax
         showLimit()
         return
@@ -145,8 +150,9 @@ function redraw(N)
         set(voxDots, 'XData', NaN, 'YData', NaN, 'ZData', NaN)   % too many to be useful
     end
 
-    title(ax, splitlines(sprintf(['Riemann sum of f over the voxels = %.6f   |   Integral of f = %.6f\n' ...
-        'Voxels inside region = %d of %d   |   Volume of voxels = %.4f   |   Volume of region = %.4f'], ...
+    % '$|$': a bare | in LaTeX text mode prints as a dash
+    title(ax, splitlines(sprintf(['Riemann sum of $f$ over the voxels = %.6f   $|$   Integral of $f$ = %.6f\n' ...
+        'Voxels inside region = %d of %d   $|$   Volume of voxels = %.4f   $|$   Volume of region = %.4f'], ...
         riemann_sum, exactIntegral, n, N^3, voxel_volume, exactVolume)))
     app.fig.Name = sprintf('3D Volume Integral: Riemann sum = %.6f, N = %d', riemann_sum, N);
     drawnow limitrate
@@ -162,11 +168,9 @@ function showLimit()
     set(hRegion, 'FaceColor', voxelColor, 'FaceAlpha', 1, ...
         'EdgeColor', 'k', 'EdgeAlpha', 0.25)
 
-    % Overwrite the slider label to show the limit. The label goes back to
-    % "N = ..." by itself the next time the slider moves.
-    sN.UserData.label.String = 'Voxels per dimension $N \to \infty$';
+    % (The slider label shows N -> infinity through its 'LimitLabel'.)
 
-    title(ax, splitlines(sprintf(['$N \\rightarrow \\infty$:   Riemann sum $\\rightarrow$ Integral of f = %.6f\n' ...
+    title(ax, splitlines(sprintf(['$N \\rightarrow \\infty$:   Riemann sum $\\rightarrow$ Integral of $f$ = %.6f\n' ...
         'Volume of voxels $\\rightarrow$ Volume of region = %.4f'], ...
         exactIntegral, exactVolume)))
     app.fig.Name = sprintf('3D Volume Integral: limit N -> infinity, integral = %.6f', exactIntegral);
