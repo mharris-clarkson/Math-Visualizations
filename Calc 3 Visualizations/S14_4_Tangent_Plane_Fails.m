@@ -2,6 +2,9 @@ function S14_4_Tangent_Plane_Fails()
 %% Shows that partial derivatives can exist at a point (0,0) yet the
 %  tangent plane still fails to describe the surface, because the function
 %  f(x,y) = x^2*y/(x^2+y^2) is not differentiable at the origin.
+%  The diagonal button adds the curve over y = x, z = x/2: its tangent line
+%  has slope 1/2 but the "tangent plane" z = 0 predicts slope 0, so the
+%  plane misses a tangent direction of the surface.
 %
 %% Author Info
 %
@@ -43,6 +46,12 @@ plot3(app.ax, C2p(1,:), C2p(2,:), C2p(3,:), 'b', 'LineWidth', 2)
 
 hT1 = plot3(app.ax, nan, nan, nan, 'g', 'LineWidth', 2);
 hT2 = plot3(app.ax, nan, nan, nan, 'g', 'LineWidth', 2);
+
+% Trace over the diagonal y = x and its tangent line (hidden at start)
+C3  = @(t) [t; t; zfun(t, t)];
+C3p = C3(t);
+hC3 = plot3(app.ax, C3p(1,:), C3p(2,:), C3p(3,:), 'm', 'LineWidth', 2, 'Visible', 'off');
+hT3 = plot3(app.ax, nan, nan, nan, 'm--', 'LineWidth', 2, 'Visible', 'off');
 [Xp0, Yp0] = meshgrid(nan(10));
 Zp0 = Yp0;
 hPlane = surf(app.ax, Xp0, Yp0, Zp0, ...
@@ -52,11 +61,15 @@ hPlane = surf(app.ax, Xp0, Yp0, Zp0, ...
 s  = [-1 1];
 p1 = s.*Diff_f_unit(C1, 0);
 p2 = s.*Diff_f_unit(C2, 0);
+p3 = s.*Diff_f_unit(C3, 0);
+set(hT3, 'XData', p3(1,:), 'YData', p3(2,:), 'ZData', p3(3,:));
 % fx = fy = 0 at the origin, so the tangent plane is z = 0
 [xp, yp] = meshgrid([-1 1]);
+% Directional derivative along u = (1,1)/sqrt(2): f(s u) = s/(2 sqrt 2)
+DuDiag = Diff_f(@(s) zfun(s/sqrt(2), s/sqrt(2)), 0);
 
 %% Build UI
-NumControls = 2;
+NumControls = 3;
 
 btnTangent = app.addControl('button', 'Show Tangent Lines', 1, NumControls, ...
     @updatePlot, 'ColorChange', true);
@@ -64,8 +77,20 @@ btnTangent = app.addControl('button', 'Show Tangent Lines', 1, NumControls, ...
 btnPlane = app.addControl('button', 'Show Tangent Plane', 2, NumControls, ...
     @updatePlot, 'ColorChange', true);
 
+btnDiag = app.addControl('button', 'Show Diagonal Curve', 3, NumControls, ...
+    @updatePlot, 'ColorChange', true, ...
+    'Toggle', ["Show Diagonal Curve", "Hide Diagonal Curve"]);
+
 %% Main Draw update function.
     function updatePlot(~, ~)
+        set([hC3 hT3], 'Visible', onoff(btnDiag.Value))
+        if btnDiag.Value
+            title(app.ax, {app.fig.Name, sprintf(['Along $y = x$: $D_{\\mathbf{u}}f(0,0) = %.3f$, ' ...
+                'but the plane predicts $\\nabla f\\cdot\\mathbf{u} = 0$'], DuDiag)})
+        else
+            title(app.ax, app.fig.Name)
+        end
+
         if btnTangent.Value
             set(hT1, 'XData', p1(1,:), 'YData', p1(2,:), 'ZData', p1(3,:));
             set(hT2, 'XData', p2(1,:), 'YData', p2(2,:), 'ZData', p2(3,:));
