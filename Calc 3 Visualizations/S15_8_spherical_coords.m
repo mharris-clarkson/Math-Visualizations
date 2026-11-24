@@ -25,8 +25,7 @@ app = uiFigure('Spherical Coordinates', 1);
 ax = app.ax(1);
 
 Pretty_Plot(ax)
-axis(ax, 'equal')
-xlabel(ax, 'x'); ylabel(ax, 'y'); zlabel(ax, 'z')
+axis(ax, 'equal')   % (Pretty_Plot labels the axes $x$, $y$, $z$)
 view(ax, 3)
 colormap(ax, parula)
 
