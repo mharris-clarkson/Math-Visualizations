@@ -27,7 +27,7 @@ close all
 % boundary. Any f(x,y) written with elementwise operators (.*  ./  .^) works.
 f = @(x,y) -0.5*x - x.^2 + 2*x.*y - 2*y.^2 + x.^3;
 
-h      = 1e-5;    % finite-difference step for derivatives
+% (Derivatives come from the Diff*_f helpers, which set their own steps)
 nStart = 5;       % Newton starting points per direction (interior search)
 nS     = 2001;    % samples per boundary piece when searching for f' = 0
 nPlot  = 200;     % boundary plot resolution
@@ -37,7 +37,7 @@ colArc    = [0.10 0.65 0.30];   % Arc B (circle):   green
 colCorner = [0.70 0.10 0.70];   % corners:          purple
 
 %% Automatically find and rank every candidate point
-C = findCandidates(f, h, nStart, nS);
+C = findCandidates(f, nStart, nS);
 cx = [C.x];  cy = [C.y];  ctype = {C.type};  cnote = {C.note};
 cf = f(cx, cy);
 [cf, order] = sort(cf);                       % ascending: first = abs min, last = abs max
@@ -60,7 +60,8 @@ fc = {[0 0 0], colEdge, colArc, colCorner};
 run('setup.m')
 app = uiFigure('Absolute Extrema on the Half Disk', 2);
 ax2 = app.ax(1);  ax3 = app.ax(2);
-Pretty_Plot(app.ax)
+% (uiFigure already applied Pretty_Plot to each axes; Pretty_Plot takes
+%  one axes, so calling it on the pair app.ax is not needed)
 
 %% View 1: the 3D graph of f over D, with the boundary curves lifted onto it
 surf(ax2, Xr, Yr, Fr, 'EdgeColor', 'none', 'FaceAlpha', 0.9);
@@ -95,7 +96,7 @@ ylabel(ax3, 'f on the boundary')
 text(ax3, 1, max([fA fB]) + 0.5*pad, 'Edge A', 'Color', colEdge, 'HorizontalAlignment', 'center', 'FontWeight', 'bold')
 text(ax3, 2 + pi/2, max([fA fB]) + 0.5*pad, 'Arc B', 'Color', colArc, 'HorizontalAlignment', 'center', 'FontWeight', 'bold')
 
-%% Candidate markers in all three views (one object per marker type)
+%% Candidate markers in both views (one object per marker type)
 for q = 1:4
     m = strcmp(ctype, types{q});
     plot3(ax2, cx(m), cy(m), cf(m), mk{q}, 'MarkerFaceColor', fc{q}, 'MarkerEdgeColor', 'w', 'MarkerSize', 11, 'LineStyle', 'none');
@@ -134,7 +135,7 @@ function nextCandidate(~, ~)
     selectCandidate(idx)
 end
 
-%% Move the highlight to candidate k in all three views and update the text
+%% Move the highlight to candidate k in both views and update the text
 function selectCandidate(k)
     set(sel3, 'XData', cx(k), 'YData', cy(k), 'ZData', cf(k))
     set(stem3, 'XData', [cx(k) cx(k)], 'YData', [cy(k) cy(k)], 'ZData', [zFloor cf(k)])
@@ -167,10 +168,10 @@ end
 % Stateless helpers
 % ========================================================================
 
-function C = findCandidates(f, h, nStart, nS)
+function C = findCandidates(f, nStart, nS)
 % All candidates for the absolute extrema of f on the half disk, found numerically.
-fx = @(x,y) (f(x+h,y) - f(x-h,y))/(2*h);
-fy = @(x,y) (f(x,y+h) - f(x,y-h))/(2*h);
+fx = @(x,y) Diffx_f(f, x, y);
+fy = @(x,y) Diffy_f(f, x, y);
 C = struct('x', {}, 'y', {}, 'type', {}, 'note', {});
 
 % 1) Interior critical points: Newton's method on grad f = 0 from a grid of starts
@@ -200,7 +201,7 @@ for k = 1:size(found, 1)
 end
 
 % 2) Edge A (y = 0): 1D problem g(x) = f(x,0); look for sign changes of g'(x)
-dg = @(x) (f(x+h, 0*x) - f(x-h, 0*x))/(2*h);
+dg = @(x) Diff_f(@(s) f(s, 0*s), x);
 xs = linspace(-1, 1, nS);  d = dg(xs);
 for i = find(d(1:end-1).*d(2:end) < 0)
     x = fzero(dg, [xs(i) xs(i+1)]);
@@ -209,7 +210,7 @@ for i = find(d(1:end-1).*d(2:end) < 0)
 end
 
 % 3) Arc B: 1D problem g(t) = f(cos t, sin t), 0 <= t <= pi
-dg = @(t) (f(cos(t+h), sin(t+h)) - f(cos(t-h), sin(t-h)))/(2*h);
+dg = @(t) Diff_f(@(s) f(cos(s), sin(s)), t);
 ts = linspace(0, pi, nS);  d = dg(ts);
 for i = find(d(1:end-1).*d(2:end) < 0)
     t = fzero(dg, [ts(i) ts(i+1)]);
@@ -223,11 +224,10 @@ C(end+1) = struct('x',  1, 'y', 0, 'type', 'corner', 'note', 'corner (1,0): endp
 end
 
 function H = hessAt(f, x, y)
-% Numerical Hessian of f at (x,y)
-d = 1e-3;  f0 = f(x, y);
-Hxx = (f(x+d, y) - 2*f0 + f(x-d, y))/d^2;
-Hyy = (f(x, y+d) - 2*f0 + f(x, y-d))/d^2;
-Hxy = (f(x+d, y+d) - f(x+d, y-d) - f(x-d, y+d) + f(x-d, y-d))/(4*d^2);
+% Numerical Hessian of f at (x,y) (shared Diff*_f helpers)
+Hxx = Diffxx_f(f, x, y);
+Hyy = Diffyy_f(f, x, y);
+Hxy = Diffxy_f(f, x, y);
 H = [Hxx Hxy; Hxy Hyy];
 end
 
