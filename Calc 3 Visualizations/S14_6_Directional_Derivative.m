@@ -18,7 +18,7 @@ close all
 r2 = @(x,y) x.^2 + y.^2;
 f  = @(x,y) (r2(x,y) < 1) .* exp(1./(r2(x,y) - 1));  % smooth bump function
 
-x0     = -.1;   % initial x (on the side of the bump, where grad f is not 0)
+x0     = -0.1;   % initial x (on the side of the bump, where grad f is not 0)
 y0     = -0.5;   % initial y
 theta0 = 0;     % initial rotation angle (rad) away from the gradient
 
