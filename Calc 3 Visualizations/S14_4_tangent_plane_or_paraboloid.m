@@ -1,8 +1,8 @@
 function S14_4_tangent_plane_or_paraboloid()
 %% Visualizes the tangent plane and tangent paraboloid approximations to a
-%  smooth bump surface at a moveable base point (x0, y0). A toggle button
-%  switches between the first-order (plane) and second-order (paraboloid)
-%  local approximations.
+%  smooth bump surface at a base point (x0, y0). Click or drag on the
+%  surface to move the point. A toggle button switches between the
+%  first-order (plane) and second-order (paraboloid) local approximations.
 %
 %% Author Info
 %
@@ -34,7 +34,8 @@ ylim(app.ax, max_val*[-1, 1])
 zlim(app.ax, [0, 0.6])
 
 %% Optional math functions for plot computations
-    function [hPt, hVx, hVy, hTp] = plot_geometry(x, y)
+    % Point, unit tangent vectors and the local plane/paraboloid at (x,y)
+    function [z, Tx, Ty, Xp, Yp, Zp] = geometry_at(x, y)
         z    = f(x, y);
         fx   = Diffx_f(f,x,y);
         fy   = Diffy_f(f,x,y);
@@ -45,15 +46,6 @@ zlim(app.ax, [0, 0.6])
         Tx = [1, 0, fx]; Tx = Tx / norm(Tx);
         Ty = [0, 1, fy]; Ty = Ty / norm(Ty);
 
-        hPt = plot3(app.ax, x, y, z, 'ko', 'MarkerSize', 8, ...
-            'LineWidth', 2, 'MarkerFaceColor', 'k');
-        hVx = quiver3(app.ax, x, y, z, Tx(1), Tx(2), Tx(3), ...
-            0, 'r', 'LineWidth', 2, 'MaxHeadSize', 0.5);
-        hVy = quiver3(app.ax, x, y, z, Ty(1), Ty(2), Ty(3), ...
-            0, 'b', 'LineWidth', 2, 'MaxHeadSize', 0.5);
-
-        tp_size = 0.25;
-        [u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
         Xp = x + u;
         Yp = y + v;
         if useParaboloid
@@ -61,18 +53,15 @@ zlim(app.ax, [0, 0.6])
         else
             Zp = z + fx*u + fy*v;
         end
-        hTp = surf(app.ax, Xp, Yp, Zp, ...
-             'EdgeColor', 'none', 'FaceColor', 'b');
-        uistack(hTp, 'top')
     end
 
     function updateTitle()
         if useParaboloid
-            title(app.ax, 'Partial Derivatives with Tangent Paraboloid', ...
-                'Interpreter', 'latex')
+            title(app.ax, {'Partial Derivatives with Tangent Paraboloid', ...
+                'Click or drag on the surface to move the point'})
         else
-            title(app.ax, 'Partial Derivatives with Tangent Plane', ...
-                'Interpreter', 'latex')
+            title(app.ax, {'Partial Derivatives with Tangent Plane', ...
+                'Click or drag on the surface to move the point'})
         end
     end
 
@@ -82,27 +71,45 @@ Z = f(X, Y);
 surf(app.ax, X, Y, Z,'FaceAlpha', 0.9)
 Pretty_Plot(app.ax);
 Pretty_Color_Positive(app.ax, Z,'colorbar','off');
-
-
-[hPt, hVx, hVy, hTp] = plot_geometry(x0, y0);
-updateTitle()
+zlim(app.ax, [0, 0.6])   % Pretty_Plot's axis tight resets the zlim set above
 
 %% Precompute math for updates
-% Light weight — skip
+% Local (u,v) patch for the plane/paraboloid, built once
+tp_size = 0.25;
+[u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
+
+% Point, tangent vectors and plane: created once, updated in place
+[z0, Tx, Ty, Xp, Yp, Zp] = geometry_at(x0, y0);
+hPt = plot3(app.ax, x0, y0, z0, 'ko', 'MarkerSize', 8, ...
+    'LineWidth', 2, 'MarkerFaceColor', 'k');
+hVx = quiver3(app.ax, x0, y0, z0, Tx(1), Tx(2), Tx(3), ...
+    0, 'r', 'LineWidth', 2, 'MaxHeadSize', 0.5);
+hVy = quiver3(app.ax, x0, y0, z0, Ty(1), Ty(2), Ty(3), ...
+    0, 'b', 'LineWidth', 2, 'MaxHeadSize', 0.5);
+hTp = surf(app.ax, Xp, Yp, Zp, ...
+     'EdgeColor', 'none', 'FaceColor', 'b');
+uistack(hTp, 'top')
+updateTitle()
+
+% Current base point (moved by dragging)
+px = x0;  py = y0;
+
+%% Dragging: clicks in the axes move the point to the surface under the mouse
+Drag_Point_On_Surface(app.ax, f, max_val*[-1 1], max_val*[-1 1], @movePoint);
 
 %% Build UI
-NumControls = 3;
+NumControls = 1;
 
-xSlider = app.addControl('slider', '$x_0 = $', 1, NumControls, @updatePlot, ...
-    'Default', x0, 'Min', -max_val, 'Max', max_val);
-
-ySlider = app.addControl('slider', '$y_0 = $', 2, NumControls, @updatePlot, ...
-    'Default', y0, 'Min', -max_val, 'Max', max_val);
-
-btnToggle = app.addControl('button', 'Showing: Tangent Plane', 3, NumControls, ...
+btnToggle = app.addControl('button', 'Showing: Tangent Plane', 1, NumControls, ...
     @toggleApprox, 'ColorChange', true);
 
 %% Functions for UI elements
+    % Called by Drag_Point_On_Surface with the new base point
+    function movePoint(x, y)
+        px = x;  py = y;
+        updatePlot()
+    end
+
     function toggleApprox(~, ~)
         useParaboloid = logical(btnToggle.Value);
         if useParaboloid
@@ -115,9 +122,15 @@ btnToggle = app.addControl('button', 'Showing: Tangent Plane', 3, NumControls, .
 
 %% Main Draw update function.
     function updatePlot(~, ~)
-        delete(hPt); delete(hVx); delete(hVy); delete(hTp);
-        [hPt, hVx, hVy, hTp] = plot_geometry(xSlider.Value, ySlider.Value);
-        zlim(app.ax, [0, 0.6])
+        x = px;
+        y = py;
+        [z, Tx, Ty, Xp, Yp, Zp] = geometry_at(x, y);
+        set(hPt, 'XData', x, 'YData', y, 'ZData', z);
+        set(hVx, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', Tx(1), 'VData', Tx(2), 'WData', Tx(3));
+        set(hVy, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', Ty(1), 'VData', Ty(2), 'WData', Ty(3));
+        set(hTp, 'XData', Xp, 'YData', Yp, 'ZData', Zp);
         updateTitle()
     end
 end

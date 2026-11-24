@@ -18,13 +18,12 @@ close all
 r2 = @(x,y) x.^2 + y.^2;
 f  = @(x,y) (r2(x,y) < 1) .* exp(1./(r2(x,y) - 1));  % smooth bump function
 
-x0     = 0.5;   % initial x (on the side of the bump, where grad f is not 0)
-y0     = 0.3;   % initial y
+x0     = -.1;   % initial x (on the side of the bump, where grad f is not 0)
+y0     = -0.5;   % initial y
 theta0 = 0;     % initial rotation angle (rad) away from the gradient
 
 max_val   = 1.4;   % domain is -max_val <= x, y <= max_val
 Delta_val = 0.05;  % grid spacing for the surface mesh
-nRay      = 400;   % samples along the mouse ray when finding the surface under the cursor
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
 run('setup.m')
@@ -57,28 +56,6 @@ zlim(app.ax, [0, 0.6])
             'Click or drag on the surface to move the point'})
     end
 
-% Point (x,y) on the surface under the mouse: walk along the mouse ray from
-% the front of the axes box and stop where it first passes below the
-% surface. If the ray misses (e.g. it leaves the domain), use where it
-% meets the plane z = 0 instead.
-    function P = pointUnderMouse()
-        cp = app.ax.CurrentPoint;                    % row 1 = front, row 2 = back
-        t  = linspace(0, 1, nRay).';
-        L  = cp(1,:) + t.*(cp(2,:) - cp(1,:));       % points along the ray
-        inBox = all(abs(L(:,1:2)) <= max_val, 2);
-        g = L(:,3) - f(L(:,1), L(:,2));              % height above the surface
-        g(~inBox) = NaN;
-        k = find(g(1:end-1) > 0 & g(2:end) <= 0, 1);
-        if ~isempty(k)
-            s = g(k)/(g(k) - g(k+1));                % linear interpolation in the step
-            P = L(k,1:2) + s*(L(k+1,1:2) - L(k,1:2));
-        else
-            dz = cp(2,3) - cp(1,3);
-            if abs(dz) < 1e-12, P = []; return, end
-            P = cp(1,1:2) - cp(1,3)/dz*(cp(2,1:2) - cp(1,1:2));
-        end
-        P = min(max(P, -max_val), max_val);          % stay inside the domain
-    end
 %% Make the initial plots
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
@@ -100,11 +77,7 @@ redraw(px, py, theta0)
 %% Precompute math for updates
 % Light weight — skip
 %% Dragging: clicks in the axes move the point to the surface under the mouse
-% (the plotted objects ignore clicks so they all reach the axes, and the
-%  built-in rotate/pan on drag is turned off so it does not compete)
-set(app.ax.Children, 'HitTest', 'off', 'PickableParts', 'none')
-disableDefaultInteractivity(app.ax)
-app.ax.ButtonDownFcn = @startDrag;
+Drag_Point_On_Surface(app.ax, f, max_val*[-1 1], max_val*[-1 1], @movePoint);
 %% Build UI
 NumControls = 1;
 thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls, @updatePlot, ...
@@ -114,24 +87,11 @@ thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls, @updatePlo
         redraw(px, py, thetaSlider.Value)
     end
 
-    function startDrag(~, ~)
-        doDrag();                                    % a click alone moves the point
-        app.fig.WindowButtonMotionFcn = @doDrag;
-        app.fig.WindowButtonUpFcn     = @stopDrag;
-    end
-
-    function doDrag(~, ~)
-        P = pointUnderMouse();
-        if isempty(P), return, end
-        px = P(1);  py = P(2);
+    % Called by Drag_Point_On_Surface with the new point
+    function movePoint(x, y)
+        px = x;  py = y;
         redraw(px, py, thetaSlider.Value)
-        drawnow limitrate
-    end
-
-    function stopDrag(~, ~)
-        app.fig.WindowButtonMotionFcn = '';
-        app.fig.WindowButtonUpFcn     = '';
     end
 %% Main Draw update function.
-% Handled above by redraw(), called from updatePlot() and the drag callbacks.
+% Handled above by redraw(), called from updatePlot() and movePoint().
 end
