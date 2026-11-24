@@ -27,7 +27,7 @@ close all
 inRegion = @(x,y) (x >= 0) & (x <= 1) & (y >= x.^3) & (y <= sqrt(max(x,0)));
 f  = @(x,y) (x.*y) .* inRegion(x,y);     % 0 outside the region
 
-xlims = [-0.01, 1.01]; Nx = 300;   
+xlims = [-0.01, 1.01]; Nx = 300;
 ylims = [-0.01, 1.01]; Ny = 300;
 
 Ncurves  = 40;         % number of black running-integral curves
@@ -56,7 +56,7 @@ zTop = max([Z(:); sum(Z, 2)*dx; sum(Z, 1)'*dy]);
 % xInner = false : inner integral in y (plane at fixed y), outer in x
 xInner  = true;
 u = []; v = []; du = 1; Zint = []; g = []; total = 0;
-cIdx = []; vp = []; zp = []; greenOn = false;
+cIdx = []; vp = []; zp = [];
 M = []; Mtail = []; uStart = 0; uEnd = 1;     % M = mask of where f > 0; uStart/uEnd = sweep extent of the region
 xSlider = [];
 btnRed = []; btnGreen = [];
@@ -125,7 +125,8 @@ function setOrder(tf)
     end
     du = u(2) - u(1);
 
-    % Running inner integral for every outer value (left-endpoint rule)
+    % Running inner integral for every outer value (right-endpoint sum,
+    % starting from 0 in column 1)
     Zint  = [zeros(numel(v), 1), cumsum(F(:, 2:end), 2)*du];
     g     = Zint(:, end);                 % full inner integral, a function of v
     total = trapz(v, g);                  % outer integral = volume
@@ -219,7 +220,6 @@ end
 
 function toggleGreenArea(~, ~)
     tf = logical(btnGreen.Value);
-    greenOn = tf;
     set(hGreen, 'Visible', onoff(tf))
     btnGreen.String = toggleLabel(tf, 'Green Area');
 end
