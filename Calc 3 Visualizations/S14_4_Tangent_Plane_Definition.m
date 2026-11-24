@@ -9,7 +9,7 @@ function S14_4_Tangent_Plane_Definition
 %
 % This function was written by Dr Matthew Harris an assistant professor at
 % Clarkson university for visually teaching MA 231: Calculus 3.
-% This code was ported from an older format using Claude AI. 
+% This code was ported from an older format using Claude AI.
 %
 close all
 %% User parameters for math objects.
@@ -30,7 +30,7 @@ title(app.ax, app.fig.Name, 'Interpreter', 'latex')
 %% Make the initial plots
 [xg, yg] = meshgrid(-1:0.05:1);
 surf(app.ax, xg, yg, zfun(xg, yg), 'EdgeColor', 'none');
-Pretty_Colormap('amp')
+colormap(app.ax, Pretty_Colormap('amp'))
 Pretty_Plot(app.ax)
 % Base point
 plot3(app.ax, 0, 0, zfun(0,0), 'ko', 'MarkerSize', 12, 'MarkerFaceColor', 'g')
@@ -45,11 +45,14 @@ Zp0    = Yp0;
 hPlane = surf(app.ax, Xp0, Yp0, Zp0, ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', [0 0.6 0]);
 %% Precompute math for updates
-% Light weight — skip
+% Base point and its partial derivatives (tangent lines and plane go
+% through (0,0,f(0,0)), so changing zfun above keeps them correct)
+z0       = zfun(0,0);
+[fx, fy] = Grad_f(zfun, 0, 0);
 %% Build UI
 NumControls  = 4;
-btnCurveType = app.addControl('button', 'Random curves', 1, NumControls, ...
-    @updatePlot, 'ColorChange', true);
+btnCurveType = app.addControl('button', '', 1, NumControls, ...
+    @updatePlot, 'ColorChange', true, 'Toggle', ["Random curves", "X-Y curves"]);
 btnCurve     = app.addControl('button', 'Show Curves', 2, NumControls, ...
     @updatePlot, 'ColorChange', true);
 btnTangent   = app.addControl('button', 'Show Tangent Lines', 3, NumControls, ...
@@ -58,45 +61,41 @@ btnPlane     = app.addControl('button', 'Show Tangent Plane', 4, NumControls, ..
     @updatePlot, 'ColorChange', true);
 %% Functions for UI elements
 %% Main Draw update function.
-function updatePlot(~, ~)
-% Select curve family
-if btnCurveType.Value
+    function updatePlot(~, ~)
+        % Select curve family (the button text follows its Value via 'Toggle')
+        if btnCurveType.Value
             C1 = C1_xy;
             C2 = C2_xy;
-            btnCurveType.String = 'X-Y curves';
-else
+        else
             C1 = C1_rand;
             C2 = C2_rand;
-            btnCurveType.String = 'Random curves';
-end
-% Curves
-if btnCurve.Value
+        end
+        % Curves
+        if btnCurve.Value
             C1p = C1(t);
             C2p = C2(t);
             set(hC1, 'XData', C1p(1,:), 'YData', C1p(2,:), 'ZData', C1p(3,:));
             set(hC2, 'XData', C2p(1,:), 'YData', C2p(2,:), 'ZData', C2p(3,:));
-else
+        else
             set([hC1 hC2], 'XData', nan, 'YData', nan, 'ZData', nan)
-end
-% Tangent lines
-if btnTangent.Value
+        end
+        % Tangent lines through the base point (0,0,z0)
+        if btnTangent.Value
             p1 = Diff_f_unit(C1, 0);
             p2 = Diff_f_unit(C2, 0);
             s  = [-1 1];
-            set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', s*p1(3));
-            set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', s*p2(3));
-else
+            set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', z0 + s*p1(3));
+            set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', z0 + s*p2(3));
+        else
             set([hT1 hT2], 'XData', nan, 'YData', nan, 'ZData', nan)
-end
-% Tangent plane
-if btnPlane.Value
+        end
+        % Tangent plane z = z0 + f_x x + f_y y
+        if btnPlane.Value
             [xp, yp] = meshgrid([-1 1]);
-            z0 = zfun(0,0);
-            fx = 0; fy = 0;
             zp = z0 + fx*xp + fy*yp;
             set(hPlane, 'XData', xp, 'YData', yp, 'ZData', zp)
-else
+        else
             set(hPlane, 'XData', Xp0, 'YData', Yp0, 'ZData', Zp0)
-end
-end
+        end
+    end
 end
