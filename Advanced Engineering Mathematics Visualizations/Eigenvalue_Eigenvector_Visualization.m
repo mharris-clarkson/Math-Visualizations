@@ -30,7 +30,7 @@ A2 = S2 \ diag([2, 1]) * S2;             % orthogonal basis,     eig = 2,1
 
 A3 = rand(2);
 A3 = A3'*A3;                             % random symmetric (positive semidefinite)
-while min(abs(eigs(A3)))<0.2
+while min(abs(eig(A3)))<0.2   % eig: all eigenvalues of a small dense matrix
     A3 = rand(2);
     A3 = A3'*A3;
 end
@@ -71,11 +71,9 @@ plot(app.ax(1), Pts(1,:), Pts(2,:), '.b', 'MarkerSize', 30, 'DisplayName', 'Orig
 AxLineX = plot(app.ax(1), [0, 0], [0, 0], 'k-', 'LineWidth', 2);
 AxLineY = plot(app.ax(1), [0, 0], [0, 0], 'k-', 'LineWidth', 2);
 
-MappingLines = gobjects(1, N);
-for j = 1:N
-    MappingLines(j) = plot(app.ax(1), Pts(1,[j j]), Pts(2,[j j]), ...
-        'k-', 'LineWidth', 1.2, 'Visible', 'off');
-end
+% All N mapping lines live in ONE line object (segments separated by NaN),
+% so an animation frame is one set() call instead of N.
+MappingLines = plot(app.ax(1), NaN, NaN, 'k-', 'LineWidth', 1.2, 'Visible', 'off');
 mappingLinesOn = false;
 
 EigVec  = gobjects(1, 2);
@@ -109,10 +107,7 @@ function applyA(~, ~)
         current = (1-s)*Pts + s*APts;
         set(Transformed, 'XData', current(1,:), 'YData', current(2,:))
         if mappingLinesOn
-            for j = 1:N
-                set(MappingLines(j), 'XData', [Pts(1,j), current(1,j)], ...
-                                      'YData', [Pts(2,j), current(2,j)])
-            end
+            setMappingLines(current(1,:), current(2,:))
         end
         drawnow
         pause(0.02)
@@ -156,11 +151,7 @@ end
 function toggleMappingLines(~, ~)
     mappingLinesOn = ~mappingLinesOn;
     if mappingLinesOn
-        curX = get(Transformed, 'XData');
-        curY = get(Transformed, 'YData');
-        for j = 1:N
-            set(MappingLines(j), 'XData', [Pts(1,j), curX(j)], 'YData', [Pts(2,j), curY(j)])
-        end
+        setMappingLines(get(Transformed, 'XData'), get(Transformed, 'YData'))
         btnLines.String = 'Hide Mapping Lines';
     else
         btnLines.String = 'Show Mapping Lines';
@@ -185,7 +176,14 @@ function swapMatrix(~, ~)
     applyAxesAndLabels()
 end
 
-%% Local helper (nested so it can update the shared graphics/state above)
+%% Local helpers (nested so they can update the shared graphics/state above)
+% Segment j goes from Pts(:,j) to (curX(j), curY(j)); NaN breaks the line
+function setMappingLines(curX, curY)
+    set(MappingLines, ...
+        'XData', reshape([Pts(1,:); curX; NaN(1,N)], 1, []), ...
+        'YData', reshape([Pts(2,:); curY; NaN(1,N)], 1, []))
+end
+
 function applyAxesAndLabels()
     maxRange = 1.25*max(1.2, max(abs(APts(:))));
     xlim(app.ax(1), [-maxRange, maxRange])
