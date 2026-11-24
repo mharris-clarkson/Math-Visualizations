@@ -15,6 +15,9 @@ function DoubleIntegralCurvyEngine(figName, f, Xb, Yb, xlims, ylims, viewAngle, 
 %   'DotsButton', true  - button that hides/shows the sample (center) dots
 %   'MaskButton', true  - button that shows the surface f only over the
 %                         region (NaN outside it) or over the whole window
+% 'Exact', value - the exact integral, when it is known in closed form or
+%                  from a better parametrization of the region (default:
+%                  computed over the boundary polygon with Polygon_Integral)
 %
 %% Author Info
 %
@@ -36,6 +39,7 @@ arguments
     buildCells
     options.DotsButton (1,1) logical = false
     options.MaskButton (1,1) logical = false
+    options.Exact      double = []
 end
 
 close all
@@ -43,15 +47,12 @@ run('setup.m')
 app = uiFigure(figName, 1);
 view(app.ax, viewAngle(1), viewAngle(2))
 
-%% "Exact" integral: fine midpoint grid restricted to the region
-resExact = 500;
-dxE = (xlims(2)-xlims(1))/resExact;
-dyE = (ylims(2)-ylims(1))/resExact;
-[xg, yg] = meshgrid(xlims(1) + dxE*((1:resExact) - 0.5), ...
-                    ylims(1) + dyE*((1:resExact) - 0.5));
-fg = f(xg, yg);
-inRegion = insideRegion(xg, yg) & (fg ~= 0);
-exactIntegral = sum(fg(inRegion))*dxE*dyE;
+%% Exact integral over the region
+if isempty(options.Exact)
+    exactIntegral = Polygon_Integral(f, Xb, Yb);
+else
+    exactIntegral = options.Exact;
+end
 
 %% Surface
 resSurf  = 150;
