@@ -45,11 +45,12 @@ shading(app.ax, 'flat')
 colormap(app.ax, winter)
 
 % Origin marker
-plot(app.ax, 0, 0, '.r', 'MarkerSize', 20)
+hOrigin = plot(app.ax, 0, 0, '.r', 'MarkerSize', 20);
 
 % Spiral path handle
 [x0, y0] = spiral_path(phiMax0);
 hSpiral   = plot(app.ax, x0, y0, 'r', 'LineWidth', 2);
+uistack(hOrigin, 'top')   % keep the origin marker drawn on top of the spiral
 
 %% Precompute math for updates
 % Light weight — skip
@@ -64,9 +65,8 @@ phiSlider = app.addControl('slider', '$\phi = $', 1, NumControls, @updatePlot, .
     function updatePlot(~, ~)
         [x, y] = spiral_path(phiSlider.Value);
         set(hSpiral, 'XData', x, 'YData', y);
-        % Redraw origin marker on top
-        plot(app.ax, 0, 0, '.r', 'MarkerSize', 20)
-        xlim(app.ax, [-0.2, 0.2])
-        ylim(app.ax, [-0.2, 0.2])
+        % (The origin marker stays on top and the limits are fixed, so
+        %  nothing else needs redrawing. Re-plotting the marker here added a
+        %  new line object on every slider move.)
     end
 end
