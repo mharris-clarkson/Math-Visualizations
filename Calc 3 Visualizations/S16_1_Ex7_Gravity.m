@@ -22,9 +22,8 @@ run('setup.m')
 app = uiFigure('Gravitational Vector Field', 1);
 ax = app.ax(1);
 
-Pretty_Plot(ax)
+% (uiFigure already applied Pretty_Plot, including the $x$, $y$, $z$ labels)
 axis(ax, 'equal')
-xlabel(ax, 'x'); ylabel(ax, 'y'); zlabel(ax, 'z')
 title(ax, 'Gravitational Vector Field')
 view(ax, 3)
 
