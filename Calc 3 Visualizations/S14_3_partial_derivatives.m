@@ -1,7 +1,8 @@
 function S14_3_partial_derivatives()
 %% Visualizes partial derivatives as tangent vectors on a bump surface.
-%  Two sliders move the base point (x0, y0) across the surface and the
-%  partial derivative arrows update live.
+%  Click or drag on the surface to move the base point (x0, y0); the
+%  partial derivative arrows (blue: x direction, green: y direction)
+%  update live.
 %
 %% Author Info
 %
@@ -18,8 +19,8 @@ f   = @(x,y) (r2(x,y) < 1) .* exp(1./(r2(x,y) - 1));
 max_val   = 1.4;
 Delta_val = 0.05;
 
-x0 = 0;
-y0 = 0;
+x0 = 0.4;   % initial base point (off the peak, where both partials are 0)
+y0 = 0.3;
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -32,51 +33,55 @@ view(app.ax, -16, 47)
 xlim(app.ax, max_val*[-1, 1])
 ylim(app.ax, max_val*[-1, 1])
 zlim(app.ax, [0, 0.6])
-title(app.ax, app.fig.Name, 'Interpreter', 'latex')
+title(app.ax, {app.fig.Name, 'Click or drag on the surface to move the point'})
 
 %% Optional math functions for plot computations
-    function [hPt, hVx, hVy] = plot_partials(x, y)
+    % Point on the surface and the unit tangent vectors in the x and y
+    % directions there (helpers Diffx_f / Diffy_f give f_x and f_y)
+    function [z, vx, vy] = partials_at(x, y)
         z  = f(x, y);
-        h  = 1e-5;
-        fx = (f(x+h,y) - f(x-h,y)) / (2*h);
-        fy = (f(x,y+h) - f(x,y-h)) / (2*h);
+        fx = Diffx_f(f, x, y);
+        fy = Diffy_f(f, x, y);
 
         vx = [1, 0, fx]; vx = vx / norm(vx);
         vy = [0, 1, fy]; vy = vy / norm(vy);
-
-        hPt = plot3(app.ax, x, y, z, 'ro', 'MarkerSize', 8, 'LineWidth', 2);
-        hVx = quiver3(app.ax, x, y, z, vx(1), vx(2), vx(3), ...
-            1, 'r', 'LineWidth', 2, 'MaxHeadSize', 0.5);
-        hVy = quiver3(app.ax, x, y, z, vy(1), vy(2), vy(3), ...
-            1, 'm', 'LineWidth', 2, 'MaxHeadSize', 0.5);
     end
 
 %% Make the initial plots
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
 surf(app.ax, X, Y, Z)
-colormap(app.ax, winter)
+shading flat
+colormap(app.ax, Pretty_Colormap('amp'))
 Pretty_Plot(app.ax)
+zlim(app.ax, [0, 0.6])   % Pretty_Plot's axis tight resets the zlim set above
 
-% Initial partial derivative arrows
-[hPt, hVx, hVy] = plot_partials(x0, y0);
+% Initial partial derivative arrows (created once, updated in place)
+[z0, vx, vy] = partials_at(x0, y0);
+% (black / blue / green: red would vanish on the red amp colormap)
+hPt = plot3(app.ax, x0, y0, z0, 'ko', 'MarkerSize', 8, 'LineWidth', 2, 'MarkerFaceColor', 'k');
+hVx = quiver3(app.ax, x0, y0, z0, vx(1), vx(2), vx(3), ...
+    1, 'b', 'LineWidth', 2, 'MaxHeadSize', 0.5);
+hVy = quiver3(app.ax, x0, y0, z0, vy(1), vy(2), vy(3), ...
+    1, 'Color', [0 0.6 0], 'LineWidth', 2, 'MaxHeadSize', 0.5);
 
 %% Precompute math for updates
 % Light weight — skip
 
+%% Dragging: clicks in the axes move the point to the surface under the mouse
+Drag_Point_On_Surface(app.ax, f, max_val*[-1 1], max_val*[-1 1], @updatePlot);
+
 %% Build UI
-NumControls = 2;
-
-xSlider = app.addControl('slider', '$x_0 = $', 1, NumControls, @updatePlot, ...
-    'Default', x0, 'Min', -max_val, 'Max', max_val);
-
-ySlider = app.addControl('slider', '$y_0 = $', 2, NumControls, @updatePlot, ...
-    'Default', y0, 'Min', -max_val, 'Max', max_val);
+% (no controls: the point is moved by dragging)
 
 %% Main Draw update function.
-    function updatePlot(~, ~)
-        delete(hPt); delete(hVx); delete(hVy);
-        [hPt, hVx, hVy] = plot_partials(xSlider.Value, ySlider.Value);
-        zlim(app.ax, [0, 0.6])
+    % Called by Drag_Point_On_Surface with the new base point (x, y)
+    function updatePlot(x, y)
+        [z, vx, vy] = partials_at(x, y);
+        set(hPt, 'XData', x, 'YData', y, 'ZData', z);
+        set(hVx, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', vx(1), 'VData', vx(2), 'WData', vx(3));
+        set(hVy, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', vy(1), 'VData', vy(2), 'WData', vy(3));
     end
 end
