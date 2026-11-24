@@ -35,7 +35,7 @@ title(app.ax,app.fig.Name,'Interpreter','latex')
 %% ============== Make the initial plots =================================
 % Setup axis
 hold(app.ax,'on')
-view(0,90)
+view(app.ax,0,90)
 
 % Main curve
 tPlot = linspace(t_Plot_range(1), t_Plot_range(2), 50);
@@ -153,14 +153,13 @@ app.addControl('button', 'Change Sign of $\Delta t$', 2, NumControls,  @updatePl
 
     function updatePlot_btn_Swap_dt(~,~)
         % Swap the sign of dt
+        % (UpdateUISlider sets the new range before the value; setting
+        %  Value first put it outside [Min, Max], which makes MATLAB warn
+        %  and hide the slider)
         if dtSlider.Max > 0 % if positive
-            dtSlider.Value  = -dt0;
-            dtSlider.Min    = -dt0;
-            dtSlider.Max    = -Min_dt;
+            app.UpdateUISlider(dtSlider, -dt0, "Min", -dt0, "Max", -Min_dt)
         else
-            dtSlider.Value = dt0;
-            dtSlider.Max   = dt0;
-            dtSlider.Min   = Min_dt;
+            app.UpdateUISlider(dtSlider, dt0, "Min", Min_dt, "Max", dt0)
         end
         updatePlot()
     end
