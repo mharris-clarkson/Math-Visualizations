@@ -24,7 +24,7 @@ app = uiFigure('3D Isosurface of $f(x,y,z) = x^2+y^2+z^2$', 1);
 axis(app.ax, [-maxRadius maxRadius -maxRadius maxRadius -maxRadius maxRadius])
 axis(app.ax, 'equal')
 view(app.ax, 3)
-camlight('headlight'); lighting gouraud
+camlight(app.ax, 'headlight'); lighting(app.ax, 'gouraud')
 title(app.ax, app.fig.Name, 'Interpreter', 'latex')
 
 %% Precompute math for updates
@@ -59,13 +59,10 @@ update();
     function update()
         n    = nSlider.Value;
 
-        % Remove old isosurface and redraw
-        delete(findall(app.ax, 'Type', 'patch'));
-        isoH = patch(app.ax,isosurface(X, Y, Z, F, n));
-        set(isoH, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-        xlim(app.ax, [-maxRadius, maxRadius])
-        ylim(app.ax, [-maxRadius, maxRadius])
-        zlim(app.ax, [-maxRadius, maxRadius])
+        % Update the isosurface in place (no delete/recreate of the patch;
+        % the axis limits were fixed above and do not change)
+        s = isosurface(X, Y, Z, F, n);
+        set(isoH, 'Vertices', s.vertices, 'Faces', s.faces);
         title(app.ax, sprintf('Isosurface of $f(x,y,z)=x^2+y^2+z^2$,  $f = %.2f$', n), ...
             'Interpreter', 'latex')
     end
