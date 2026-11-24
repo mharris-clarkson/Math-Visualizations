@@ -9,7 +9,7 @@ function Fourier_Series_RealtimeWaterfall()
 %
 % Ported/cleaned up by Claude from an original visualization written by
 % Dr Matthew Harris, assistant professor at Clarkson University,
-% for MA 231: Calculus 3.
+% for MA 330: Advanced Engineering Mathematics.
 
 close all
 
@@ -41,7 +41,7 @@ cleanupObj = onCleanup(@() release(reader));
 
 buffer        = zeros(fftSize, 1);
 waterfallData = -120*ones(nBins, history, 'single');
-w             = hann(fftSize);
+w             = 0.5*(1 - cos(2*pi*(0:fftSize-1).'/(fftSize-1)));  % = hann(fftSize), no Signal Processing Toolbox needed
 winGain       = sum(w)/2;          % so a full-scale sine reads 0 dB
 histIdx       = 1;                 % next column to write (circular)
 pending       = -120*ones(nBins, 1, 'single');   % max-hold within a column
