@@ -15,9 +15,11 @@ if isscalar(t)
     fp = fp/(norm(fp) + eps); % eps avoids 0/0 where the speed is zero
 else
     % One tangent per sample: normalise along the dimension that holds the
-    % vector components (the one whose length is not numel(t)).
+    % vector components (the one whose length is not numel(t)). When both
+    % sizes equal numel(t) (e.g. 3 samples of a 3D curve) use t's shape:
+    % row t -> one column per sample, column t -> one row per sample.
     dim = find(size(fp) ~= numel(t), 1);
-    if isempty(dim), dim = 1; end
+    if isempty(dim), dim = 1 + iscolumn(t); end
     fp = fp ./ (vecnorm(fp, 2, dim) + eps);
 end
 end
