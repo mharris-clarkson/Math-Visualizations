@@ -23,9 +23,11 @@ hold(app.ax,'on')
 
 %% ================= Precompute =====================
 
-% Numerical derivatives (updated dynamically when curve switches)
-r_prime  = @(t) (r_fun(t+1e-6)-r_fun(t-1e-6))/(2e-6);
-r_double = @(t) (r_fun(t+1e-6)-2*r_fun(t)+r_fun(t-1e-6))/(1e-6)^2;
+% Numerical derivatives (updated dynamically when curve switches). The
+% Diff_f / Diff2_f helpers use step sizes tuned for accuracy; a 1e-6 step
+% in a second difference gives ~1e-4 rounding noise in kappa.
+r_prime  = @(t) Diff_f(r_fun,t);
+r_double = @(t) Diff2_f(r_fun,t);
 
 t_samples = linspace(tlims(1), tlims(2), 10000);
 [s_samples, sMax] = arclength_param(r_fun,t_samples);
@@ -41,7 +43,7 @@ hCurve = plot(app.ax, r(1,:), r(2,:),'b','LineWidth',2);
 
 hPoint = plot(app.ax,r0(1), r0(2), '.r', 'MarkerSize', 24);
 hT = quiver(app.ax,r0(1), r0(2), T(1), T(2), 0, 'r','LineWidth',2);
-hN = quiver(app.ax,r0(1), r0(2), N(1), N(2), 0, 'm','LineWidth',2);
+hN = quiver(app.ax,r0(1), r0(2), abs(kappa)*N(1), abs(kappa)*N(2), 0, 'm','LineWidth',2); % dT/ds = kappa*N
 
 theta = linspace(0,2*pi,200);
 xCircle = C(1) + R*cos(theta);
@@ -52,6 +54,9 @@ legend(app.ax,[hT,hN,hCircle], {'$\vec{T}$','$d\vec{T}/ds$','Osculating Circle'}
        'Interpreter','latex','FontSize',16);
 
 Pretty_Plot(app.ax);
+xlim(app.ax,[-5,5])
+ylim(app.ax,[-5,5])
+daspect(app.ax,[1 1 1])   % equal scaling, so the osculating circle looks round
 
 %% ================= UI =====================
 NumControls = 2;
@@ -91,17 +96,18 @@ function updatePlot_s(~,~)
 
     set(hPoint,'XData',r0(1),'YData',r0(2));
     set(hT,'XData',r0(1),'YData',r0(2),'UData',T(1),'VData',T(2));
-    set(hN,'XData',r0(1),'YData',r0(2),'UData',N(1),'VData',N(2));
+    % dT/ds = kappa*N: the unit normal scaled by the curvature (it was
+    % drawn as the unit vector N while labelled dT/ds)
+    set(hN,'XData',r0(1),'YData',r0(2),'UData',abs(kappa)*N(1),'VData',abs(kappa)*N(2));
 
     xCircle = C(1) + R*cos(theta);
     yCircle = C(2) + R*sin(theta);
     set(hCircle,'XData',xCircle,'YData',yCircle);
 
-    title(app.ax, [app.fig.Name, ': $\kappa = $', num2str(kappa,'%.3f')], 'Interpreter','latex');
-
-    Pretty_Plot(app.ax)
-    xlim(app.ax,[-5,5])
-    ylim(app.ax,[-5,5])
+    % Curvature is |dT/ds| >= 0 (kappa above is the signed 2D curvature,
+    % used only to pick the side of the normal)
+    title(app.ax, [app.fig.Name, ': $\kappa = |d\vec{T}/ds| = $', num2str(abs(kappa),'%.3f')], 'Interpreter','latex');
+    % (Pretty_Plot and the axis limits are set once at start-up)
 end
 
 function updatePlot_switchCurve(~,~)
