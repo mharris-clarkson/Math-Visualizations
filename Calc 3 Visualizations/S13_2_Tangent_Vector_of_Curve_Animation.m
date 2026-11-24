@@ -27,42 +27,32 @@ view(app.ax, 3)
 axis(app.ax, 'equal')
 
 %% Optional math functions for plot computations
-    function [x, y, z] = getCurve(idx)
+% Points on curve idx and its tangent vectors r'(t), drawn at
+% tangent_scale*dt times their length
+    function [x, y, z, dx, dy, dz] = getCurve(idx)
         t = linspace(0, 2*pi, nPoints);
         switch idx
             case 1  % Torus spiral
-                R = 3; r = 1; nTwists = 2;
-                phi   = linspace(0, 2*pi*nTwists, nPoints);
-                x = (R + r*cos(phi)) .* cos(t);
-                y = (R + r*cos(phi)) .* sin(t);
-                z = r * sin(phi);
+                R = 3; a = 1; nTwists = 2;
+                r = @(t) [(R + a*cos(nTwists*t)).*cos(t); ...
+                          (R + a*cos(nTwists*t)).*sin(t); ...
+                          a*sin(nTwists*t)];
             case 2  % Trefoil knot
-                x = sin(t) + 2*sin(2*t);
-                y = cos(t) - 2*cos(2*t);
-                z = -sin(3*t);
+                r = @(t) [sin(t) + 2*sin(2*t); cos(t) - 2*cos(2*t); -sin(3*t)];
             case 3  % Figure-8 knot
-                x = (2 + cos(2*t)) .* cos(3*t);
-                y = (2 + cos(2*t)) .* sin(3*t);
-                z = sin(4*t);
+                r = @(t) [(2 + cos(2*t)).*cos(3*t); (2 + cos(2*t)).*sin(3*t); sin(4*t)];
             case 4  % Piriform curve
                 a = 1.5;
-                x = a * (1 - cos(t));
-                y = a * sin(t) .* (1 - cos(t));
-                z = cos(2*t);
+                r = @(t) [a*(1 - cos(t)); a*sin(t).*(1 - cos(t)); cos(2*t)];
         end
-    end
-
-    function [dx, dy, dz] = getTangents(x, y, z)
-        dx = diff(x); dy = diff(y); dz = diff(z);
-        dx(end+1) = dx(end); dy(end+1) = dy(end); dz(end+1) = dz(end);
-        dx = dx * tangent_scale;
-        dy = dy * tangent_scale;
-        dz = dz * tangent_scale;
+        P = r(t);
+        V = Diff_f(r, t) * tangent_scale * (t(2) - t(1));
+        x = P(1,:);  y = P(2,:);  z = P(3,:);
+        dx = V(1,:); dy = V(2,:); dz = V(3,:);
     end
 
 %% Make the initial plots
-[x, y, z]       = getCurve(curveIdx);
-[dx, dy, dz]    = getTangents(x, y, z);
+[x, y, z, dx, dy, dz] = getCurve(curveIdx);
 hLine           = plot3(app.ax, x, y, z, 'b', 'LineWidth', 2);
 hpoint          = plot3(app.ax, x(1), y(1), z(1),'.r','MarkerSize',40);
 hArrow          = quiver3(app.ax, x(1), y(1), z(1), dx(1), dy(1), dz(1), ...
@@ -104,8 +94,7 @@ btnCurve = app.addControl('button', ...
         stopTimer();
 
         curveIdx = mod(curveIdx, 4) + 1;
-        [x, y, z]    = getCurve(curveIdx);
-        [dx, dy, dz] = getTangents(x, y, z);
+        [x, y, z, dx, dy, dz] = getCurve(curveIdx);
         frameIdx     = 1;
 
         set(hLine,  'XData', x,    'YData', y,    'ZData', z);
