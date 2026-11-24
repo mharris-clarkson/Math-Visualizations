@@ -117,6 +117,54 @@ classdef Test_Math_Helpers < matlab.unittest.TestCase
             testCase.verifyEqual([X(isMax), Y(isMax)], [1, 0], 'AbsTol', 1e-9);
         end
 
+        %% Regions bounded by polygons
+        function insidePolygonGridMatchesInpolygon(testCase)
+            % Same answer as inpolygon on meshgrids: random star-shaped and
+            % self-crossing polygons, and grids through vertices and edges
+            rng(1);
+            for k = 1:60
+                nv = randi([3 40]);
+                if k <= 30
+                    th = sort(rand(1, nv))*2*pi;  r = 0.3 + rand(1, nv);
+                    xv = r.*cos(th);  yv = r.*sin(th);
+                else
+                    xv = round(2*randn(1, nv))/2;  yv = round(2*randn(1, nv))/2;
+                end
+                [X, Y] = meshgrid(-3:0.25:3, -3:0.5:3);
+                testCase.verifyEqual(Inside_Polygon_Grid(X, Y, xv, yv), inpolygon(X, Y, xv, yv), ...
+                    sprintf('polygon %d', k));
+            end
+        end
+
+        function insidePolygonGridOtherInputs(testCase)
+            % Points that are not a meshgrid fall back to inpolygon
+            xv = [0 1 1 0];  yv = [0 0 1 1];
+            x = [0.5 2 1 -0.1];  y = [0.5 0.5 0.5 0.2];
+            testCase.verifyEqual(Inside_Polygon_Grid(x, y, xv, yv), inpolygon(x, y, xv, yv));
+        end
+
+        function polygonIntegralKnownValues(testCase)
+            % Unit square: area 1, integral of x*y is 1/4
+            sq = {[0 1 1 0], [0 0 1 1]};
+            testCase.verifyEqual(Polygon_Integral(@(x,y) 1 + 0*x, sq{:}), 1, 'AbsTol', 1e-10);
+            testCase.verifyEqual(Polygon_Integral(@(x,y) x.*y, sq{:}), 1/4, 'AbsTol', 1e-10);
+            % Non-convex L shape (area 3); integral of x is 2.5 (closed polygon given)
+            Lx = [0 2 2 1 1 0 0];  Ly = [0 0 1 1 2 2 0];
+            testCase.verifyEqual(Polygon_Integral(@(x,y) 1 + 0*x, Lx, Ly), 3, 'AbsTol', 1e-10);
+            testCase.verifyEqual(Polygon_Integral(@(x,y) x, Lx, Ly), 2.5, 'AbsTol', 1e-10);
+        end
+
+        function polygonIntegralMatchesGreen(testCase)
+            % Polygon approximating a circle: area against polyarea, and the
+            % integral of x^2 against Green's theorem (1/3) oint x^3 dy,
+            % which is exact for straight edges
+            th = linspace(0, 2*pi, 400);  xv = cos(th) - 1;  yv = sin(th);
+            testCase.verifyEqual(Polygon_Integral(@(x,y) 1 + 0*x, xv, yv), polyarea(xv, yv), 'AbsTol', 1e-9);
+            x1 = xv(1:end-1);  x2 = xv(2:end);  dy = diff(yv);
+            green = sum(dy/12 .* (x1.^3 + x1.^2.*x2 + x1.*x2.^2 + x2.^3));
+            testCase.verifyEqual(Polygon_Integral(@(x,y) x.^2, xv, yv), green, 'AbsTol', 1e-9);
+        end
+
         %% Mesh and labels
         function prismMeshSizes(testCase)
             [V, bottomF, topF, sideF] = buildPrismMesh([0 1], [0 0], [2 3], 1, 1);
