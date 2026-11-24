@@ -41,7 +41,7 @@ Fx = @(x,y) y;
 Fy = @(x,y) x.^2;
 
 % Slider settings
-n0    = 4;      % initial number of chords
+n0    = 1;      % initial number of chords
 n_max = 50;     % largest finite n on the slider. One step past it is "infinity"
 N_inf = 1000;   % number of chords used to represent n -> infinity
 nCols     = 9;    % black field arrows across the plot (the rows are spaced to match on screen)

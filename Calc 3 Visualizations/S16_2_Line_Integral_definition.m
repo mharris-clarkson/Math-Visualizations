@@ -1,10 +1,12 @@
-function S16_2_Line_Integral_definition_spline()
+function S16_2_Line_Integral_definition()
 %% Line Integral Definition Visualized -- Spline Curve
 % The curve C is a cubic spline through 6 draggable control points in the
-% xy-plane (parameterized by chord length). Drag any red control point in
-% the 3D view to reshape C; the curtain, the arc-length plot and the Riemann
-% sum all update. Arrows along C show its direction (start = green circle,
-% end = black square).
+% xy-plane (parameterized by chord length). Drag any yellow diamond (a
+% control point) to reshape C; the Riemann sum panels, the arc-length plot
+% and the sum all update. The n slider ends at n -> infinity, where the panels become
+% the continuous curtain under f along C (the line integral itself). Arrows along C show its direction (start = green circle,
+% end = black square). A button rotates the view between the top view and
+% 3D (dragging works in both).
 %
 %   Left  : 3D view (surface, curve, control points, curtain panels)
 %   Right : 2D "unrolled" Riemann sum on the arc-length axis (can be hidden)
@@ -18,21 +20,20 @@ function S16_2_Line_Integral_definition_spline()
 close all
 
 %% User parameters for math objects
-f  = @(x,y) 1.5 + 0.8*sin(2*x).*cos(1.5*y);       % surface / integrand (positive everywhere)
-f = @(x,y) (x.^2);
+f = @(x,y) (x.^2);                                 % surface / integrand
+% another one to try (positive everywhere):
+% f  = @(x,y) 1.5 + 0.8*sin(2*x).*cos(1.5*y);
 
-t6 = linspace(0, 1, 6);
-px = cos(pi*t6);            % control points: start roughly on an upper semicircle
-py = sin(pi*t6);
 % control points in a rough box
+% (another start to try: roughly on an upper semicircle
+%  t6 = linspace(0, 1, 6); px = cos(pi*t6); py = sin(pi*t6);)
 px = [1,    1, 1, 0.8, 0, -1];
 py = [-1, -0.5, 0,  1, 1, 1];
 bound = 1.5;                % control points are clamped to [-bound, bound]^2
 
 Nfine = 600;                % points used to draw the spline
-n0 = 4;  nMax = 100;         % initial / maximum number of panels
-ShowLineInt = false;         % initial toggle states
-ShowPanels  = false;
+n0 = 0;  nMax = 50;          % initial / largest finite number of panels
+                             % (one slider step past nMax is n -> infinity)
 Show1D      = false;         % 1D (arc-length) plot initially hidden
 oneWidthFactor = 1.8;        % 3D axes width when the 1D plot is hidden, as a multiple of
                              % its width in the two-pane layout (raise to widen, lower if it
@@ -43,9 +44,11 @@ ax2ShiftFrac = 0.12;         % shift the 1D plot's left edge right by this fract
 
 color1 = [0.15 0.35 0.75];  % alternating panel colors (blue / orange)
 color2 = [0.95 0.55 0.15];
-color3 = [0.20 0.65 0.45];  % line-integral area (green)
-cpColor = [0.85 0.10 0.10]; % control points
+color3 = [0.20 0.65 0.45];  % line-integral area in the limit (green)
+cpColor = [1.00 0.80 0.00]; % control points (yellow diamonds, black outline)
 nGrid = 60;                 % surface grid resolution
+
+view3D = [130 50];         % [azimuth elevation] of the 3D view (top view is [0 90])
 
 nArr   = 6;                 % number of direction arrows along the curve
 arrLen = 0.3*bound;         % arrow length (in 3D data units)
@@ -58,7 +61,7 @@ run('setup.m')
 app = uiFigure('Line Integral - Spline Curve', 2);
 ax3 = app.ax(1);
 ax2 = app.ax(2);
-Pretty_Plot(app.ax)
+% (uiFigure already applied Pretty_Plot to both axes)
 
 % Remember the 3D axes OuterPosition in the two-pane layout. For the one-pane
 % layout keep the same left edge, bottom and height, and set the width by hand
@@ -101,8 +104,8 @@ hLine3 = patch(ax3, 'Faces', curtainFaces, 'Vertices', NaN(2*Nfine,3), ...
 hLine2 = patch(ax2, nanv, nanv, color3, 'FaceAlpha', 0.40, 'EdgeColor', 'none');
 hCurve3 = plot3(ax3, nanv, nanv, nanv, 'k--', 'LineWidth', 1);               % curve on surface (dashed)
 hProj3  = plot3(ax3, nanv, nanv, nanv, 'k', 'LineWidth', 2);                 % projection on z = 0 (solid)
-hCP3    = plot3(ax3, px, py, zeros(1,6), 'o', 'Color', cpColor, 'MarkerFaceColor', cpColor, ...
-    'MarkerSize', 10, 'LineWidth', 1.5);
+hCP3    = plot3(ax3, px, py, zeros(1,6), 'd', 'MarkerFaceColor', cpColor, ...
+    'MarkerEdgeColor', 'k', 'MarkerSize', 12, 'LineWidth', 1);
 hCurve2 = plot(ax2, nanv, nanv, 'k', 'LineWidth', 2);
 hPan3  = patch(ax3, 'Faces', box3, 'Vertices', boxV, 'FaceColor', 'flat', ...
     'FaceVertexCData', color1, 'FaceAlpha', 0.55, 'EdgeColor', 'k', 'Visible', 'off');
@@ -127,15 +130,17 @@ ax3.ButtonDownFcn = @startDrag;
 dragIdx = [];
 
 %% Build UI
-% Rows count upward from the bottom: row 4 is the top control
-sN      = app.addControl('slider', '$n = $', 1, 3, @updatePlot, ...
-    'Default', n0, 'Min', 4, 'Max', nMax, 'Number_format', '%d');
-btnLine = app.addControl('button', 'Show Line Integral', 2, 3, @toggleLineInt, 'ColorChange', true);
-btnPan  = app.addControl('button', 'Show Panels', 3, 3, @togglePanels, 'ColorChange', true);
-btn1D   = app.addControl('button', 'Show 1D Plot', 4, 3, @toggle1D, 'ColorChange', true);
+% Rows count upward from the bottom: row 3 is the top control
+NumControls = 3;
+% The last slider step (nMax + 1) stands for n -> infinity: 'LimitLabel'
+% writes it on the slider and redraw shows the continuous line integral
+sN      = app.addControl('slider', '$n = $', 1, NumControls, @updatePlot, ...
+    'Default', n0, 'Min', 0, 'Max', nMax + 1, 'Number_format', '%d', ...
+    'Step', 1, 'LimitLabel', '$n \to \infty$');
+btn1D   = app.addControl('button', 'Show 1D Plot', 2, NumControls, @toggle1D, 'ColorChange', true);
+btnView = app.addControl('button', '', 3, NumControls, @toggleView, ...
+    'Toggle', ["Rotate to 3D view", "Rotate to top view"]);
 btn1D.Value   = Show1D;
-btnLine.Value = ShowLineInt;
-btnPan.Value  = ShowPanels;
 if Show1D, btn1D.String = 'Hide 1D Plot'; else, btn1D.String = 'Show 1D Plot'; end
 
 redraw(n0)
@@ -146,23 +151,20 @@ function updatePlot(~, ~)
     redraw(round(sN.Value))
 end
 
+% Smoothly turn the camera between the top view and the 3D view
+function toggleView(~, ~)
+    if btnView.Value
+        Animate_View(ax3, view3D(1), view3D(2))
+    else
+        Animate_View(ax3, 0, 90)
+    end
+end
+
 function toggle1D(~, ~)
     Show1D = logical(btn1D.Value);
     if Show1D, btn1D.String = 'Hide 1D Plot'; else, btn1D.String = 'Show 1D Plot'; end
     applyVisibility()
     applyLayout()
-end
-
-function toggleLineInt(~, ~)
-    ShowLineInt = logical(btnLine.Value);
-    if ShowLineInt, btnLine.String = 'Hide Line Integral'; else, btnLine.String = 'Show Line Integral'; end
-    applyVisibility()
-end
-
-function togglePanels(~, ~)
-    ShowPanels = logical(btnPan.Value);
-    if ShowPanels, btnPan.String = 'Hide Panels'; else, btnPan.String = 'Show Panels'; end
-    redraw(round(sN.Value))
 end
 
 function startDrag(~, ~)
@@ -213,12 +215,14 @@ end
 
 %% Visibility: one place that applies all toggle states
 function applyVisibility()
-    % 3D objects depend only on their own toggles
-    set(hLine3, 'Visible', onoff(ShowLineInt))
-    set([hPan3 hDots3], 'Visible', onoff(ShowPanels))
+    % n -> infinity shows the continuous curtain (the line integral);
+    % finite n shows the panels
+    isLimit = app.isAtLimit(sN);
+    set(hLine3, 'Visible', onoff(isLimit))
+    set([hPan3 hDots3], 'Visible', onoff(~isLimit))
     % 2D objects also require the 1D plot to be shown
-    set(hLine2, 'Visible', onoff(ShowLineInt && Show1D))
-    set([hPan2 hDots2], 'Visible', onoff(ShowPanels && Show1D))
+    set(hLine2, 'Visible', onoff(isLimit && Show1D))
+    set([hPan2 hDots2], 'Visible', onoff(~isLimit && Show1D))
     set(hCurve2, 'Visible', onoff(Show1D))
     set([ax2, ax2.Title, ax2.XLabel, ax2.YLabel], 'Visible', onoff(Show1D))
 end
@@ -264,7 +268,10 @@ function redraw(n)
     set(hCurve2, 'XData', sFine, 'YData', zFine)
     xlim(ax2, [0 S_total]); ylim(ax2, [0 max(1.25*max(zFine), 0.1)])
 
-    if ShowPanels
+    isLimit = app.isAtLimit(sN);
+    if isLimit
+        title(ax2, splitlines(sprintf('$n \\to \\infty$: area under $f$ along $C$\nLine integral $= %.5f$', I_exact)))
+    else
         % Equal arc-length partition into n pieces, midpoint heights
         sEdges = linspace(0, S_total, n+1);
         xe = interp1(sFine, xFine, sEdges);  ye = interp1(sFine, yFine, sEdges);
@@ -290,11 +297,9 @@ function redraw(n)
         set(hDots2, 'XData', sm, 'YData', fm)
 
         title(ax2, splitlines(sprintf('Riemann Sum on Arc-Length Axis\nApprox = %.5f    Line integral = %.5f', approx, I_exact)))
-    else
-        title(ax2, splitlines(sprintf('f along the arc-length axis\nLine integral = %.5f', I_exact)))
     end
-    title(ax3, '$\int_C f(x,y)ds= \lim_{n\to\infty}\sum_{i=1}^n f(x_i^*,y_i^*)\Delta s_i$ $\\$ Drag the red dots to change C','Interpreter','latex')
-    
+    title(ax3, '$\int_C f(x,y)ds= \lim_{n\to\infty}\sum_{i=1}^n f(x_i^*,y_i^*)\Delta s_i$ $\\$ Drag the yellow diamonds to change $C$','Interpreter','latex')
+
 %
     applyVisibility()
     drawnow limitrate
