@@ -12,7 +12,8 @@ function S14_6_Gradient_Descent()
 %  With the second rule the steps shrink as the gradient goes to zero, so
 %  the path settles at a critical point instead of hopping around it.
 %
-%  The red arrow shows the next step, drawn 10 times longer.
+%  The red arrow shows the next step, drawn 10 times longer. A third button
+%  picks a new random starting point in the domain.
 %
 %% Author Info
 %
@@ -35,6 +36,7 @@ arrowScale = 10;       % the arrow is the next step drawn this many times longer
 nLevels    = 40;       % number of contour levels
 xlims  = [-3, 3];
 ylims  = [-3, 3];
+startMargin = 0.1;     % random starts stay this fraction of the domain away from its edges
 
 useAscent       = false;  % false = descent, true = ascent
 useProportional = false;  % false = fixed length steps, true = steps proportional to grad f
@@ -85,7 +87,7 @@ Pretty_Plot(app.ax)
 % Path taken so far, start point, current point and next-step arrow. All
 % are created once here and updated in place by redraw() below.
 hTrail = plot(app.ax, NaN, NaN, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 12);
-plot(app.ax, x0(1), x0(2), 'ks', 'MarkerFaceColor', 'w', 'MarkerSize', 9);
+hStart = plot(app.ax, x0(1), x0(2), 'ks', 'MarkerFaceColor', 'w', 'MarkerSize', 9);
 hPoint = plot(app.ax, NaN, NaN, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 hArrow = quiver(app.ax, 0, 0, 0, 0, 0, ...
     'Color', 'r', 'LineWidth', 2, 'MaxHeadSize', 2);
@@ -98,37 +100,44 @@ xlim(app.ax, xlims); ylim(app.ax, ylims)
 Path = compute_path();
 
 %% Build UI
-NumControls = 3;
+NumControls = 4;
 
 nSlider = app.addControl('slider', 'Steps $=$ ', 1, NumControls, @updatePlot, ...
     'Default', 0, 'Min', 0, 'Max', nStepsMax, 'Number_format', '%d', 'colOrRow', 'row');
 
-btnMode = app.addControl('button', 'Gradient Descent', 2, NumControls, ...
-    @toggleMode, 'ColorChange', true, 'colOrRow', 'row');
+% 'Toggle' swaps the button text with btn.Value (first entry = off)
+btnMode = app.addControl('button', '', 2, NumControls, ...
+    @toggleMode, 'ColorChange', true, 'colOrRow', 'row', ...
+    'Toggle', ["Gradient Descent", "Gradient Ascent"]);
 
-btnRule = app.addControl('button', 'Step: Fixed Length', 3, NumControls, ...
-    @toggleRule, 'ColorChange', true, 'colOrRow', 'row');
+btnRule = app.addControl('button', '', 3, NumControls, ...
+    @toggleRule, 'ColorChange', true, 'colOrRow', 'row', ...
+    'Toggle', ["Step: Fixed Length", "Step: $\propto \nabla f$"]);
+
+app.addControl('button', 'New Random Start', 4, NumControls, ...
+    @randomStart, 'colOrRow', 'row');
 
 redraw(0)
 
 %% Functions for UI elements
     function toggleMode(~, ~)
-        useAscent = logical(btnMode.Value);
-        if useAscent
-            btnMode.String = 'Gradient Ascent';
-        else
-            btnMode.String = 'Gradient Descent';
-        end
+        useAscent = logical(btnMode.Value);   % button text follows via 'Toggle'
         restart()
     end
 
     function toggleRule(~, ~)
-        useProportional = logical(btnRule.Value);
-        if useProportional
-            btnRule.String = 'Step: $\propto \nabla f$';
-        else
-            btnRule.String = 'Step: Fixed Length';
-        end
+        useProportional = logical(btnRule.Value);   % text follows via 'Toggle'
+        restart()
+    end
+
+    % Pick a new starting point uniformly at random inside the domain
+    % (away from the edges by startMargin) and start over from it
+    function randomStart(~, ~)
+        mx = startMargin*diff(xlims);
+        my = startMargin*diff(ylims);
+        x0 = [xlims(1) + mx + rand*(diff(xlims) - 2*mx); ...
+              ylims(1) + my + rand*(diff(ylims) - 2*my)];
+        set(hStart, 'XData', x0(1), 'YData', x0(2));
         restart()
     end
 
