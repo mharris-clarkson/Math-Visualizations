@@ -62,8 +62,8 @@ hImg = imagesc(ax, xvec, yvec, zeros(300));
 set(ax, 'YDir', 'normal');
 colormap(ax, Pretty_Colormap('balance'));
 cb = colorbar(ax, 'Location', 'eastoutside');
-cb.Label.Interpreter = 'latex';
 cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
+cb.Label.Interpreter = 'latex';
 cb.Label.FontSize = 18;
 
 hField = gobjects(0);                % background field, drawn by buildField
@@ -84,6 +84,14 @@ for i = 1:nW
         'HorizontalAlignment', 'center', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 end
 lastTxt = repmat({''}, nW, 1);       % cache so the slow latex text only changes when the value does
+
+% Per-frame work is kept small for slow computers: the pixel scale is only
+% measured again after a resize or field change (layoutDirty), and a
+% wheel's hub, ring of arrows and label are only moved when it was dragged.
+pxX = 1; pxY = 1; pxL = 1;           % pixels per data unit in x, y and wheel arm length
+layoutDirty = true;
+drawnPts = NaN(nW, 2);               % wheel centers at the last full redraw
+dwPhi = (0:nRing-1)'*2*pi/nRing;     % ring arrow angles
 
 %% Plot elements are done - Make pretty
 Pretty_Plot(ax);
@@ -145,6 +153,7 @@ end
 % converted to pixels first so each arrow points the way F really points on
 % screen even though the aspect ratio is not preserved.
     function buildField()
+        layoutDirty = true;              % size or field changed: redraw wheels fully
         delete(hField(isgraphics(hField)))
         if isempty(fP)
             return
@@ -180,11 +189,13 @@ end
         if isempty(fCurl) || ~ishghandle(ax)
             return
         end
-        dwPos = getpixelposition(ax);
-        dwX = dwPos(3)/diff(xlim(ax));
-        dwY = dwPos(4)/diff(ylim(ax));
-        dwL = wheelFrac*min(dwPos(3), dwPos(4)); % wheel arm length in pixels
-        dwPhi = (0:nRing-1)'*2*pi/nRing;
+        if layoutDirty
+            dwPos = getpixelposition(ax);
+            pxX = dwPos(3)/diff(xlim(ax));
+            pxY = dwPos(4)/diff(ylim(ax));
+            pxL = wheelFrac*min(dwPos(3), dwPos(4)); % wheel arm length in pixels
+        end
+        dwX = pxX; dwY = pxY; dwL = pxL;
         for i = 1:nW
             cx = pts(i,1);
             cy = pts(i,2);
@@ -196,6 +207,11 @@ end
             % The two arms of the wheel
             set(hArm(i,1), 'XData', cx + dwL*wc*[-1 1]/dwX, 'YData', cy + dwL*ws*[-1 1]/dwY);
             set(hArm(i,2), 'XData', cx - dwL*ws*[-1 1]/dwX, 'YData', cy + dwL*wc*[-1 1]/dwY);
+
+            % Everything below only changes when the wheel moved
+            if ~layoutDirty && isequal(pts(i,:), drawnPts(i,:))
+                continue
+            end
             set(hHub(i),   'XData', cx, 'YData', cy);
 
             % Ring of field arrows around the wheel
@@ -213,6 +229,8 @@ end
             end
             set(hTxt(i), 'Position', [cx, cy + (ringFrac+1.2)*dwL/dwY + 0.02, 0]);
         end
+        drawnPts = pts;
+        layoutDirty = ~(pxX > 0 && pxY > 0); % measure again if the axes had no size yet
     end
 
 % Click detection is in pixels so it works for any axes shape
