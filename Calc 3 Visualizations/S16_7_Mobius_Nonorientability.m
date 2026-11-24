@@ -24,7 +24,7 @@ nU        = 150;     % surface grid along the strip
 nV        = 20;      % surface grid across the strip
 nPath     = 400;     % points on the centerline
 arrowLen  = 0.35;    % length of the normal arrows
-uMax      = 2*pi;    % one lap
+uMax      = 4*pi;    % two laps
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
