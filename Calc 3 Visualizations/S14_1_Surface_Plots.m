@@ -31,7 +31,7 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
                 [x, y] = meshgrid(linspace(-pi, pi, 40));
                 Z = sin(x.*y);
                 h = surf(app.ax, x, y, Z);
-            case 2  % f(x,y) = e^{x^2 y^2}
+            case 2  % f(x,y) = e^{-x^2 y^2}
                 [x, y] = meshgrid(linspace(-4, 4, 41));
                 Z = exp(-x.^2.*y.^2);
                 h = surf(app.ax, x, y, Z);
@@ -52,10 +52,7 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
         if idx == 5
             h.FaceAlpha = 0.6;   % peaks example uses a lighter alpha
         end
-        Pretty_Plot(app.ax)
-        xlabel(app.ax, '$x$', 'Interpreter', 'latex')
-        ylabel(app.ax, '$y$', 'Interpreter', 'latex')
-        zlabel(app.ax, '$z$', 'Interpreter', 'latex')
+        Pretty_Plot(app.ax)   % also sets the x, y, z labels
         view(app.ax, 45,45)
         title(app.ax, exampleNames{idx}, 'Interpreter', 'latex')
         app.fig.Name = exampleNames{idx};
@@ -66,17 +63,11 @@ drawExample(exampleIdx)
 % Light weight — skip
 %% Build UI
 NumControls = 2;
-app.addControl('button', '$\leftarrow$ Previous', 1, NumControls, @prevExample);
-app.addControl('button', 'Next $\rightarrow$',    2, NumControls, @nextExample);
+% Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
+app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
+app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
 %% Functions for UI elements
-    function prevExample(~, ~)
-        exampleIdx = mod(exampleIdx - 2, 5) + 1;
-        drawExample(exampleIdx)
-    end
-    function nextExample(~, ~)
-        exampleIdx = mod(exampleIdx, 5) + 1;
-        drawExample(exampleIdx)
-    end
+% (Previous/Next handled by app.addPrevNext above)
 %% Main Draw update function.
-% (Handled directly in prevExample / nextExample above)
+% (Handled directly by drawExample above)
 end
