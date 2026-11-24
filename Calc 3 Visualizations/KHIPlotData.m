@@ -22,15 +22,17 @@ run('setup.m')
 
 %% Load data or if it does not exist, create it
 
-if isfile('KH_data.mat')
-     data = load('KH_data.mat');
-else 
+% The data file lives next to this file (run() saves it there too), so the
+% demo works from any current folder.
+dataFile = fullfile(fileparts(mfilename('fullpath')), 'KH_data.mat');
+if isfile(dataFile)
+     data = load(dataFile);
+else
     fprintf('KH_data.mat not found. Running fluids simulation.\n This will take a while.\n')
-    Run_KHI_Sim.m
-    clear
-    data = load('KH_data.mat');
+    runSimulation()
+    data = load(dataFile);
 end
-    
+
 x             = data.x;
 y             = data.y;
 U_store       = data.U_store;
@@ -58,11 +60,15 @@ hImgVort = [];
 %% Build UI first — so Subplot_Mover runs and reserves the bottom strip
 NumControls = 2;
 
+% 'Step',1: every arrow click moves one snapshot (default 1% steps often
+% left round(idx) unchanged)
 tSlider = app.addControl('slider', '$t$ Index $ = $', 1, NumControls, @updatePlot, ...
-    'Default', 1, 'Min', 1, 'Max', num_snapshots, 'Number_format', '%d', 'colOrRow', 'row');
+    'Default', 1, 'Min', 1, 'Max', num_snapshots, 'Number_format', '%d', 'colOrRow', 'row', ...
+    'Step', 1);
 
-btnVort = app.addControl('button', 'Vorticity: OFF', 2, NumControls, ...
-    @toggleVorticity, 'ColorChange', true, 'colOrRow', 'row');
+btnVort = app.addControl('button', '', 2, NumControls, ...
+    @toggleVorticity, 'ColorChange', true, 'colOrRow', 'row', ...
+    'Toggle', ["Vorticity: OFF", "Vorticity: ON"]);
 
 %% Read back the plot area that Subplot_Mover reserved so axes fill it exactly
 % Subplot_Mover shifts axes up to pos(2)+pos(4)+0.1 for 'row' layout.
@@ -76,8 +82,7 @@ MARGIN_R     = 0.04;
 GAP          = 0.03;
 
 %% Make the initial plots
-buildAxes()
-updatePlot()
+buildAxes()   % (buildAxes ends with updatePlot)
 
 %% Layout helper — builds or rebuilds plot axes without touching controls
     function buildAxes()
@@ -111,7 +116,7 @@ updatePlot()
             0, 'k');
         hold(ax_vel, 'off')
         Pretty_Plot(ax_vel)
-        
+
 
         % --- Vorticity panel ---
         if plotVorticity
@@ -120,23 +125,17 @@ updatePlot()
         Pretty_Color_Centered(ax_vort, VORT_store(:,:,end));
             title(ax_vort, 'Vorticity', 'Interpreter', 'latex')
             Pretty_Plot(ax_vort)
-            ylabel(ax_vort,'')         
-yticks(ax_vort,[])  
+            ylabel(ax_vort,'')
+yticks(ax_vort,[])
         end
 
-        updateTitle(idx)
-        updatePlot()
+        updatePlot()   % sets the data and the title
     end
 
 %% Functions for UI elements
     function toggleVorticity(~, ~)
-        plotVorticity = logical(btnVort.Value);
-        btnVort.String = sprintf('Vorticity: %s', onOff(plotVorticity));
+        plotVorticity = logical(btnVort.Value);   % label follows Value ('Toggle')
         buildAxes()
-    end
-
-    function s = onOff(val)
-        if val; s = 'ON'; else; s = 'OFF'; end
     end
 
     function updateTitle(idx)
@@ -158,4 +157,11 @@ yticks(ax_vort,[])
         end
         updateTitle(idx)
     end
+end
+
+%% Run the simulation script in its own workspace: Run_KHI_Sim starts with
+%  'clc; clear; close all', which would otherwise wipe this file's variables.
+function runSimulation()
+run(fullfile(fileparts(mfilename('fullpath')), 'Run_KHI_Sim.m'))
+close all   % the simulation's own preview figure
 end
