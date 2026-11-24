@@ -31,7 +31,7 @@ xv = [-1:0.01:-0.01, -1e-4, 0, 1e-4, 0.01:0.01:1];
 [xg, yg] = meshgrid(xv);
 zg = zfun(xg, yg);
 surf(app.ax, xg, yg, zg, 'EdgeColor', 'none');
-Pretty_Colormap('balance')
+colormap(app.ax, Pretty_Colormap('balance'))
 Pretty_Plot(app.ax)
 
 % Base point at origin
