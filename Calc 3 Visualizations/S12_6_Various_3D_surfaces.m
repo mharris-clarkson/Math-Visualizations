@@ -2,12 +2,13 @@ function S12_6_Various_3D_surfaces()
 %% Plots various 3D surfaces alongside their contour plots, introducing
 %  the connection between surface geometry and level curves.
 %  Cycles through four examples with Previous/Next buttons.
-%  Complements Lecture 5 for MA 232.
+%  Complements Lecture 5 for MA 231.
 %
 %% Author Info
 %
-% This function was written by Dr Matthew Harris an assistant professor at
-% Clarkson university for visually teaching MA 231: Calculus 3.
+% Ported/cleaned up by Claude from an original visualization written by
+% Dr Matthew Harris, assistant professor at Clarkson University,
+% for MA 231: Calculus 3.
 %
 close all
 
@@ -142,20 +143,13 @@ drawExample(exampleIdx)
 %% Build UI
 NumControls = 2;
 
-app.addControl('button', '$\leftarrow$ Previous', 1, NumControls, @prevExample);
-app.addControl('button', 'Next $\rightarrow$',    2, NumControls, @nextExample);
+% Previous/Next pair from uiFigure (wraps around the examples)
+app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
+app.galleryIdx = exampleIdx; % start the gallery on the chosen example
 
 %% Functions for UI elements
-    function prevExample(~, ~)
-        exampleIdx = mod(exampleIdx - 2, 4) + 1;
-        drawExample(exampleIdx)
-    end
-
-    function nextExample(~, ~)
-        exampleIdx = mod(exampleIdx, 4) + 1;
-        drawExample(exampleIdx)
-    end
+% (Previous/Next handled by app.addPrevNext)
 
 %% Main Draw update function.
-% (Handled directly in prevExample / nextExample above)
+% (Handled directly by drawExample above)
 end
