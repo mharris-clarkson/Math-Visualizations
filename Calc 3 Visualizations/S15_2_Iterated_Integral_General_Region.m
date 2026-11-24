@@ -199,14 +199,16 @@ function redraw(i)
                  'ZData', reshape(Zmat.', 1, []))
 end
 
+% Title: the iterated integral in the current order and its value
 function updateTitle()
     if xInner
-        orderStr = 'dx dy  (inner integral in x)';
+        orderStr = '$\int_0^1\!\int_{y^2}^{y^{1/3}} xy\,dx\,dy$ (inner integral in $x$)';
     else
-        orderStr = 'dy dx  (inner integral in y)';
+        orderStr = '$\int_0^1\!\int_{x^3}^{\sqrt{x}} xy\,dy\,dx$ (inner integral in $y$)';
     end
-    title(app.ax, sprintf('Iterated integral over a non-rectangular region, order %s', ...
-        orderStr), 'Interpreter', 'none')
+    title(app.ax, {['Iterated integral over a non-rectangular region: ' orderStr], ...
+        sprintf('Volume from the slices $\\approx %.4f$, \\quad exact $\\frac{5}{48} = %.4f$', ...
+        total, 5/48)})
 end
 
 function toggleWallCurve(~, ~)
