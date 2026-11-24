@@ -115,7 +115,7 @@ updatePlot()
         elseif abs(u - 4*pi) < 1e-9
             msg = ': two laps, normal is back to $\mathbf{n}(0)$';
         end
-        title(ax, ['Möbius strip' msg])
+        title(ax, ['Mobius strip' msg])
     end
 
 end
