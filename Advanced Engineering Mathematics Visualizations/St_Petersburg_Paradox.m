@@ -21,7 +21,8 @@ function St_Petersburg_Paradox()
 %% Author Info
 %
 % Written by Claude for Dr Matthew Harris, assistant professor at
-% Clarkson University, for MA 231: Calculus 3, following the style of his
+% Clarkson University, for MA 330: Advanced Engineering Mathematics,
+% following the style of his
 % Math-Visualizations scripts.
 %
 close all
@@ -57,7 +58,10 @@ games           = 1:nMax;
 
 %% Make the initial plots
 % Running average (left). Created once and updated in place.
-hRef = plot(axAvg, games, log2(games), 'k--', 'LineWidth', 1.5);
+% (400 log-spaced points draw the same smooth curve on the log axis as
+%  all nMax points, at a fraction of the cost)
+gRef = unique(round(logspace(0, log10(nMax), 400)));
+hRef = plot(axAvg, gRef, log2(gRef), 'k--', 'LineWidth', 1.5);
 hAvg = plot(axAvg, NaN, NaN, 'b-', 'LineWidth', 2);
 set(axAvg, 'XScale', 'log')
 xlabel(axAvg, 'Number of games $n$', 'Interpreter', 'latex')
@@ -107,12 +111,14 @@ updatePlot();
         xlim(axPay, [0, max(n, 2)])
         ylim(axPay, [1, 2*biggest])
 
-        title(axAvg, sprintf(['Average payout after $n = %d$ games: \\$%.2f\n' ...
+        % splitlines: LaTeX ignores a newline inside one string, so each
+        % line is passed as its own cell
+        title(axAvg, splitlines(sprintf(['Average payout after $n = %d$ games: \\$%.2f\n' ...
             'Expected payout per game $= \\sum_{k=1}^{\\infty} 2^k \\cdot 2^{-k} = \\infty$'], ...
-            n, RunningAvg(n)), 'Interpreter', 'latex')
-        title(axPay, sprintf(['Largest payout: \\$%d in game %d ' ...
+            n, RunningAvg(n))), 'Interpreter', 'latex')
+        title(axPay, splitlines(sprintf(['Largest payout: \\$%d in game %d ' ...
             '(first heads on flip %d)\nMedian payout: \\$%d'], ...
-            biggest, iBig, Flips(iBig), round(median(Payout(1:n)))), ...
+            biggest, iBig, Flips(iBig), round(median(Payout(1:n))))), ...
             'Interpreter', 'latex')
     end
 end
