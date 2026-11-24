@@ -4,6 +4,7 @@ function S15_5_surface_area_tangent_planes()
 % taken at the center of each cell of an N x N grid, and compares it with a
 % high-resolution reference value. Each tangent plane shows its center
 % point, normal vector (blue), and the fx / fy direction vectors (green).
+% A button hides/shows all the vectors and dots, leaving just the planes.
 %
 %% Author Info
 %
@@ -18,14 +19,14 @@ r2 = @(x,y) x.^2 + y.^2;
 fRaw = @(x,y) 2*exp(1)*exp(1 ./ (r2(x,y)-1 + (r2(x,y)>=1)));
 f  = @(x,y) (r2(x,y)<1) .* fRaw(x,y);
 
-h  = 1e-5;   % finite-difference step for partial derivatives
-fx = @(x,y) (f(x+h,y) - f(x-h,y)) / (2*h);
-fy = @(x,y) (f(x,y+h) - f(x,y-h)) / (2*h);
+% Partial derivatives by central differences (shared Helper functions)
+fx = @(x,y) Diffx_f(f, x, y);
+fy = @(x,y) Diffy_f(f, x, y);
 
 xlims = [-1 1]; ylims = [-1 1];
 resHigh = 200;      % resolution of the reference surface / "true" area
 resLow0 = 1;        % initial N
-resMax  = 25;       % largest N on the slider
+resMax  = 50;       % largest N on the slider
 arrowLen = 0.2;     % length of the normal / fx / fy arrows
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
@@ -33,9 +34,8 @@ run('setup.m')
 app = uiFigure('Surface Area Approximation', 1);
 ax = app.ax(1);
 
-Pretty_Plot(ax)
+Pretty_Plot(ax)   % also labels the axes $x$, $y$, $z$
 axis(ax, 'equal')
-xlabel(ax, '$x$'); ylabel(ax, '$y$'); zlabel(ax, '$z$')
 xlim(ax, xlims); ylim(ax, ylims)
 view(ax, -38, 20)
 
@@ -68,12 +68,22 @@ fyArrows = quiver3(ax, c.xc, c.yc, c.zc, c.ty(:,1), c.ty(:,2), c.ty(:,3), 0, ...
 setTitle(resLow0, c.SA)
 
 %% Build UI
-sRes = app.addControl('slider', '$N = $', 1, 1, @updateResolution, ...
+NumControls = 2;
+sRes = app.addControl('slider', '$N = $', 1, NumControls, @updateResolution, ...
     'Default', resLow0, 'Min', 1, 'Max', resMax, 'Number_format', '%d', ...
-    'Step', 1,'colOrRow','Row');                    % whole numbers only: N x N grid of planes
+    'Step', 1, 'colOrRow', 'row');                  % whole numbers only: N x N grid of planes
+btnVec = app.addControl('button', '', 2, NumControls, @toggleVectors, ...
+    'colOrRow', 'row', ...
+    'Toggle', ["Hide vectors and dots", "Show vectors and dots"]);
 setSliderLabel(resLow0)
 
-%% Callback: recompute all cells in one shot and update the 5 objects in place
+%% Callbacks
+% Hide/show the center dots, normals and fx / fy vectors (planes stay)
+function toggleVectors(~, ~)
+    set([centerDots, normalArrows, fxArrows, fyArrows], 'Visible', onoff(~btnVec.Value))
+end
+
+% Recompute all cells in one shot and update the 5 objects in place
 function updateResolution(~, ~)
     N = max(1, round(sRes.Value));
     c = computeCells(N);
