@@ -20,7 +20,7 @@ thetamin0 = 0;
 thetamax0 = pi/2;
 rLims     = [0, 5];
 thetaLims = [0, 2*pi];
-res = 120;   % grid resolution for the filled region
+res = 120;   % angular resolution of the filled region
 axisColor = [0.6, 0.6, 0.6];   % light grey for the x and y axes
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -70,7 +70,7 @@ app.ax.Position(2) = app.ax.Position(2) + 0.03;
 %% Redraw function: updates the existing graphics objects in place
     function redraw(rmin, rmax, thetamin, thetamax)
         theta = linspace(thetamin, thetamax, res);
-        r     = linspace(rmin, rmax, res);
+        r     = [rmin, rmax];   
         [TH, R] = meshgrid(theta, r);
         X = R.*cos(TH);
         Y = R.*sin(TH);
@@ -84,7 +84,6 @@ app.ax.Position(2) = app.ax.Position(2) + 0.03;
         % Full circle: the two radial edges sit on top of each other and draw a
         % seam across the disk, so hide them (small tolerance for round-off)
         fullCircle = (thetamax - thetamin) >= 2*pi - 1e-9;
-        hThetaMin.Visible = ~fullCircle;
-        hThetaMax.Visible = ~fullCircle;
+        set([hThetaMin, hThetaMax], 'Visible', onoff(~fullCircle))
     end
 end
