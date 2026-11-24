@@ -32,7 +32,7 @@ run('setup.m')
 app = uiFigure('Area Under a Curve', 1);
 ax = app.ax(1);
 
-Pretty_Plot(ax)
+% (uiFigure already applied Pretty_Plot)
 axis(ax, 'equal')
 colormap(ax, parula)
 
@@ -70,17 +70,15 @@ function showView()
     zlim(ax, 'auto')
     if is3D
         xlim(ax, [0 1]); ylim(ax, [0 1])
-        xlabel(ax, 'x'); ylabel(ax, 'y'); zlabel(ax, 'z')
-        title(ax, 'Area Under a Curve')
+        xlabel(ax, '$x$'); ylabel(ax, '$y$'); zlabel(ax, '$z$')
+        title(ax, sprintf('Area Under a Curve: $\\int_C f\\,ds = %.4f$', lineIntegral))
         view(ax, 45,25)
     else
         xlim(ax, [0 s(end)]); ylim(ax, [0 1.05*max(z)])
-        xlabel(ax, 's'); ylabel(ax, 'f(s)'); zlabel(ax, '')
+        xlabel(ax, 'Arc length $s$'); ylabel(ax, '$f(s)$'); zlabel(ax, '')
         title(ax, sprintf('$\\int_C f(s)\\,ds = %.4f$', lineIntegral), 'Interpreter', 'latex')
         view(ax, 2)
     end
 end
 
 end
-
-%% Stateless helper
