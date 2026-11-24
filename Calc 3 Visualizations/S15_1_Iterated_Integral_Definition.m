@@ -1,10 +1,10 @@
 function S15_1_Iterated_Integral_Definition()
 %% Iterated Integral Definition
 % Visualizes the iterated-integral idea: a moving plane sweeps across the
-% surface in x; the black curves on that plane are the "inner integral"
-% g(x) = integral of f(x,y) dy-direction accumulated so far (shown here
-% accumulated in x, matching the original demo), and the red curve/green
-% area on the far wall show the resulting profile g and the area under it.
+% surface in x. Each black curve (one per fixed y) is the inner integral
+% accumulated so far, int_{x_min}^{x} f(s,y) ds. On the far wall the red
+% curve is the full inner integral g(y) = int f(x,y) dx and the green area
+% under it is the outer integral int g(y) dy, i.e. the double integral.
 %
 %% Author Info
 %
@@ -41,22 +41,24 @@ dx   = xvec(2) - xvec(1);
 Z = f(X, Y);
 
 % Zint(j,i) = running integral along x, up to xvec(i), at height yvec(j)
-% (left-endpoint rule, matching the column-1 = 0 starting condition).
+% (right-endpoint sum, starting from 0 in column 1).
 Zint = [zeros(Ny, 1), cumsum(Z(:, 2:end), 2)*dx];
 
 % High-resolution version along y, used for the red curve / green area at
 % the final x. Each column of Z already holds f at all of yvec for a
 % fixed x, so interp1 can resample every column (every x) in one call
-% instead of looping over Nx columns.
+% instead of looping over Nx columns. Only the full inner integral is
+% needed, with the same sum as Zint, so the red curve meets the ends of
+% the black curves for any f (summing all Nx columns counted one extra
+% interval).
 yvecHigh    = linspace(ylims(1), ylims(2), NyHighRes);
 fInterpAll  = interp1(yvec, Z, yvecHigh, 'spline');   % NyHighRes x Nx
-ZintHigh    = cumsum(fInterpAll, 2)*dx;
-gHigh       = ZintHigh(:, end);
+gHigh       = sum(fInterpAll(:, 2:end), 2)*dx;
 zPlaneMax   = max(gHigh);
 
 %% Static graphics
 surf(app.ax, X, Y, Z, 'EdgeColor', 'none', 'FaceAlpha', 0.75)
-Pretty_Colormap('amp')
+colormap(app.ax, Pretty_Colormap('amp'))
 Pretty_Plot(app.ax)
 
 ypoints = [ylims(1), ylims(1), ylims(2), ylims(2)];
@@ -128,7 +130,3 @@ function rotateToSideView(~, ~)
 end
 
 end
-
-%% Small stateless helpers (kept as ordinary local functions, not nested,
-% since they don't need access to the app's shared workspace).
-

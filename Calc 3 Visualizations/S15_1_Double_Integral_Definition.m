@@ -38,16 +38,21 @@ res = 140;
 [xs, ys] = meshgrid(linspace(a, b, res), linspace(c, d, res));
 zs = f(xs, ys);
 surf(app.ax, xs, ys, zs, zs, 'EdgeColor', 'none', 'FaceAlpha', 0.95)
-Pretty_Colormap('amp')
-colorbar(app.ax)
+Pretty_Color_Positive(app.ax, zs);   % amp colormap on [0, max f] + colorbar
 Pretty_Plot(app.ax)
 zlabel(app.ax, 'f(x,y)')
 
-%% Riemann-prism graphics: rebuilt (as 3 patch objects) each time N changes
-PrismTop    = gobjects(0);
-PrismBottom = gobjects(0);
-PrismSide   = gobjects(0);
-SamplePts   = gobjects(0);
+%% Riemann-prism graphics: 3 patch objects + 1 line, created once and
+% updated in place (set Faces/Vertices) each time N changes
+PrismBottom = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
+PrismSide   = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.6);
+PrismTop    = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
+SamplePts   = plot3(app.ax, NaN, NaN, NaN, 'ko', ...
+    'MarkerFaceColor', 'k', 'MarkerSize', 4);
+Ncurrent    = NaN;   % N currently drawn (skip redraws when N has not changed)
 
 redraw(N0)
 
@@ -67,7 +72,10 @@ end
 % every cube and calling fill3 six times each -- this is what keeps the
 % slider responsive even at N = 50 (2500 prisms, 15000 faces).
 function redraw(Nside)
-    delete([PrismTop, PrismBottom, PrismSide, SamplePts])
+    % The slider moves continuously but N is a whole number: only rebuild
+    % the prisms when N actually changes
+    if Nside == Ncurrent, return, end
+    Ncurrent = Nside;
 
     dx = (b - a)/Nside;
     dy = (d - c)/Nside;
@@ -79,18 +87,17 @@ function redraw(Nside)
 
     [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(x(:), y(:), z(:), dx, dy);
 
-    PrismBottom = patch(app.ax, 'Faces', bottomFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
-    PrismSide   = patch(app.ax, 'Faces', sideFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.6);
-    PrismTop    = patch(app.ax, 'Faces', topFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
-    SamplePts   = plot3(app.ax, x(:), y(:), z(:), 'ko', ...
-        'MarkerFaceColor', 'k', 'MarkerSize', 4);
+    % Vertices first, then Faces, in one set() call per object
+    set(PrismBottom, 'Vertices', V, 'Faces', bottomFaces)
+    set(PrismSide,   'Vertices', V, 'Faces', sideFaces)
+    set(PrismTop,    'Vertices', V, 'Faces', topFaces)
+    set(SamplePts,   'XData', x(:), 'YData', y(:), 'ZData', z(:))
 
-    title(app.ax, sprintf(['Double Integral Approximation with %d cubes\n' ...
-        'Riemann Approximation = %.6f   |   Exact Integral = %.6f'], ...
-        Nside^2, integral_approx, exactIntegral))
+    % splitlines: a newline inside one LaTeX string does not start a new
+    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
+    title(app.ax, splitlines(sprintf(['Double Integral Approximation with %d cubes\n' ...
+        'Riemann Approximation = %.6f   $|$   Exact Integral = %.6f'], ...
+        Nside^2, integral_approx, exactIntegral)))
 end
 
 end
