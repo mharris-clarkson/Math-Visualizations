@@ -28,11 +28,11 @@ T   = 0.0005;        % thickness [m]
 E   = 70e9;
 nu  = 0.33;
 rho = 2700;
-mu  = 0.0387; % Percent of weight on center point (Pin vs full plate)
+mu  = 0.0387; % Fraction (3.87%) of the plate mass added at the center point (pin vs full plate)
 
 D      = E*T^3/(12*(1-nu^2));
 m      = rho*T;
-mPlate = m*L^2;   
+mPlate = m*L^2;
 
 %% -- basis / quadrature ---------------------------------------------------
 
@@ -132,7 +132,7 @@ A_or_B = "A";
 
 % playback params
 playbackHz  = 0.5;
-duration    = 5; % Time in s
+duration    = 10; % Time in s
 
 % Process choice
 if upper(A_or_B) == "A"
@@ -148,21 +148,22 @@ figure
 ax = axes;
 % plot wave object
 ani_wave_plot = surf(ax, x, x, modeShape);
-view(-20,25)
-set(gca, 'CLim', [-1 1])
-set(gca, 'ZLim', [-1.5 1.5])
-shading interp
-colormap(ax, cmocean('balance'))
+view(ax, -20, 25)
+set(ax, 'CLim', [-1 1])
+set(ax, 'ZLim', [-1.5 1.5])
+shading(ax, 'interp')
+colormap(ax, Pretty_Colormap('balance'))   % cached copy of cmocean('balance')
 
 
 
-% Animation
+% Animation (the title does not change, so it is set once here)
+title(ax, sprintf('mode %d | %.0f Hz (shown at %.1f Hz)', ...
+    mode_number, modeFrequency, playbackHz))
 t0 = tic;
+pause(1);% pause to let things plot
 while ishandle(ani_wave_plot) && toc(t0) < duration
     phase = 2*pi*playbackHz*toc(t0);
     set(ani_wave_plot, 'ZData', modeShape*cos(phase))
-    title(ax, sprintf('mode %d | %.0f Hz (shown at %.1f Hz)', ...
-        mode_number, modeFrequency, playbackHz))
     drawnow limitrate
 end
 %% =========================================================================
@@ -187,12 +188,6 @@ function S = sym_subspace(P, sgn)
     S = cols;
 end
 
-function f = class_freqs(K, M, n)
-    lam = sort(real(eig(K, M)));
-    lam = lam(lam > 1);
-    f = sqrt(lam(1:n)) / (2*pi);
-end
-
 function [f, U, drive] = class_modes(K, M, cs, n)
     [U, Lam] = eig(K, M);
     lam = real(diag(Lam));
@@ -206,13 +201,6 @@ function [f, U, drive] = class_modes(K, M, cs, n)
     end
     f = 5/3*sqrt(lam)/(2*pi);
     drive = ((cs.'*U).^2).' ./ lam;
-end
-
-function r = pick(fa, fb, cls, idx)
-    r = zeros(numel(idx),1);
-    for j = 1:numel(idx)
-        if cls(j) == 'A', r(j) = fa(idx(j)); else, r(j) = fb(idx(j)); end
-    end
 end
 
 function [x, w] = gauss_legendre(n)
