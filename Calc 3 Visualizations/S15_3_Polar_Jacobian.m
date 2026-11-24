@@ -22,8 +22,7 @@ run('setup.m')
 app = uiFigure('Cartesian vs Polar (Draggable)', 1);
 ax = app.ax(1);
 axis(ax, 'equal')
-Pretty_Plot(app.ax)
-xlabel(ax, 'x'); ylabel(ax, 'y');
+Pretty_Plot(app.ax)   % also labels the axes $x$ and $y$
 xlim(ax, [-4 4]); ylim(ax, [-4 4]);
 title(ax, 'Cartesian vs Polar (Draggable)')
 
@@ -32,11 +31,13 @@ xC = [x0 x0+dx x0+dx x0];
 yC = [y0 y0 y0+dy y0+dy];
 hCart = patch(ax, xC, yC, 'b', 'FaceAlpha', 0.4, 'ButtonDownFcn', @startDragCartesian);
 hCartText = text(ax, 0, 0, '', 'HorizontalAlignment', 'center', ...
-    'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold');
+    'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold', ...
+    'PickableParts', 'none');   % clicks on the number reach the patch below
 
 %% Polar patch
-theta0 = atan(x0/y0);
-r0     = sqrt(x0^2 + y0^2);
+% Polar coordinates of the corner (x0,y0): theta = atan2(y, x)
+% (atan(x0/y0) is the angle from the y-axis; equal only when x0 = y0)
+[theta0, r0] = cart2pol(x0, y0);
 
 theta = linspace(theta0, theta0+dtheta, 200);
 [xt1, yt1] = pol2cart(theta, r0);
@@ -44,7 +45,8 @@ theta = linspace(theta0, theta0+dtheta, 200);
 
 hPolar = patch(ax, [xt1 xt2], [yt1 yt2], 'r', 'FaceAlpha', 0.4, 'ButtonDownFcn', @startDragPolar);
 hPolarText = text(ax, 0, 0, '', 'HorizontalAlignment', 'center', ...
-    'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold');
+    'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold', ...
+    'PickableParts', 'none');   % clicks on the number reach the patch below
 
 updateAreaText()
 
