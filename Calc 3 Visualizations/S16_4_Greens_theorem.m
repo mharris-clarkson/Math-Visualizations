@@ -24,12 +24,14 @@ function S16_4_Greens_theorem()
 %
 %  Controls:
 %    n slider - number of chords. Its last value shows n -> infinity.
-%    s slider - arc length the dot has traveled around C.
+%    s slider - arc length the dot has traveled around C, in multiples of
+%               pi (e.g. s = 1.25 pi).
 %
 %% Author Info
 %
-% This function was written by Dr Matthew Harris an assistant professor at
-% Clarkson university for visually teaching MA 231: Calculus 3.
+% Ported/cleaned up by Claude from an original visualization written by
+% Dr Matthew Harris, assistant professor at Clarkson University,
+% for MA 231: Calculus 3.
 %
 close all
 
@@ -79,21 +81,22 @@ fieldColor = [0.3 0.3 0.3];
 run('setup.m')
 
 %% Build an applet that holds the figure, plots and all UI elements
-app = uiFigure('Green''s Theorem', 3); % Left: curl. Middle: boundary and field. Right: boxes and running total
+app = uiFigure('Green''s Theorem', 3); % axes are re-positioned below: Left: boundary and field. Middle: curl. Right: boxes and running total
 axC = app.ax(1); % curl heat map
 axM = app.ax(2); % boundary and field
 axR = app.ax(3); % boxes and running total
 
 %% Optional math functions for plot computations
-% Quiver of the entries selected by mask, drawn in axis ax. Empty when nothing is selected
-    function h = arrows(ax, x, y, u, v, mask, col, lw, head)
+% Move the existing quiver h to the entries selected by mask (NaN when
+% nothing is selected), so the arrows are updated in place, not re-created
+    function setArrows(h, x, y, u, v, mask, lw, head)
         if any(mask)
-            h = quiver(ax, x(mask), y(mask), u(mask), v(mask), 0, ...
-                'Color', col, 'LineWidth', lw, ...
-                'MaxHeadSize', head, 'AutoScale', 'off');
+            x = x(mask); y = y(mask); u = u(mask); v = v(mask);
         else
-            h = gobjects(0);
+            x = NaN; y = NaN; u = NaN; v = NaN;
         end
+        set(h, 'XData', x, 'YData', y, 'UData', u, 'VData', v, ...
+            'LineWidth', lw, 'MaxHeadSize', head);
     end
 
 % Columns of M selected by mask, or one column of NaN when nothing is selected
@@ -137,7 +140,7 @@ imagesc(axC, xvec, yvec, Curl_grid);
 set(axC, 'YDir', 'normal');
 
 % Diverging cmocean map centered on zero (white = zero curl)
-colormap(axC, cmocean(curlMap));
+colormap(axC, Pretty_Colormap(curlMap));   % cached cmocean map
 clim(axC, max(abs(Curl_grid(:)))*[-1 1]);
 cb = colorbar(axC, 'Location', 'eastoutside');
 cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
@@ -159,11 +162,16 @@ hChord = gobjects(1,4);
 for g = 1:4
     hChord(g) = plot(axM, NaN, NaN, '-', 'Color', chordCol{g}, 'LineWidth', 3);
 end
+% Chord arrows: one quiver per color group, created once and updated in
+% place by setArrows (deleting and re-creating them on every slider move
+% was the slowest part of an update)
+hArr = gobjects(1,4);
+for g = 1:4
+    hArr(g) = quiver(axM, NaN, NaN, NaN, NaN, 0, 'Color', chordCol{g}, 'AutoScale', 'off');
+end
 hDot   = plot(axM, NaN, NaN, 'o', 'MarkerSize', 8, ...
     'MarkerFaceColor', cDot, 'MarkerEdgeColor', 'k', 'LineWidth', 1.2);
 
-% Arrows for finite n are rebuilt on every update (there are few of them)
-hDynM = gobjects(0);
 lastInf = []; % remembers the last n mode so the slow label updates run only on a change
 
 %% ---- Right panel: boxes over arc length and the running total ----
@@ -220,13 +228,17 @@ leg = legend(axR, [hBoxLeg, hCum, hExact], {'', '', ''}, ...
 NumControls = 2; % maximum number of controls
 
 % Number of chords. The last slider value stands in for n -> infinity
+% ('Step',1: one click = one chord; 'LimitLabel' writes n -> infinity there)
 nSlider = app.addControl('slider', '$n = $', 1, NumControls, @updatePlot, ...
-    'Default', n0, 'Min', n_min, 'Max', n_max + 1, 'Number_format', '%d', 'colOrRow', 'row');
-nSlider.SliderStep = [1/(n_max + 1 - n_min), 5/(n_max + 1 - n_min)]; % one click = one chord
+    'Default', n0, 'Min', n_min, 'Max', n_max + 1, 'Number_format', '%d', 'colOrRow', 'row', ...
+    'Step', 1, 'LimitLabel', '$n \to \infty$');
 
-% Arc length traveled by the dot, from the start of C to its end
+% Arc length traveled by the dot, from the start of C to its end. The
+% slider holds s/pi, so its label reads as a decimal multiple of pi
+% ('$s = $' + '1.25' + '$\pi$' -> s = 1.25 pi).
 sSlider = app.addControl('slider', '$s = $', 2, NumControls, @updatePlot, ...
-    'Default', L, 'Min', 0, 'Max', L, 'Number_format', '%.2f', 'colOrRow', 'row');
+    'Default', L/pi, 'Min', 0, 'Max', L/pi, 'Number_format', '%.2f', ...
+    'AddToEnd', '$\pi$', 'colOrRow', 'row');
 
 % All three panels get exactly the same size. The gaps leave room for the
 % colorbar (and its label) between the left and middle plots, and for the
@@ -284,14 +296,14 @@ updatePlot()
         end
         isInf = nVal > n_max;
         if isInf
-            n = N_inf;
-            nSlider.UserData.label.String = '$n \to \infty$'; % after the Value listener
+            n = N_inf;   % (label shows n -> infinity via 'LimitLabel')
         else
             n = nVal;
         end
 
-        % Arc length traveled by the dot
-        s = sSlider.Value;
+        % Arc length traveled by the dot (the slider holds s/pi)
+        % (min: pi*(L/pi) can round to just above L, and interp1 would give NaN)
+        s = min(pi*sSlider.Value, L);
 
         %% Update data
         % Partition of C into n chords
@@ -323,8 +335,6 @@ updatePlot()
         set(hDot,   'XData', xC(tS),     'YData', yC(tS));
 
         mk = {isPos & isDone, isPos & ~isDone, ~isPos & isDone, ~isPos & ~isDone};
-        delete(hDynM(isgraphics(hDynM)))
-        hDynM = gobjects(0);
         if isInf
             % Colored path as line pieces, no arrows
             Xs = [xEdge(1:n); xEdge(2:n+1); NaN(1,n)];
@@ -340,14 +350,12 @@ updatePlot()
             ux   = headLen*dX(kk)./tlen;
             uy   = headLen*dY(kk)./tlen;
             for g = 1:4
-                hq = arrows(axM, xMid(kk) - ux/2, yMid(kk) - uy/2, ux, uy, mk{g}(kk), chordCol{g}, 3, 1);
-                hDynM(end+1:end+numel(hq)) = hq;
+                setArrows(hArr(g), xMid(kk) - ux/2, yMid(kk) - uy/2, ux, uy, mk{g}(kk), 3, 1);
             end
         else
             set(hChord, 'XData', NaN, 'YData', NaN)
             for g = 1:4
-                hq = arrows(axM, xEdge(1:n), yEdge(1:n), dX, dY, mk{g}, chordCol{g}, 2.2, 0.7);
-                hDynM(end+1:end+numel(hq)) = hq;
+                setArrows(hArr(g), xEdge(1:n), yEdge(1:n), dX, dY, mk{g}, 2.2, 0.7);
             end
         end
         uistack(hDot, 'top')
