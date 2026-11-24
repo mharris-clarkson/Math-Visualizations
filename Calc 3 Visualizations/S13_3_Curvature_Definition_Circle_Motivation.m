@@ -7,8 +7,9 @@ function S13_3_Curvature_Definition_Circle_Motivation()
 %
 %% Author Info
 %
-% This function was written by Dr Matthew Harris an assistant professor at
-% Clarkson university for visually teaching MA 231: Calculus 3.
+% Ported/cleaned up by Claude from an original visualization written by
+% Dr Matthew Harris, assistant professor at Clarkson University,
+% for MA 231: Calculus 3.
 %
 close all
 
