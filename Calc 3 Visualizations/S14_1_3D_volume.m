@@ -41,11 +41,11 @@ F = 1./((X-1).^2 + Y.^2     + Z.^2) + ...
 colors = jet(length(fValues));
 for k = 1:length(fValues)
     fval = fValues(k)^2;
-    p = patch(isosurface(X, Y, Z, F, fval));
+    p = patch(app.ax, isosurface(X, Y, Z, F, fval));
     set(p, 'FaceColor', colors(k,:), 'EdgeColor', 'none', 'FaceAlpha', 0.2);
 end
 
-camlight('headlight'); lighting gouraud
+camlight(app.ax, 'headlight'); lighting(app.ax, 'gouraud')
 Pretty_Plot(app.ax)
 xlim(app.ax, [-maxRadius, maxRadius])
 ylim(app.ax, [-maxRadius, maxRadius])

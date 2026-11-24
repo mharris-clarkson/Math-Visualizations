@@ -64,7 +64,7 @@ drawExample(exampleIdx)
 %% Build UI
 NumControls = 2;
 % Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
-app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
+app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample, 'colOrRow', 'row');
 app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
 %% Functions for UI elements
 % (Previous/Next handled by app.addPrevNext above)

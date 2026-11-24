@@ -12,7 +12,7 @@ close all
 
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
-exampleIdx = 1;  
+exampleIdx = 1;
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -26,6 +26,7 @@ view(app.ax, 0, 90)
 NumFigs = 4;
     function drawExample(idx)
         cla(app.ax)
+        axis(app.ax, 'normal')   % undo axis equal from example 2 (cla keeps it)
         switch idx
             case 1
                 [x, y] = meshgrid(linspace(-5, 5, 40));
@@ -71,20 +72,13 @@ drawExample(exampleIdx)
 %% Build UI
 NumControls = 2;
 
-app.addControl('button', '$\leftarrow$ Previous', 1, NumControls, @prevExample);
-app.addControl('button', 'Next $\rightarrow$',    2, NumControls, @nextExample);
+% Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
+app.addPrevNext(1, NumControls, NumFigs, @drawExample, 'colOrRow', 'row');
+app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
 
 %% Functions for UI elements
-    function prevExample(~, ~)
-        exampleIdx = mod(exampleIdx - 2, NumFigs) + 1;
-        drawExample(exampleIdx)
-    end
-
-    function nextExample(~, ~)
-        exampleIdx = mod(exampleIdx, NumFigs) + 1;
-        drawExample(exampleIdx)
-    end
+% (Previous/Next handled by app.addPrevNext above)
 
 %% Main Draw update function.
-% (Handled directly in prevExample / nextExample above)
+% (Handled directly by drawExample above)
 end
