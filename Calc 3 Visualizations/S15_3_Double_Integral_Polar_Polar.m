@@ -45,11 +45,15 @@ ylims = [min(Yb)-pad, max(Yb)+pad];
 % Wedge centres inside the region, cached per N_r
 insideCache = cell(1, Nmax);
 
+% Exact integral over the disk, in polar coordinates about its centre
+exactDisk = integral2(@(r,th) f(xc + r.*cos(th), yc + r.*sin(th)).*r, 0, 1, 0, 2*pi, ...
+    'AbsTol', 1e-12, 'RelTol', 1e-10);
+
 %% Run the shared engine
 run('setup.m')
 DoubleIntegralCurvyEngine('Polar Riemann Approximation', ...
     f, Xb, Yb, xlims, ylims, [150, 75], N0, Nmax, '$N_r = $', @buildCells, ...
-    'DotsButton', true, 'MaskButton', true)
+    'DotsButton', true, 'MaskButton', true, 'Exact', exactDisk)
 
 %% Cell builder: solid polar wedges whose centres are inside the region
 function [layers, X, Y, Z, titleStr] = buildCells(Nr, exactIntegral)
