@@ -129,7 +129,7 @@ updatePlot()
 
     function toggleNormalView(src,~)
         if src.Value
-            view(app.ax(1), -44.8, -48);   % found by hand for the default u and v
+            view(app.ax(1), -44.8, -48);
         else
             view(app.ax(1), 7, 32);
         end
