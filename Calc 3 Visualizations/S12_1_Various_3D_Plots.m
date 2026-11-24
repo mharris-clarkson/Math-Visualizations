@@ -2,7 +2,7 @@ function S12_1_Various_3D_Plots()
 %% Plots various surfaces and regions in 3D for exploring the connection
 %  between equations and the regions they describe. Cycles through five
 %  examples with Previous/Next buttons.
-%  Complements Lecture 1 for MA 232.
+%  Complements Lecture 1 for MA 231.
 %
 %% Author Info
 %
@@ -127,20 +127,13 @@ drawExample(exampleIdx)
 %% Build UI
 NumControls = 2;
 
-app.addControl('button', '$\leftarrow$ Previous', 1, NumControls, @prevExample);
-app.addControl('button', 'Next $\rightarrow$',    2, NumControls, @nextExample);
+% Previous/Next pair from uiFigure (wraps around the examples)
+app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
+app.galleryIdx = exampleIdx; % start the gallery on the chosen example
 
 %% Functions for UI elements
-    function prevExample(~, ~)
-        exampleIdx = mod(exampleIdx - 2, 5) + 1;
-        drawExample(exampleIdx)
-    end
-
-    function nextExample(~, ~)
-        exampleIdx = mod(exampleIdx, 5) + 1;
-        drawExample(exampleIdx)
-    end
+% (Previous/Next handled by app.addPrevNext)
 
 %% Main Draw update function.
-% (Handled directly in prevExample / nextExample above)
+% (Handled directly by drawExample above)
 end
