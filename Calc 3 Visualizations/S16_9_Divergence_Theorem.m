@@ -6,8 +6,8 @@ function S16_9_Divergence_Theorem()
 %         The title shows the volume integral.
 %  Right: the sphere S colored by F . n, with the outward unit normals
 %         (black) and F (magenta). The title shows the flux.
-%  Both integrals are computed with Gauss-Legendre quadrature, which is
-%  exact for these polynomial fields, so the two titles always agree.
+%  Both integrals are computed with Gauss-Legendre quadrature, accurate to
+%  many more digits than are shown, so the two titles agree.
 %    R slider               - radius of the ball
 %    Previous / Next        - step through several vector fields
 %    Vectors button         - hide/show the arrows on the sphere
