@@ -18,10 +18,10 @@ function Heat_Equation_Fourier()
 %     - Left and right boundary condition toggles (independent)
 %     - Single mode / sum of modes toggle. Single mode plots only the n-th
 %       mode with coefficient 1 (not the Fourier coefficient).
-%     - Slider for the number of modes N (1 to Max_N). Putting the slider
-%       at Max_N switches to ALL the modes the FFT grid can hold (N = Nfft)
-%       summed with an inverse FFT. The N label shows that value until the
-%       slider is moved again.
+%     - Slider for the number of modes N (1 to Max_N). The last step stands
+%       for N -> infinity: it switches to ALL the modes the FFT grid can
+%       hold (Nfft of them) summed with an inverse FFT, and the slider
+%       label reads N -> infinity.
 %     - Slider for time t (0 to t_max). Pushing any toggle or the initial
 %       condition button resets t = 0.
 %
@@ -266,7 +266,8 @@ addlistener(tSlider, 'ContinuousValueChange', @(~,~) updateTime());
 
 % Number of modes
 NSlider = app.addControl('slider', '$N = $', 2, NumControls, @changeN, ...
-    'Number_format', '%d', 'Default', N0, 'Min', 1, 'Max', Max_N);
+    'Number_format', '%d', 'Default', N0, 'Min', 1, 'Max', Max_N, ...
+    'LimitLabel', '$N \to \infty$');   % shown at N = Max_N (all Nfft modes)
 % Arrow click moves one mode and clicking in the track moves ten
 NSlider.SliderStep = [1/(Max_N-1), 10/(Max_N-1)];
 
@@ -299,9 +300,8 @@ btnIC = app.addControl('button', ['IC: ' ICs{icIdx,1}], 6, NumControls, ...
         updatePlot()
     end
 
-    % Number of modes: snap the slider to an integer. Setting Value resets
-    % the N label, which is how the label goes back to normal once the
-    % slider has moved off Max_N.
+    % Number of modes: snap the slider to an integer (the label switches
+    % to N -> infinity by itself at Max_N via 'LimitLabel')
     function changeN(~,~)
         NSlider.Value = round(NSlider.Value);
         updatePlot()
@@ -348,7 +348,6 @@ updatePlot()
         if isFull
             xg = xm;
             N  = M;
-            NSlider.UserData.label.String = sprintf('$N = $%d', M);
         else
             xg = x;
         end
@@ -361,8 +360,13 @@ updatePlot()
             desc = sprintf('single mode $n = %d$', N);
         else
             ylim(app.ax, yl{icIdx,fam})
-            leg.String = {'$f(x)$', '$u_N(x,t)$'};
-            desc = sprintf('sum of modes $n = 1$ to $%d$', N);
+            if isFull
+                leg.String = {'$f(x)$', '$u(x,t)$'};   % the full series
+                desc = 'sum of all modes, $N \to \infty$';
+            else
+                leg.String = {'$f(x)$', '$u_N(x,t)$'};
+                desc = sprintf('sum of modes $n = 1$ to $%d$', N);
+            end
         end
         title(app.ax, sprintf('1D Heat Equation, %s at $x=0$, %s at $x=L$: %s', ...
             bcName{bcL+1}, bcName{bcR+1}, desc), 'Interpreter', 'latex')
