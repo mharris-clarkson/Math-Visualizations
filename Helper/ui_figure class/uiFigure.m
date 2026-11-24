@@ -32,7 +32,9 @@ classdef uiFigure < handle
     % See LICENSE file in the project root for full license information.
     %
     % November 2026: LaTeX defaults, pi/limit/step slider options, toggle
-    % text, addPrevNext, isAtLimit/getValue added by Claude (see report).
+    % text, addPrevNext, isAtLimit/getValue added by Claude.
+    % Later November 2026 (Claude): UpdateUISlider no longer trips
+    % linkMinMax, getValue snaps code-set values to 'Step'.
     properties
         fig
         ax = gobjects(0)
@@ -331,7 +333,8 @@ classdef uiFigure < handle
                     str = uiFigure.joinLatex(str, ud.addToEnd);
                 end
                 set(ud.label, 'String', str);
-                set(Slider_label, 'Visible', Slider.Visible)
+                % (Visibility is kept in step by the 'Visible' listener
+                %  above, so it is not re-set on every slider move.)
             end
         end
 
@@ -364,6 +367,10 @@ classdef uiFigure < handle
             % for 'Step' sliders, and 'LimitValue' at the limit end.
             ud = Slider.UserData;
             v  = Slider.Value;
+            if isfield(ud, 'step') && ~isempty(ud.step)   % value set from code
+                v = Slider.Min + round((v - Slider.Min)/ud.step)*ud.step;
+                v = min(max(v, Slider.Min), Slider.Max);
+            end
             if isfield(ud, 'format') && strcmp(ud.format, '%d')
                 v = round(v);
             end
@@ -384,6 +391,11 @@ classdef uiFigure < handle
             addlistener(sMin, 'Value', 'PostSet', @(~,~) pushOther(sMin, sMax, +1));
             addlistener(sMax, 'Value', 'PostSet', @(~,~) pushOther(sMax, sMin, -1));
             function pushOther(moved, other, dirn)
+                % UpdateUISlider briefly parks a slider at its Max to force
+                % a refresh; that temporary value must not push the partner.
+                if isfield(moved.UserData, 'holdLink') && moved.UserData.holdLink
+                    return
+                end
                 if dirn > 0 && other.Value < moved.Value + gap
                     other.Value = min(moved.Value + gap, other.Max);
                     if other.Value < moved.Value + gap   % other hit its end
@@ -435,7 +447,12 @@ classdef uiFigure < handle
             Value = min(max(Value, options.Min), options.Max);
 
             % --- Force value refresh (needed for MATLAB 2025) ---
+            % holdLink stops linkMinMax from reacting to the temporary Max
+            % (it would otherwise push a linked max slider to its end).
+            isUi = isstruct(Slider.UserData);
+            if isUi, Slider.UserData.holdLink = true; end
             set(Slider, 'Value', options.Max);
+            if isUi, Slider.UserData.holdLink = false; end
             set(Slider, 'Value', Value);
 
             drawnow
