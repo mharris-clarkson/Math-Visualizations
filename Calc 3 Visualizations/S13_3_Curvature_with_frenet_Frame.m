@@ -5,8 +5,9 @@ function S13_3_Curvature_with_frenet_Frame()
 %
 %% Author Info
 %
-% This function was written by Dr Matthew Harris an assistant professor at
-% Clarkson university for visually teaching MA 231: Calculus 3.
+% Ported/cleaned up by Claude from an original visualization written by
+% Dr Matthew Harris, assistant professor at Clarkson University,
+% for MA 231: Calculus 3.
 %
 close all
 
@@ -34,7 +35,7 @@ view(app.ax, 3)
 %% Optional math functions for plot computations
     function r = get_curve(t)
         if Constant_curve
-                        r = [cos(t), sin(t), t/(2*pi)];
+                        r = [cos(3*t), sin(3*t), 3*t/(2*pi)];
         else
             r = [(1./(pi + 0.5*pi*sin(6*t))) .* cos(2*t), ...
                  (1./(pi + 0.5*pi*sin(6*t))) .* sin(2*t), ...
@@ -43,39 +44,48 @@ view(app.ax, 3)
     end
 
     function [r1, r2] = FD_approx(t)
-        dt = 1e-5;
-        rp = get_curve(t + dt);
-        rm = get_curve(t - dt);
-        r0 = get_curve(t);
-        r1 = (rp - rm) / (2*dt);
-        r2 = (rp - 2*r0 + rm) / (dt^2);
+        % r'(t) and r''(t) from the shared helpers (step sizes tuned there)
+        r1 = Diff_f(@get_curve, t);
+        r2 = Diff2_f(@get_curve, t);
     end
 
 %% Make the initial plots
+% Every object is created once here and updated in place (set ...Data)
+% by plot_curve / update_frenet, instead of being deleted and re-drawn.
+hCurve = plot3(app.ax, NaN, NaN, NaN, 'b', 'LineWidth', 2);
+hDir   = quiver3(app.ax, 0, 0, 0, 0, 0, 0, ...
+    0.1,'b','AutoScale','off','LineWidth',2,'MaxHeadSize',1);
+hPt    = plot3(app.ax, NaN, NaN, NaN, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 8);
+hT     = quiver3(app.ax, 0,0,0, 0,0,0, 0, 'r', 'LineWidth', 2);
+hN     = quiver3(app.ax, 0,0,0, 0,0,0, 0, 'm', 'LineWidth', 2);
+hB     = quiver3(app.ax, 0,0,0, 0,0,0, 0, 'c', 'LineWidth', 2);
+hCirc  = plot3(app.ax, NaN, NaN, NaN, 'k--', 'LineWidth', 2, 'Visible', 'off');
+hNormP = surf(app.ax, NaN(10), NaN(10), NaN(10), 'FaceAlpha', 0.2, ...
+    'EdgeColor', 'none', 'FaceColor', 'g', 'Visible', 'off');
+hOscP  = surf(app.ax, NaN(10), NaN(10), NaN(10), 'FaceAlpha', 0.2, ...
+    'EdgeColor', 'none', 'FaceColor', 'y', 'Visible', 'off');
+legend(app.ax, [hT, hN, hB], ...
+    {'$\vec{T}$ (unit tangent)', '$\vec{N}$ (unit normal)', '$\vec{B} = \vec{T}\times\vec{N}$'}, ...
+    'Interpreter', 'latex', 'FontSize', 16, 'AutoUpdate', 'off')
+
+L = 0.5; % plane half-size
+[uP, vP] = meshgrid(linspace(-L, L, 10));   % planes centred on the point
+th = linspace(0, 2*pi, 100)';                % osculating circle angles
+
     function plot_curve()
-        delete(findall(app.ax, 'Tag', 'mainCurve'));
-        tFine = linspace(tlims(1), tlims(2), 600);
-        rMat  = arrayfun(@(t) get_curve(t), tFine, 'UniformOutput', false);
-        rMat  = vertcat(rMat{:});
-        plot3(app.ax, rMat(:,1), rMat(:,2), rMat(:,3), ...
-            'b', 'LineWidth', 2, 'Tag', 'mainCurve');
+        tFine = linspace(tlims(1), tlims(2), 600)';
+        rMat  = get_curve(tFine);              % get_curve works on a column of t
+        set(hCurve, 'XData', rMat(:,1), 'YData', rMat(:,2), 'ZData', rMat(:,3));
         tmax = tlims(2);
         % plot direction quiver
         h = 0.1;
         vec = (get_curve(tmax + h)-get_curve(tmax))/h;
         point = get_curve(tmax);
-        quiver3(app.ax,point(1), point(2), point(3),vec(1),vec(2),vec(3),...
-            0.1,'b','AutoScale','off','LineWidth',2,'MaxHeadSize',1);
+        set(hDir, 'XData', point(1), 'YData', point(2), 'ZData', point(3), ...
+            'UData', vec(1), 'VData', vec(2), 'WData', vec(3));
     end
 
     function update_frenet(t)
-        % Remove previous dynamic elements
-        delete(findall(app.ax, 'Tag', 'frenetPt'));
-        delete(findall(app.ax, 'Tag', 'frenetVec'));
-        delete(findall(app.ax, 'Tag', 'oscCircle'));
-        delete(findall(app.ax, 'Tag', 'normalPlane'));
-        delete(findall(app.ax, 'Tag', 'oscPlane'));
-
         r  = get_curve(t);
         [r1, r2] = FD_approx(t);
 
@@ -87,46 +97,41 @@ view(app.ax, 3)
         s = 0.5; % vector display scale
 
         % Point on curve
-        plot3(app.ax, r(1), r(2), r(3), 'ko', ...
-            'MarkerFaceColor', 'k', 'MarkerSize', 8, 'Tag', 'frenetPt');
+        set(hPt, 'XData', r(1), 'YData', r(2), 'ZData', r(3));
 
         % T, N, B vectors
-        quiver3(app.ax, r(1),r(2),r(3), T(1)*s,T(2)*s,T(3)*s, ...
-            0, 'r', 'LineWidth', 2, 'Tag', 'frenetVec');
-        quiver3(app.ax, r(1),r(2),r(3), N(1)*s,N(2)*s,N(3)*s, ...
-            0, 'm', 'LineWidth', 2, 'Tag', 'frenetVec');
-        quiver3(app.ax, r(1),r(2),r(3), B(1)*s,B(2)*s,B(3)*s, ...
-            0, 'c', 'LineWidth', 2, 'Tag', 'frenetVec');
+        set(hT, 'XData', r(1), 'YData', r(2), 'ZData', r(3), 'UData', T(1)*s, 'VData', T(2)*s, 'WData', T(3)*s);
+        set(hN, 'XData', r(1), 'YData', r(2), 'ZData', r(3), 'UData', N(1)*s, 'VData', N(2)*s, 'WData', N(3)*s);
+        set(hB, 'XData', r(1), 'YData', r(2), 'ZData', r(3), 'UData', B(1)*s, 'VData', B(2)*s, 'WData', B(3)*s);
 
-        % Osculating circle
+        % Osculating circle: radius 1/kappa, centre r + N/kappa, in the
+        % osculating plane spanned by T and N (it was drawn in the N-B
+        % plane, i.e. the normal plane)
         if ShowOscCircle && kappa > 1e-10
             R      = 1 / kappa;
             center = r + R*N;
-            th     = linspace(0, 2*pi, 100);
-            C      = center + R*(cos(th')*(-N) + sin(th')*B);
-            plot3(app.ax, C(:,1), C(:,2), C(:,3), ...
-                'k--', 'LineWidth', 2, 'Tag', 'oscCircle');
+            C      = center + R*(cos(th)*(-N) + sin(th)*T);
+            set(hCirc, 'XData', C(:,1), 'YData', C(:,2), 'ZData', C(:,3), 'Visible', 'on');
+        else
+            set(hCirc, 'Visible', 'off');
         end
 
-        L = 0.5; % plane half-size
         % Normal plane: spanned by N and B
         if ShowNormalPlane
-            [u, v] = meshgrid(linspace(0, L, 10));
-            Xp = r(1) + u*N(1) + v*B(1);
-            Yp = r(2) + u*N(2) + v*B(2);
-            Zp = r(3) + u*N(3) + v*B(3);
-            surf(app.ax, Xp, Yp, Zp, 'FaceAlpha', 0.2, ...
-                'EdgeColor', 'none', 'FaceColor', 'g', 'Tag', 'normalPlane');
+            set(hNormP, 'XData', r(1) + uP*N(1) + vP*B(1), ...
+                        'YData', r(2) + uP*N(2) + vP*B(2), ...
+                        'ZData', r(3) + uP*N(3) + vP*B(3), 'Visible', 'on');
+        else
+            set(hNormP, 'Visible', 'off');
         end
 
         % Osculating plane: spanned by T and N
         if ShowOscPlane
-            [u, v] = meshgrid(linspace(0, L, 10));
-            Xp = r(1) + u*T(1) + v*N(1);
-            Yp = r(2) + u*T(2) + v*N(2);
-            Zp = r(3) + u*T(3) + v*N(3);
-            surf(app.ax, Xp, Yp, Zp, 'FaceAlpha', 0.2, ...
-                'EdgeColor', 'none', 'FaceColor', 'y', 'Tag', 'oscPlane');
+            set(hOscP, 'XData', r(1) + uP*T(1) + vP*N(1), ...
+                       'YData', r(2) + uP*T(2) + vP*N(2), ...
+                       'ZData', r(3) + uP*T(3) + vP*N(3), 'Visible', 'on');
+        else
+            set(hOscP, 'Visible', 'off');
         end
 
         title(app.ax, sprintf('3D Curvature and Frenet Frame: $\\kappa = %.4f$', kappa), ...
@@ -150,45 +155,40 @@ tSlider = app.addControl('slider', '$t = $', 1, NumControls, @updateSlider, ...
         update_frenet(tSlider.Value);
     end
 
-
-app.addControl('button', 'Curve: Constant Curvature', 2, NumControls, @toggleCurve);
+% Buttons: 'Toggle' keeps each label in step with its state. The first
+% curve (cos t, sin t, t/2pi) is the helix (constant curvature); the second
+% has a wobbling radius, so its curvature varies.
+app.addControl('button', '', 2, NumControls, @toggleCurve, ...
+    'Toggle', ["Curve: Helix (Constant Curvature)", "Curve: Varying Curvature"]);
     function toggleCurve(src, ~)
         Constant_curve = ~logical(src.Value);
-        if Constant_curve
-                  src.String = 'Curve: Constant Curvature';      
-        else
-            src.String = 'Curve: Helix';
-        end
-        cla(app.ax);
         plot_curve();
         update_frenet(tSlider.Value);
     end
 
-app.addControl('button', 'Osculating Circle ON', 3, NumControls, @toggleCircle);
+app.addControl('button', '', 3, NumControls, @toggleCircle, ...
+    'Toggle', ["Show Osculating Circle", "Hide Osculating Circle"]);
     function toggleCircle(src, ~)
         ShowOscCircle = logical(src.Value);
-        src.String = sprintf('Osculating Circle: %s', onOff(ShowOscCircle));
         update_frenet(tSlider.Value);
     end
 
-app.addControl('button', 'Normal Plane ON', 4, NumControls, @toggleNormalPlane);
+app.addControl('button', '', 4, NumControls, @toggleNormalPlane, ...
+    'Toggle', ["Show Normal Plane", "Hide Normal Plane"]);
     function toggleNormalPlane(src, ~)
         ShowNormalPlane = logical(src.Value);
-        src.String = sprintf('Normal Plane %s', onOff(ShowNormalPlane));
         update_frenet(tSlider.Value);
     end
 
-app.addControl('button', 'Osculating Plane ON', 5, NumControls, @toggleOscPlane);
+app.addControl('button', '', 5, NumControls, @toggleOscPlane, ...
+    'Toggle', ["Show Osculating Plane", "Hide Osculating Plane"]);
     function toggleOscPlane(src, ~)
         ShowOscPlane = logical(src.Value);
-        src.String = sprintf('Osculating Plane %s', onOff(ShowOscPlane));
         update_frenet(tSlider.Value);
     end
 
 %% Functions for UI elements
-    function s = onOff(val)
-        if val; s = 'ON'; else; s = 'OFF'; end
-    end
+% (none: the buttons use the 'Toggle' option for their text)
 
 %% Main Draw update function.
 % (Handled directly in each button/slider callback above)
