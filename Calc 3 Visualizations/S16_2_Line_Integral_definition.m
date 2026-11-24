@@ -223,7 +223,7 @@ function redraw(n)
     ds = hypot(diff(xFine), diff(yFine));
     sFine = [0, cumsum(ds)];
     S_total = sFine(end);
-    I_exact = sum(zFine(1:end-1).*ds);
+    I_exact = sum((zFine(1:end-1) + zFine(2:end))/2 .* ds);   % trapezoid rule
 
     set(hCurve3, 'XData', xFine, 'YData', yFine, 'ZData', zFine)
     set(hProj3,  'XData', xFine, 'YData', yFine, 'ZData', zeros(1,Nfine))
