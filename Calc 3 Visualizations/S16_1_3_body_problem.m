@@ -38,7 +38,7 @@ if nargin >= 3 && ~isempty(velocities)
 end
 
 G     = 1;        % gravitational constant (normalized units)
-tspan = [0 5];    % simulation time span
+tspan = [0 10];    % simulation time span
 
 % 2D view: plot limits and vector-field grid
 axLim2 = [-1 2];  Nvf2 = 40;  vfLim2 = [-2 2];  arrowFrac2 = 0.03;
@@ -167,8 +167,12 @@ function [bx, by, bz] = simulateBodies(pos, vel, m, G, tspan, tUniform)
 % per body. In 2D, bz is all zeros so the same plot objects work for both.
 d  = size(pos, 2);
 y0 = reshape([pos vel].', [], 1);          % [pos1 vel1 pos2 vel2 pos3 vel3]
-[t, Y] = ode45(@(t,y) threeBodyODE(y, G, m, d), tspan, y0);
-S  = reshape(interp1(t, Y, tUniform), numel(tUniform), 2*d, 3);   % time x coord x body
+opts = odeset('RelTol', 1e-9, 'AbsTol', 1e-9);
+sol  = ode45(@(t,y) threeBodyODE(y, G, m, d), tspan, y0, opts);
+% deval uses the solver's own interpolant (smooth trails, unlike a straight
+% line between the solver's steps with interp1)
+Y  = deval(sol, tUniform).';
+S  = reshape(Y, numel(tUniform), 2*d, 3);   % time x coord x body
 bx = squeeze(S(:, 1, :));
 by = squeeze(S(:, 2, :));
 if d == 3
