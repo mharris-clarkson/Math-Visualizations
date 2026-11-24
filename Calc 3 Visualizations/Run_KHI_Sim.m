@@ -28,12 +28,12 @@ Lx = 10;   Ly = 10;    % Domain size
 
 % --- Time ---
 dt_max          = 0.25; % Maximum allowed timestep
-tmax            = 30;   % End time
-T_plot_and_save = 0.5;  % Output interval (plots + saves)
+tmax            = 60;   % End time
+T_plot_and_save = 1;  % Output interval (plots + saves)
 
 % --- Flow ---
 U0 = 2;             % Peak jet velocity
-Re = 500 * 1.25;    % Reynolds number (Re ~500–625 captures both KHI and vortex roll-up)
+Re = 500 * 1.25;    % Reynolds number (Re ~500â€“625 captures both KHI and vortex roll-up)
 nu = 1 / Re;        % Kinematic viscosity
 
 % --- Jet geometry ---
@@ -46,9 +46,9 @@ delta = 0.01 / k0;  % Shear-layer thickness (thin -> fast KHI onset)
 amp = 1e-3;         % Amplitude of vortex-sheet perturbation
 
 % --- I/O ---
-if isfile('KH_data.mat') % if there is no data then save 
+if isfile('KH_data.mat') % if there is no data then save
     save_data = false;
-else 
+else
     save_data = true;
 end
 plot_data = true;
@@ -164,7 +164,7 @@ while t <= tmax
         psi_hat(1,1) = 0;
         u    = real(ifft2( 1i*KY .* psi_hat));
         v    = real(ifft2(-1i*KX .* psi_hat));
-        vort = real(ifft2(omega));
+        vort = -real(ifft2(omega));   
         vel  = sqrt(u.^2 + v.^2);
 
         % Save snapshot
@@ -173,8 +173,7 @@ while t <= tmax
             V_store   (:,:,snap_idx) = v;
             VORT_store(:,:,snap_idx) = vort;
             T_store   (snap_idx)     = t;
-            save(filename, 'x','y','U_store','V_store','VORT_store','T_store', '-v7.3');
-            fprintf('Saved snapshot %d at t = %.2f\n', snap_idx, t);
+            fprintf('Stored snapshot %d at t = %.2f\n', snap_idx, t);
             snap_idx = snap_idx + 1;
         end
 
@@ -205,8 +204,9 @@ function omega_new = rk4_step(omega0, u, v, K2, KX, KY, dealias, nu, dt)
 %  All fields are in spectral space except u and v (physical, used only to
 %  seed the first velocity evaluation; subsequent stages recompute from psi).
 
-    k = zeros(size(omega0), 'like', omega0);  % preallocate stage array (single slot, reused)
-    k_all = zeros([size(omega0), 4]);
+    % Stage array, complex like omega0 (a real array was converted to
+    % complex, i.e. re-allocated, on the first assignment of every step)
+    k_all = zeros([size(omega0), 4], 'like', omega0);
 
     w = omega0;
     for s = 1:4
@@ -247,7 +247,7 @@ function plot_fields(x, y, vel, u, v, vort, t)
     % Panel 1: velocity magnitude with quivers
     subplot(1,2,1)
     pcolor(x, y, vel);  shading flat;  axis xy equal
-    cmocean('amp');  colorbar
+    Pretty_Colormap('amp');  colorbar       % cached cmocean('amp')
     hold on
     stride = 16;
     quiver(x(1:stride:end), y(1:stride:end), ...
@@ -260,7 +260,7 @@ function plot_fields(x, y, vel, u, v, vort, t)
     % Panel 2: vorticity
     subplot(1,2,2)
     imagesc(x, y, vort);  axis xy equal
-    cmocean('balance');  colorbar
+    Pretty_Colormap('balance');  colorbar   % cached cmocean('balance')
     xlim([0, x(end)]);  ylim([y(1), y(end)])
     title('Vorticity (KH structures)')
     set(gca, 'FontSize', 18)
