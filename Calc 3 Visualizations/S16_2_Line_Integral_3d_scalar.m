@@ -44,13 +44,12 @@ run('setup.m')
 app = uiFigure('Line Integral of a 3D Scalar Field', 2);
 axL = app.ax(1);
 axR = app.ax(2);
-Pretty_Plot(app.ax)
+% (uiFigure already applied Pretty_Plot, including the $x$, $y$, $z$ labels)
 
 %% Left axes: level surfaces of F (computed once)
 axis(axL, 'equal')
 xlim(axL, maxRadius*[-1 1]); ylim(axL, maxRadius*[-1 1]); zlim(axL, maxRadius*[-1 1])
 xticks(axL, -maxRadius:2:maxRadius); yticks(axL, -maxRadius:2:maxRadius); zticks(axL, -maxRadius:2:maxRadius)
-xlabel(axL, 'x'); ylabel(axL, 'y'); zlabel(axL, 'z')
 title(axL, ['3D Level Surfaces of $f$ and a Path $C$'],'Interpreter','latex')
 
 [X, Y, Z] = meshgrid(-maxRadius:gridStep:maxRadius);
@@ -73,7 +72,7 @@ point = plot3(axL, xp(1), yp(1), zp(1), 'or', 'MarkerFaceColor', 'r', 'MarkerSiz
 %% Right axes: F along the path vs. arc length, with the area traveled so far
 area = patch(axR, [s(1) s(1) 0], [fLine(1) 0 0], areaColor, 'FaceAlpha', 0.8, 'EdgeColor', 'none');
 plot(axR, s, fLine, 'k', 'LineWidth', 2);
-xlabel(axR, 's'); ylabel(axR, 'F(x(s))')
+xlabel(axR, 'Arc length $s$'); ylabel(axR, '$f(\mathbf{r}(s))$')
 xlim(axR, [0 s(end)]); ylim(axR, [0 1.05*max(fLine)])
 
 %% Build UI
@@ -89,13 +88,14 @@ redraw(0)
 
 %% Redraw: moves the red trail, the point, and the shaded area to path index n
     function redraw(sval)
-        % approximate n 
-        n = max(1, sum(s<sval));
+        % Last path index with arc length <= s ('<=' so the end of the
+        % slider reaches the end of C and shows the full line integral)
+        n = max(1, sum(s <= sval));
         set(trail, 'XData', xp(1:n), 'YData', yp(1:n), 'ZData', zp(1:n))
         set(point, 'XData', xp(n), 'YData', yp(n), 'ZData', zp(n))
         set(area, 'XData', [s(1:n), s(n), 0], 'YData', [fLine(1:n), 0, 0])
-        title(axR, sprintf('Line Integral Along Path  (so far = %.3f)', Icum(n)))
-        drawnow 
+        title(axR, sprintf('Line Integral Along Path: $\\int f\\,ds$ so far $= %.3f$', Icum(n)))
+        drawnow limitrate   % do not queue frames while the slider is dragged
     end
 
 end
