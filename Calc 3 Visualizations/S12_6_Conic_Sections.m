@@ -21,12 +21,16 @@ z0 = 5;          % plane initially passes through z = z0
 theta = 0;       % initial angle
 z_max = 25;      % Max for Z (also sets x and y)
 
-alpha = atan(r_ratio);
+% Critical tilt of the plane: at |theta| = alpha the plane is parallel to
+% a line on the cone (parabola). The cone is x^2+y^2 = r_ratio^2 z^2, so its
+% sides have slope dz/dr = h/r_base and alpha = atan(h/r_base).
+alpha = atan(1/r_ratio);
+degenTol = 1e-1; % |z0| below this counts as a plane through the vertex
 
 %% ========== Code below here is for making the visualizations ============
 
 %% Build figure object and open full screen
-app = uiFigure('Change $\int$',1);
+app = uiFigure('Conic Sections: Cone and Plane Intersection',1);
 
 %% Axes
 title(app.ax, app.fig.Name,'Interpreter','latex');
@@ -143,7 +147,7 @@ updatePlot();
         % Grab theta and z0 values with catch for vertical planes
         theta = round(thetaSlider.Value) * pi/180;
         if abs(theta) > pi/2 - 1e-3 % avoid singualrity in 90 deg case.
-            theta = 89*pi/180;
+            theta = sign(theta)*89*pi/180; % keep the sign (-90 stays negative)
         end
         z0    = ZSlider.Value;
 
@@ -160,26 +164,32 @@ updatePlot();
         [x, y, z] = Compute_intersection(theta, z0);
         set(Intersect, 'XData', x, 'YData', y, 'ZData', z);
 
-        % Classify type based on theta and z0
+        % Classify type based on |theta| and z0 (a negative angle tilts the
+        % plane the other way and gives the same conic). Uses the same
+        % tolerance for z0 as the degenerate cases in Compute_intersection,
+        % so the label always matches the curve that is drawn.
         turn_off_Buttons()
-        if abs(z0) < 1e-2 && abs(theta - alpha) < 1e-3
-            if abs(theta - alpha) < 1e-3
+        if abs(z0) < degenTol % plane through the vertex: degenerate conics
+            if abs(abs(theta) - alpha) < 1e-3
                 conicType = 'Line';
                 btn_line.UserData.setColor(1);
-            elseif theta < alpha
+            elseif abs(theta) < alpha
                 conicType = 'Point';
                 btn_point.UserData.setColor(1);
+            else
+                conicType = 'Two Intersecting Lines';
+                btn_line.UserData.setColor(1);
             end
         else
             if theta == 0
                 conicType = 'Circle';
                 btn_circle.UserData.setColor(1);
-            elseif theta > 0 && theta < alpha
-                conicType = 'Ellipse';
-                btn_ellipse.UserData.setColor(1);
-            elseif abs((theta - alpha)) < 1e-3
+            elseif abs(abs(theta) - alpha) < 1e-3
                 conicType = 'Parabola';
                 btn_parabola.UserData.setColor(1);
+            elseif abs(theta) < alpha
+                conicType = 'Ellipse';
+                btn_ellipse.UserData.setColor(1);
             else
                 conicType = 'Hyperbola';
                 btn_hyperbola.UserData.setColor(1);
@@ -213,12 +223,12 @@ updatePlot();
         x = r .* z .* cos(phi);
         y = r .* z .* sin(phi);
 
-        if abs(z0) < 1e-1 % Degenerate cases
-            if abs(m) < 1 - 1e-5
+        if abs(z0) < degenTol % Degenerate cases
+            if r*abs(m) < 1 - 1e-5
                 x = zeros(size(x));
                 y = sign(theta)*x;
                 z = x;
-            elseif abs(m-1) < 1e-3
+            elseif abs(r*abs(m) - 1) < 1e-3
                 t = linspace(-1*z_max, 1*z_max, length(phi));
                 x = 0*t;
                 y = sign(theta)*t;
