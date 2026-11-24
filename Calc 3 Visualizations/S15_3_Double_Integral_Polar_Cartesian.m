@@ -3,8 +3,9 @@ function S15_3_Double_Integral_Polar_Cartesian()
 % Approximates the double integral of a bump function over a circular
 % leaf-shaped region with axis-aligned (x,y) prisms, keeping only the
 % ones whose center lies inside the region. Companion to
-% L20_S15_3_Double_Integral_Polar_Polar, which approximates the same
+% S15_3_Double_Integral_Polar_Polar, which approximates the same
 % integral with polar wedges instead -- both share DoubleIntegralCurvyEngine.
+% A button shows the surface f only over the region.
 %
 %% Author Info
 %
@@ -17,7 +18,7 @@ r2 = @(x,y) x.^2 + y.^2;
 f  = @(x,y) 2*exp(1)*exp(1 ./ (r2(x,y)-1 + (r2(x,y)>=1)));
 f  = @(x,y) (r2(x,y)<1) .* f(x,y);
 
-N0 = 1; Nmax = 100;   % subdivisions per side
+N0 = 1; Nmax = 25;   % subdivisions per side
 
 %% Region boundary: circle centered at (-1,0), passing through the origin
 theta = linspace(0, 2*pi, 300);
@@ -38,10 +39,11 @@ ylims = [min(Yb), max(Yb)];
 %% Run the shared engine
 run('setup.m')
 DoubleIntegralCurvyEngine('Double Integral Approximation over Curvy Region', ...
-    f, Xb, Yb, xlims, ylims, [153, 78], N0, Nmax, '$N = $', @buildCells)
+    f, Xb, Yb, xlims, ylims, [153, 78], N0, Nmax, '$N = $', @buildCells, ...
+    'MaskButton', true)
 
 %% Grid-specific cell builder: axis-aligned prisms, vectorized with
-% buildPrismMesh (see L18/L19 ports for the same technique).
+% buildPrismMesh (same technique as S15_1/S15_2_Double_Integral_*).
 function [layers, X, Y, Z, titleStr] = buildCells(Nside, exactIntegral)
     dx = (xlims(2)-xlims(1))/Nside;
     dy = (ylims(2)-ylims(1))/Nside;
@@ -55,10 +57,12 @@ function [layers, X, Y, Z, titleStr] = buildCells(Nside, exactIntegral)
                      'Vertices', {V, V, V}, ...
                      'FaceAlpha', {0.25, 0.6, 0.9});
 
-    titleStr = sprintf(['Double Integral Approximation over Curvy Region\n' ...
+    % splitlines: a newline inside one LaTeX string does not start a new
+    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
+    titleStr = splitlines(sprintf(['Double Integral Approximation over Curvy Region\n' ...
         'Number cubes = %d   Cubes inside region = %d\n' ...
-        'Riemann Approx = %.6f   |   Exact = %.6f'], ...
-        Nside^2, numel(X), sum(Z)*dx*dy, exactIntegral);
+        'Riemann Approx = %.6f   $|$   Exact = %.6f'], ...
+        Nside^2, numel(X), sum(Z)*dx*dy, exactIntegral));
 end
 
 end
