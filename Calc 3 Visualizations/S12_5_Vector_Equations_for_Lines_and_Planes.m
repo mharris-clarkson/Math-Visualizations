@@ -50,11 +50,11 @@ plot3(app.ax(1), linePts(1,:), linePts(2,:), linePts(3,:), 'b','LineWidth',2)
 plot3(app.ax(1), r0(1), r0(2), r0(3), '.k','MarkerSize', 20);
 
 % Vector from origin to r0
-quiver3(   0,     0,     0,...
+quiver3(app.ax(1), 0,     0,     0,...
     r0(1), r0(2), r0(3), 0,'k','LineWidth',2,'MaxHeadSize',0.5);
 
 % r0 label.
-text(r0(1)+labelOffset/2, r0(2)+labelOffset/2, r0(3)+labelOffset/2, ...
+text(app.ax(1), r0(1)+labelOffset/2, r0(2)+labelOffset/2, r0(3)+labelOffset/2, ...
     '$\vec r_0$','Interpreter', 'latex','FontSize', 24,'Color','k');
 
 % Direction vector v
@@ -62,7 +62,7 @@ quiver3(app.ax(1), 0,       0,    0,...
     v(1), v(2), v(3), 0,'b','LineWidth',2,'MaxHeadSize',0.5);
 
 % Vector v label
-text(v(1)+labelOffset, v(2)+labelOffset, v(3)+labelOffset, ...
+text(app.ax(1), v(1)+labelOffset, v(2)+labelOffset, v(3)+labelOffset, ...
     '$\vec{v}$','Interpreter','latex','FontSize',24,'Color','b');
 
 %% Dynamic elements
@@ -73,26 +73,26 @@ YPlane = r0(2) + tGrid*v(2) + sGrid*u(2);
 ZPlane = r0(3) + tGrid*v(3) + sGrid*u(3);
 
 % % Plane surface. Initially not visable
-Plane_Plot = surf(XPlane, YPlane, ZPlane,...
+Plane_Plot = surf(app.ax(1), XPlane, YPlane, ZPlane,...
     'FaceColor', 'cyan', 'FaceAlpha', 0.3, 'Visible', 'off');
 
 % Direction vector u
-Plane_dir_vec = quiver3(0,    0,    0,...
+Plane_dir_vec = quiver3(app.ax(1), 0,    0,    0,...
     u(1), u(2), u(3),...
     0, 'r', 'LineWidth',2, 'MaxHeadSize', 0.5, 'Visible', 'off');
 
 % Line along  u. Initially not visable
 lineUpts = r0 + u*tLine;
-Plane_dir_line = plot3(lineUpts(1,:), lineUpts(2,:), lineUpts(3,:),...
+Plane_dir_line = plot3(app.ax(1), lineUpts(1,:), lineUpts(2,:), lineUpts(3,:),...
     'r','LineWidth',2,'Visible','off');
 
 % Point on r = r0 + tv + su
 r = r0 + t0*v ;
-Moving_Point_on_plane = plot3(r(1), r(2), r(3),'om',...
+Moving_Point_on_plane = plot3(app.ax(1), r(1), r(2), r(3),'om',...
     'MarkerSize',10,'MarkerFaceColor','m');
 
 % Vector to r = r_0 + tv + su
-Moving_Vector_on_plane = quiver3(0, 0, 0,...
+Moving_Vector_on_plane = quiver3(app.ax(1), 0, 0, 0,...
     0, 0, 0,...
     0, 'm', 'LineWidth', 2,'MaxHeadSize', 0.5);
 
@@ -101,24 +101,24 @@ n = cross(v,u);
 n = n / norm(n);
 edgePoint = r0 + tLine(2)*v;
 
-Plane_Normal_Vec = quiver3(edgePoint(1),edgePoint(2),edgePoint(3), ...
+Plane_Normal_Vec = quiver3(app.ax(1), edgePoint(1),edgePoint(2),edgePoint(3), ...
     n(1),n(2),n(3), ...
     0,'k','LineWidth',2,'MaxHeadSize',0.7,'Visible','off');
 
 % Normal vector label. Initially not visable
-Normal_vector_Label = text(edgePoint(1) + n(1) + labelOffset, ...
+Normal_vector_Label = text(app.ax(1), edgePoint(1) + n(1) + labelOffset, ...
     edgePoint(2) + n(2) + labelOffset, ...
     edgePoint(3) + n(3) + labelOffset, ...
     '$\vec{n} = \vec{v} \times \vec{u}$', ...
     'Interpreter','latex', 'FontSize',24,'Color','k','Visible','off');
 
 % Line equation label
-Point_Label = text(r(1)+labelOffset, r(2)+labelOffset, r(3)+labelOffset, ...
+Point_Label = text(app.ax(1), r(1)+labelOffset, r(2)+labelOffset, r(3)+labelOffset, ...
     '$\vec{r}(t) = \vec r_0 + t\vec{v}$', ...
     'Interpreter', 'latex','FontSize', 24,'Color','m');
 
 % Vector u label
-u_Vector_Label = text(u(1)+labelOffset, u(2)+labelOffset, u(3)+labelOffset, ...
+u_Vector_Label = text(app.ax(1), u(1)+labelOffset, u(2)+labelOffset, u(3)+labelOffset, ...
     '$\vec{u}$', ...
     'Interpreter','latex','FontSize',24,'Color','r','Visible','off');
 
@@ -155,7 +155,7 @@ app.addControl('button', 'Show Plane', 3, num_GUI,  @updatePlot_btn_Swap_Plane_L
             set(Point_Label, 'String', '$\vec r(t,s) = \vec r_0 + t\vec{v} + s\vec{u}$');
         else
             src.String='Show Plane';
-            set(Point_Label, 'String', '$\vec r(t,s) = \vec r_0 + t\vec{v}$');
+            set(Point_Label, 'String', '$\vec{r}(t) = \vec r_0 + t\vec{v}$');
         end
         % Toggle view states
         flip_state(Plane_Plot);
@@ -163,7 +163,7 @@ app.addControl('button', 'Show Plane', 3, num_GUI,  @updatePlot_btn_Swap_Plane_L
         flip_state(Plane_dir_line);
         flip_state(u_Vector_Label);
         flip_state(btn_Normal_View);
-        flip_state(sliderS); 
+        flip_state(sliderS);
         flip_state(Normal_vector_Label)
         flip_state(Plane_Normal_Vec)
 
@@ -182,12 +182,16 @@ btn_Normal_View= app.addControl('button', 'Normal View', 4, num_GUI,  @updatePlo
         if src.Value
             % manually found for default u and v. Does not update with user data!!
             view(app.ax(1), -44.8, -48);
-            btn_Normal_View.String = "Orignal View";
+            btn_Normal_View.String = "Original View";
         else
             view(app.ax(1), 7, 32);
             btn_Normal_View.String = "Normal View";
         end
     end
+
+% Launch update so the magenta vector r(t) starts at r(t0) (it was
+% created with zero length)
+update(sliderT.Value, sliderS.Value)
 
 %% Functions for UI elements
 % Function to flip view states
