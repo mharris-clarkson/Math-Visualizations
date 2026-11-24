@@ -35,26 +35,21 @@ arguments
     options.colorbar = 'on'
 end
 
-% Use the amp colormap
-colormap(current_axis, Pretty_Colormap('amp')); % cached copy of cmocean('amp')
+colormap(current_axis, Pretty_Colormap('amp'));
 
-% Set the color axis to [0, max]. Guard against data with no positive
-% values, which would give an invalid (non-increasing) color range.
+% Color axis [0, max] (no positive data falls back to [0 1])
 cmax = max(cdata(:));
 if isempty(cmax) || ~isfinite(cmax) || cmax <= 0
     cmax = 1;
 end
 clim(current_axis, [0, cmax]);
 
-% Place a colorbar only when asked to
 if strcmpi(options.colorbar, 'on')
     cb = colorbar(current_axis,'Location', 'eastoutside');
 else
     colorbar(current_axis, 'off');
     cb = gobjects(0);
 end
-% Only hand back the colorbar when asked for it, so a call without a
-% semicolon does not print "ans = 0x0 empty GraphicsPlaceholder array"
 if nargout > 0
     varargout{1} = cb;
 end

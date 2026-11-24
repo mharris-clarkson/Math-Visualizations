@@ -36,18 +36,15 @@ arguments
     options.FontSize double   = 18
     options.Visible   string   = "on"
     options.Callback          = @(~,~) []
-    options.Color_change logical = false % need extra class to 
+    options.Color_change logical = false
     options.Toggle_strings string = string.empty
-
 end
 
-% Read and store data from options
 Button_Name     = options.String;
 Button_Position = options.Position;
-FontSize        = options.FontSize;
 CallbackFcn     = options.Callback;
 
-%% Invisible zero-size togglebutton — that stores .Value and .String
+%% Invisible togglebutton that stores .Value and .String
 Button = uicontrol(fig, ...
     'Style',    'togglebutton', ...
     'String',   '', ...
@@ -56,45 +53,34 @@ Button = uicontrol(fig, ...
     'Visible',  options.Visible, ...
     'Callback', CallbackFcn);
 
-
-%% Axes that fills the button region — handles visuals and clicks
-
-    ax = axes(fig, ...
-        'Units',    'normalized', ...
-        'Position', Button_Position, ...
-        'Tag',      'uiFigureControl', ... % marks it as a control, not a plot
-        'XLim',     [0 1],...
-        'YLim',     [0 1], ...
-        'Visible',  'on', ...
-        'XTick',    [], ...
-        'YTick',    []);
-
-
-% Disable all built-in axes UI controls
+%% Axes that draws the button and receives the clicks
+ax = axes(fig, ...
+    'Units',    'normalized', ...
+    'Position', Button_Position, ...
+    'Tag',      'uiFigureControl', ...
+    'XLim',     [0 1],...
+    'YLim',     [0 1], ...
+    'Visible',  'on', ...
+    'XTick',    [], ...
+    'YTick',    [], ...
+    'Toolbar',  []);
 disableDefaultInteractivity(ax);
-ax.Toolbar.Visible = 'off';
 
-%% Draw button background patch showing clickable region
 btn_patch = patch(ax, ...
     [0 1 1 0], [0 0 1 1], [0.94 0.94 0.94], ...
     'EdgeColor', [0.5 0.5 0.5], ...
     'LineWidth',  1.5);
 
-%% LaTeX label
 btn_text = text(ax, 0.5, 0.5, '', ...
     'Interpreter',         'latex', ...
     'HorizontalAlignment', 'center', ...
     'VerticalAlignment',   'middle', ...
-    'FontSize',            FontSize);
+    'FontSize',            options.FontSize);
 
-%% Listener: any write to Button.String syncs to the visible text object
+%% Keep the drawn label and visibility in step with the uicontrol
 addlistener(Button, 'String', 'PostSet', @(~,~) syncLabel(Button, btn_text));
-
-%% Listener: allows the button region to be turned off
 addlistener(Button, 'Visible', 'PostSet', @(~,~) syncVisible(Button, ax));
 
-
-%% Seed the string — fires the listener so btn_text is immediately populated
 Button.String = Button_Name;
 
 %% Store cross-references
@@ -112,22 +98,15 @@ Button.UserData.callback = CallbackFcn;
 Button.UserData.ax_position = Button_Position;
 Button.UserData.Color_change = options.Color_change;
 Button.UserData.setColor = @(state) setButtonColor(Button, state);
-btn_text.String = Button_Name;
 
-
-%% Toggle text / highlight follow Button.Value, also when a script sets
-%  Button.Value from code (e.g. a Reset button), so the label and colour
-%  can never disagree with the state.
+%% Toggle text and highlight follow Button.Value, also when set from code
 Button.UserData.Toggle_strings = options.Toggle_strings;
 if numel(options.Toggle_strings) == 2 || options.Color_change
     addlistener(Button, 'Value', 'PostSet', @(~,~) syncState(Button));
 end
 
-%% Initial visible check
 syncVisible(Button, ax)
 
-
-%% Attach click handler to axes, patch, and text
 clickFcn = @(src, event) toggleButton(src, event, ax);
 set(ax,        'ButtonDownFcn', clickFcn);
 set(btn_patch, 'ButtonDownFcn', clickFcn);
@@ -137,26 +116,18 @@ end
 
 
 %% -----------------------------------------------------------------------
-% Button toggle function
 function toggleButton(~, ~, ax)
-
 ud  = ax.UserData;
 btn = ud.button;
 
 btn.Value = ~btn.Value;
-
-% optional colorchange
 if btn.UserData.Color_change
     setButtonColor(btn, btn.Value);
 end
-
-% callback
 ud.callback(btn, []);
 end
 
-
 %% -----------------------------------------------------------------------
-% Keep toggle text and highlight in step with Button.Value
 function syncState(btn)
 ts = btn.UserData.Toggle_strings;
 if numel(ts) == 2
@@ -168,13 +139,11 @@ end
 end
 
 %% -----------------------------------------------------------------------
-% Button string update function
 function syncLabel(btn, btn_text)
 btn_text.String = btn.String;
 end
 
 %% -----------------------------------------------------------------------
-% Button visability option
 function syncVisible(btn, ax)
 if strcmp(btn.Visible, 'off')
     set(ax.Children, 'Visible', 'off');
@@ -186,10 +155,8 @@ end
 end
 
 %% -----------------------------------------------------------------------
-% force set button color
 function setButtonColor(btn, state)
 ud = btn.UserData;
-
 if state
     ud.patch.FaceColor = [0.75 0.85 1.0];
     ud.patch.LineWidth = 2.5;
@@ -197,6 +164,5 @@ else
     ud.patch.FaceColor = [0.94 0.94 0.94];
     ud.patch.LineWidth = 1.5;
 end
-
 btn.UserData.Value = logical(state);
 end

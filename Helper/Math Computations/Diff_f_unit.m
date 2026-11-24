@@ -9,15 +9,13 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function fp = Diff_f_unit(f,t)
-h = 1e-6;   % ~optimal for central differences (1e-10 gives ~1e-6 rounding noise)
+h = 1e-6;
 fp = (f(t+h) - f(t-h))/(2*h);
 if isscalar(t)
-    fp = fp/(norm(fp) + eps); % eps avoids 0/0 where the speed is zero
+    fp = fp/(norm(fp) + eps);
 else
-    % One tangent per sample: normalise along the dimension that holds the
-    % vector components (the one whose length is not numel(t)). When both
-    % sizes equal numel(t) (e.g. 3 samples of a 3D curve) use t's shape:
-    % row t -> one column per sample, column t -> one row per sample.
+    % Normalise along the component dimension (the one not of length
+    % numel(t)); if both are, row t means one column per sample
     dim = find(size(fp) ~= numel(t), 1);
     if isempty(dim), dim = 1 + iscolumn(t); end
     fp = fp ./ (vecnorm(fp, 2, dim) + eps);

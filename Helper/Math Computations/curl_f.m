@@ -17,7 +17,7 @@ arguments
     x             double
     y             double
     z             double
-    options.Dt   double = 1e-6  % ~optimal for central differences
+    options.Dt   double = 1e-6
 end
 
 h = options.Dt;

@@ -36,25 +36,21 @@ arguments
     options.colorbar = 'on'
 end
 
-% Use the balance colormap
-colormap(current_axis, Pretty_Colormap('balance')); % cached copy of cmocean('balance')
-% Center the color axis. Guard against all-zero data, which would give an
-% invalid (non-increasing) color range.
+colormap(current_axis, Pretty_Colormap('balance'));
+
+% Center the color axis (all-zero data falls back to [-1 1])
 cmax = max(abs(cdata(:)));
 if isempty(cmax) || ~isfinite(cmax) || cmax <= 0
     cmax = 1;
 end
 clim(current_axis,cmax*[-1,1]);
 
-% Place a colorbar only when asked to
 if strcmpi(options.colorbar, 'on')
     cb = colorbar(current_axis,'Location', 'eastoutside');
 else
-    colorbar(current_axis, 'off');   % as in Pretty_Color_Positive
-    cb = gobjects(0); % nothing to return in the 'off' case
+    colorbar(current_axis, 'off');
+    cb = gobjects(0);
 end
-% Only hand back the colorbar when asked for it, so a call without a
-% semicolon does not print "ans = 0x0 empty GraphicsPlaceholder array"
 if nargout > 0
     varargout{1} = cb;
 end

@@ -9,6 +9,6 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function fpp = Diff2_f(f,t)
-h = 1e-4;   % ~optimal for second differences (1e-6 gives ~2e-4 rounding noise)
+h = 1e-4;
 fpp = (f(t+h) -2*f(t) + f(t-h))/(h^2);
 end

@@ -2,11 +2,8 @@
 % - values zp = f(x(t), y(t)) sampled along a path through the origin and
 % - the path parameter t (the path reaches the origin at t = 0)
 % and returns an estimate of the limit of f along that path: the mean of
-% the k samples closest to (but not at) t = 0.
-%
-% Replaces approx_limit in S14_2_Ex3/Ex4/Ex5:
-%   lv = approx_limit(zp, t)   ->   lv = Limit_Along_Path(zp, t)
-% Ex5 also rounded tiny values to 0; use 'ZeroTol', 1e-3 for that.
+% the k samples closest to (but not at) t = 0. Values below 'ZeroTol' are
+% rounded to 0.
 %
 %% Syntax
 %

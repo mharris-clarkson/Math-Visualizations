@@ -10,7 +10,7 @@
 %
 
 function fy = Diffy_f(f,x,y,z)
-h = 1e-6;   % ~optimal for central differences (1e-10 gives ~1e-6 rounding noise)
+h = 1e-6;
 if nargin < 4
     fy = (f(x,y+h) - f(x,y-h))/(2*h);
 else

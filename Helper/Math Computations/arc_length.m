@@ -5,9 +5,7 @@
 %
 %   L = integral from t_start to t_end of |r'(t)| dt
 %
-% The speed |r'(t)| is sampled at N points and integrated with the
-% trapezoid rule. (A plain sum(speed)*dt over all N samples counts one
-% extra interval and overestimates the length by a factor of N/(N-1).)
+% using the trapezoid rule on N samples of the speed.
 %
 %% Author Info
 %
@@ -15,11 +13,8 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function len = arc_length(x, y, z, tlims)
-N = 2001;                                  % number of sample points
+N = 2001;
 t = linspace(tlims(1), tlims(2), N);
-dX = Diff_f(x,t);
-dY = Diff_f(y,t);
-dZ = Diff_f(z,t);
-speed = sqrt(dX.^2 + dY.^2 + dZ.^2);       % |r'(t)| at every sample
+speed = sqrt(Diff_f(x,t).^2 + Diff_f(y,t).^2 + Diff_f(z,t).^2);
 len = trapz(t, speed);
 end

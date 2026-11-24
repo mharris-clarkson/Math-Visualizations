@@ -9,16 +9,14 @@ classdef uiFigure < handle
     %  do rows and cols with equal or min size spacing. The data of these
     %  items are modifiable if needed as noted in demo()
     %
-    %  New in this version (all optional, old scripts run unchanged):
+    %  Options:
     %   - Every figure uses LaTeX for all text by default (Latex_Defaults).
-    %   - Sliders: 'Number_format','pi' shows values as multiples of pi
-    %     (stacked fraction, label font 75% so it fits) and snaps to pi/12
-    %     steps; 'pi_inline' writes them on one line (17\pi/12) at full
-    %     size; 'Step' snaps any slider to a step size;
-    %     'LimitLabel' shows e.g. '$n \to \infty$' when the slider sits at
-    %     its limit end ('LimitAt' = "max", "min" or "zero").
+    %   - Sliders: 'Number_format','pi' shows values as multiples of pi and
+    %     snaps to pi/12; 'pi_inline' writes them on one line (17\pi/12);
+    %     'Step' snaps any slider to a step size; 'LimitLabel' shows e.g.
+    %     '$n \to \infty$' at the limit end ('LimitAt' = "max", "min" or "zero").
     %   - app.isAtLimit(slider) and app.getValue(slider) read a limit slider;
-    %     getValue returns 'LimitValue' (e.g. a very large n) at the limit.
+    %     getValue returns 'LimitValue' at the limit.
     %   - Buttons: 'Toggle', ["Show Plane","Hide Plane"] swaps the text on
     %     every click (and when btn.Value is set from code).
     %   - app.addPrevNext(...) builds a Previous/Next pair for galleries.
@@ -31,10 +29,8 @@ classdef uiFigure < handle
     % Licensed under the MIT License.
     % See LICENSE file in the project root for full license information.
     %
-    % November 2026: LaTeX defaults, pi/limit/step slider options, toggle
-    % text, addPrevNext, isAtLimit/getValue added by Claude.
-    % Later November 2026 (Claude): UpdateUISlider no longer trips
-    % linkMinMax, getValue snaps code-set values to 'Step'.
+    % LaTeX defaults, pi/limit/step slider options, toggle text,
+    % addPrevNext and isAtLimit/getValue were added with Claude (Nov 2026).
     properties
         fig
         ax = gobjects(0)
@@ -59,8 +55,6 @@ classdef uiFigure < handle
                 'Name',name,...
                 'WindowState','maximized');
 
-            % LaTeX for every title/label/legend/tick made in this figure,
-            % so scripts do not need 'Interpreter','latex' on every call.
             if options.Latex
                 Latex_Defaults(app.fig);
             end
@@ -145,10 +139,8 @@ classdef uiFigure < handle
                 otherwise
                     error('uiFigure - addControl: type should be ''button'' or ''slider'' but was %s', type);
             end
-            % Store in creation order. (Storing at idx overwrote controls
-            % that shared an index, e.g. a row and a column both using 1.)
             app.controls(end+1) = h;
-            label = h.UserData.label;   % the text object that shows the label
+            label = h.UserData.label;
         end
 
         % ============================================
@@ -166,19 +158,12 @@ classdef uiFigure < handle
                 options.FontSize     double  = 18
                 options.Toggle       string  = string.empty
             end
-            % Call helper function to resize axes to fit buttons/sliders if needed
             Subplot_Mover(app, pos, options.colOrRow);
 
             % With 'Toggle' the first entry is the starting text
-            if numel(options.Toggle) == 2
-                name = options.Toggle(1);
-            end
-
-            % Add button with dynamic fontsize based on the button pixel size
-            % Only pass Toggle_strings when a toggle is used, so this also
-            % works with an older uicontrol_Latex that lacks the option.
             toggleArgs = {};
             if numel(options.Toggle) == 2
+                name = options.Toggle(1);
                 toggleArgs = {'Toggle_strings', options.Toggle};
             end
             Button = uicontrol_Latex(app.fig, ...
@@ -221,8 +206,7 @@ classdef uiFigure < handle
                 options.Step = pi/12;
             end
 
-            % Stacked fractions are about twice as tall as normal text, so
-            % 'pi' labels use a smaller font unless FontSize was given.
+            % Stacked pi fractions need a smaller font
             if isempty(options.FontSize)
                 if strcmpi(options.Number_format, 'pi')
                     options.FontSize = 18 * 0.75;
@@ -234,32 +218,25 @@ classdef uiFigure < handle
             % Keep the starting value inside the slider range
             options.Default = min(max(options.Default, options.Min), options.Max);
 
-            % Grab Slider/Label pos to split for label/slider
+            % Split the space between the slider and its label
             SliderPosition    = pos;
             SliderLabPosition = pos;
-
-            % Adjust slider and label to share the space
             SliderPosition(4)    = SliderPosition(4) * options.labelRatio;
-            SliderLabPosition(2) = SliderPosition(2) + SliderPosition(4) + 0.001; % num is padding
+            SliderLabPosition(2) = SliderPosition(2) + SliderPosition(4) + 0.001;
             SliderLabPosition(4) = pos(4) * (1 - options.labelRatio);
 
-            %% Call helper function to resize axes to fit the slider if needed
             Subplot_Mover(app, pos, options.colOrRow);
 
             %% Make slider label
-            % (axtoolbar(ax,{}) was removed: building a toolbar is one of
-            %  the slowest steps of figure start-up and this axes is hidden.)
             ax_label = axes(app.fig, ...
                 'Units',    'normalized', ...
                 'Position', SliderLabPosition, ...
-                'Tag',      'uiFigureControl', ... % marks it as a control, not a plot
+                'Tag',      'uiFigureControl', ... % a control, not a plot
                 'HitTest',  'off', ...
-                'Visible',  'off');
-
-            % Disable all interactivity on ax_label
+                'Visible',  'off', ...
+                'Toolbar',  []);
             disableDefaultInteractivity(ax_label);
             ax_label.Interactions = [];
-            ax_label.Toolbar.Visible = 'off';
 
             Slider_label = text(ax_label, 0.5, 0.5, '', ... % hard coded center
                 'Interpreter',         'latex', ...
@@ -299,15 +276,12 @@ classdef uiFigure < handle
             Slider.UserData.limitValue = options.LimitValue;
             Slider.UserData.callback   = CallbackFcn;
 
-            %% Listener that auto-updates label whenever Value changes
+            %% The label follows the slider's value and visibility
             addlistener(Slider, 'Value', 'PostSet', @(~,~) updateLabel());
-
-            %% Listener that hides/shows the label together with the slider, so
-            %  slider.Visible = 'off' is all a script has to set.
             addlistener(Slider, 'Visible', 'PostSet', ...
                 @(~,~) set(Slider_label, 'Visible', Slider.Visible));
 
-            updateLabel() % Force update
+            updateLabel()
 
             % Snap to the step (if any), then run the script's callback
             function sliderMoved(src, evt)
@@ -327,14 +301,10 @@ classdef uiFigure < handle
                 if strlength(ud.limitLabel) > 0 && app.isAtLimit(Slider)
                     str = char(ud.limitLabel);
                 else
-                    % joinLatex merges '...$' + '$...' into one math block
-                    % (a plain '$$' would break LaTeX, e.g. name + pi value)
                     str = uiFigure.joinLatex(char(ud.name), uiFigure.formatValue(Slider.Value, ud.format));
                     str = uiFigure.joinLatex(str, ud.addToEnd);
                 end
                 set(ud.label, 'String', str);
-                % (Visibility is kept in step by the 'Visible' listener
-                %  above, so it is not re-set on every slider move.)
             end
         end
 
@@ -438,17 +408,12 @@ classdef uiFigure < handle
                 options.Max double = Slider.Max
             end
 
-            % --- Update limits FIRST ---
             set(Slider, 'Min', options.Min);
             set(Slider, 'Max', options.Max);
-
-            % Keep the value inside the new range (a value outside the
-            % range makes MATLAB hide the slider with a warning)
             Value = min(max(Value, options.Min), options.Max);
 
-            % --- Force value refresh (needed for MATLAB 2025) ---
-            % holdLink stops linkMinMax from reacting to the temporary Max
-            % (it would otherwise push a linked max slider to its end).
+            % Force a value refresh (needed for MATLAB 2025); holdLink keeps
+            % linkMinMax from reacting to the temporary Max
             isUi = isstruct(Slider.UserData);
             if isUi, Slider.UserData.holdLink = true; end
             set(Slider, 'Value', options.Max);
@@ -460,11 +425,9 @@ classdef uiFigure < handle
 
 
         % ============================================
-        % SUBPLOT MOVER - Shrinks the plot axes once per layout direction so
-        % that a column of controls (right side) or a row of controls
-        % (bottom) never overlaps the plots. Mixed layouts are supported:
-        % the first 'col' control and the first 'row' control each trigger
-        % their own move.
+        % SUBPLOT MOVER - Shrinks the plot axes once per layout direction
+        % (column on the right, row at the bottom) so controls never
+        % overlap the plots.
         % ============================================
         function Subplot_Mover(app, pos, colOrRow)
             arguments
@@ -474,7 +437,6 @@ classdef uiFigure < handle
             end
             isRow = strcmpi(colOrRow, 'row');
 
-            % Each direction is only applied once per figure
             if isRow
                 flag = 'SubplotsMovedRow';
             else
@@ -485,21 +447,16 @@ classdef uiFigure < handle
                 return
             end
 
-            % Plot axes only: the axes that draw buttons and slider labels
-            % are tagged 'uiFigureControl' and must not be moved.
             ax_list = findobj(app.fig, 'Type', 'axes', '-not', 'Tag', 'uiFigureControl');
 
             if isRow
-                % Lift the bottom of every plot above the row of controls.
-                % Leave room for that plot's own tick labels and x label
-                % (TightInset(2) = space they need below the axes box), plus
-                % a small gap, so the x label never sits on the controls.
+                % Lift every plot above the row, leaving room for its x labels
                 gap = 0.03;
                 controlsTop = pos(2) + pos(4);
-                drawnow limitrate   % make sure label sizes are up to date
+                drawnow limitrate
                 for i = 1:numel(ax_list)
                     ax = ax_list(i);
-                    below = 0.07;                       % fallback label space
+                    below = 0.07;
                     if strcmp(ax.Units, 'normalized')
                         below = max(below, ax.TightInset(2));
                     end
@@ -522,7 +479,7 @@ classdef uiFigure < handle
             end
 
             app.fig.UserData.(flag)        = true;
-            app.fig.UserData.SubplotsMoved = true; % kept for older scripts
+            app.fig.UserData.SubplotsMoved = true;
         end
         %%%%%%%%%%%%%%%%%%%%%%%%  END FUNCTIONS  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end

@@ -9,7 +9,7 @@
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
 function fp = Diff_f(f,t)
-h = 1e-6;   % ~optimal for central differences (1e-10 gives ~1e-6 rounding noise)
+h = 1e-6;
 fp = (f(t+h) - f(t-h))/(2*h);
 
 end
