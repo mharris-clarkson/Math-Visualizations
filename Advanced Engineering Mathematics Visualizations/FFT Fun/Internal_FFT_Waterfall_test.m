@@ -3,16 +3,17 @@
 % be present.
 
 
-wavFiles = dir('wav files\*.wav');
+% fullfile instead of 'wav files\...' so the paths also work on Mac/Linux
+wavFiles = dir(fullfile('wav files', '*.wav'));
 if isempty(wavFiles)
     fprintf('No WAV files found in %s\n', pwd);
     fprintf('Making them now!')
     run("Batch_Image_To_Audio.m")
-    wavFiles = dir('wav files\*.wav');
+    wavFiles = dir(fullfile('wav files', '*.wav'));
 end
 for k = 1:numel(wavFiles)
-    % Read MP3
-    [file, fs] = audioread(['wav files\' wavFiles(k).name]);
+    % Read WAV
+    [file, fs] = audioread(fullfile('wav files', wavFiles(k).name));
     % If stereo, convert to mono
     file = mean(file,2);
 
@@ -31,9 +32,10 @@ for k = 1:numel(wavFiles)
     figure(k)
     pcolor(T, F, Sdb)
     shading flat
-    % Switched from earlier
-    ylabel('Time (s)')
-    xlabel('Frequency (Hz)')
+    % pcolor(T, F, ...) puts time on x and frequency on y (the labels were
+    % the other way round)
+    xlabel('Time (s)')
+    ylabel('Frequency (Hz)')
     zlabel('Magnitude (dB)')
     title('Waterfall Spectrum')
     colormap('hot');
