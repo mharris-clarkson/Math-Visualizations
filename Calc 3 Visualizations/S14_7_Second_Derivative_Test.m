@@ -14,7 +14,9 @@ close all
 % Adjust these to modify selected math objects below.
 f         = @peaks;
 max_val   = 2;
-Delta_val = 0.005;
+Delta_val = 0.005;   % grid spacing used to find the critical points
+Delta_plot = 0.02;   % grid spacing of the drawn surface (looks the same, 16x fewer faces)
+critTol   = 0.1;     % |grad f| below this counts as a critical point in the title
 x0        = 0;
 y0        = 0;
 useParaboloid = false;
@@ -30,53 +32,78 @@ xlim(app.ax, max_val*[-1, 1])
 ylim(app.ax, max_val*[-1, 1])
 
 %% Optional math functions for plot computations
-    function [hPt, hVx, hVy, hTp] = plot_geometry(x, y)
+    % Point, tangent vectors and the local plane/paraboloid at (x,y).
+    % Derivatives come from the Diff*_f helpers (step sizes tuned there).
+    function [z, Tx, Ty, Zp, D, fxx, gradNorm] = geometry_at(x, y)
         z   = f(x, y);
-        h   = 1e-5;
-        fx  = (f(x+h,y) - f(x-h,y)) / (2*h);
-        fy  = (f(x,y+h) - f(x,y-h)) / (2*h);
-        fxx = (f(x+h,y) - 2*f(x,y) + f(x-h,y)) / h^2;
-        fyy = (f(x,y+h) - 2*f(x,y) + f(x,y-h)) / h^2;
-        fxy = (f(x+h,y+h) - f(x+h,y-h) - f(x-h,y+h) + f(x-h,y-h)) / (4*h^2);
+        fx  = Diffx_f(f, x, y);
+        fy  = Diffy_f(f, x, y);
+        fxx = Diffxx_f(f, x, y);
+        fyy = Diffyy_f(f, x, y);
+        fxy = Diffxy_f(f, x, y);
+        D        = fxx*fyy - fxy^2;          % second derivative test discriminant
+        gradNorm = norm([fx, fy]);
 
         Tx = [1, 0, fx];
         Ty = [0, 1, fy];
 
-        hPt = plot3(app.ax, x, y, z, 'ko', 'MarkerSize', 8, ...
-            'LineWidth', 2, 'MarkerFaceColor', 'k');
-        hVx = quiver3(app.ax, x, y, z, Tx(1), Tx(2), Tx(3), 0, 'r', 'LineWidth', 2);
-        hVy = quiver3(app.ax, x, y, z, Ty(1), Ty(2), Ty(3), 0, 'b', 'LineWidth', 2);
-
-        tp_size = 0.25;
-        [u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
         if useParaboloid
             Zp = z + fx*u + fy*v + 0.5*(fxx*u.^2 + 2*fxy*u.*v + fyy*v.^2);
         else
             Zp = z + fx*u + fy*v;
         end
-        hTp = surf(app.ax, x+u, y+v, Zp, ...
-            'FaceAlpha', 1, 'EdgeColor', 'none', 'FaceColor', [0 0 0]);
     end
 
-    function updateTitle()
+    % Title: which approximation, D and f_xx, and the test's verdict
+    function updateTitle(D, fxx, gradNorm)
         if useParaboloid
-            title(app.ax, 'Second Derivative Test --- Tangent Paraboloid', 'Interpreter', 'latex')
+            approxStr = 'Tangent Paraboloid';
         else
-            title(app.ax, 'Second Derivative Test --- Tangent Plane', 'Interpreter', 'latex')
+            approxStr = 'Tangent Plane';
         end
+        if gradNorm > critTol
+            verdict = sprintf('not a critical point ($|\\nabla f| = %.2f$)', gradNorm);
+        elseif D < 0
+            verdict = 'saddle point ($D < 0$)';
+        elseif D > 0 && fxx < 0
+            verdict = 'local max ($D > 0$, $f_{xx} < 0$)';
+        elseif D > 0
+            verdict = 'local min ($D > 0$, $f_{xx} > 0$)';
+        else
+            verdict = 'test inconclusive ($D = 0$)';
+        end
+        title(app.ax, {['Second Derivative Test --- ' approxStr], ...
+            sprintf('$D = f_{xx}f_{yy} - f_{xy}^2 = %.2f$, $f_{xx} = %.2f$: %s', D, fxx, verdict)}, ...
+            'Interpreter', 'latex')
     end
 
 %% Make the initial plots
+% Fine grid (Delta_val) for finding critical points below; the drawn
+% surface and contours use the coarser Delta_plot grid. A transparent
+% 801 x 801 surface was very slow to render and rotate on weak laptops.
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
-surf(app.ax, X, Y, Z, 'EdgeColor', 'none', 'FaceAlpha', 0.5)
+[Xs, Ys] = meshgrid(-max_val:Delta_plot:max_val);
+Zs = f(Xs, Ys);
+surf(app.ax, Xs, Ys, Zs, 'EdgeColor', 'none', 'FaceAlpha', 0.5)
 colormap(app.ax, parula)
 hold(app.ax, 'on')
-contour3(app.ax, X, Y, Z, 20, 'k', 'LineWidth', 1)
+contour3(app.ax, Xs, Ys, Zs, 20, 'k', 'LineWidth', 1)
 Pretty_Plot(app.ax)
 
-[hPt, hVx, hVy, hTp] = plot_geometry(x0, y0);
-updateTitle()
+% Local (u,v) patch for the plane/paraboloid, built once
+tp_size = 0.25;
+[u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
+
+% Point, tangent vectors and plane: created once, updated in place
+[z0, Tx, Ty, Zp, D0, fxx0, g0] = geometry_at(x0, y0);
+hPt = plot3(app.ax, x0, y0, z0, 'ko', 'MarkerSize', 8, ...
+    'LineWidth', 2, 'MarkerFaceColor', 'k');
+hVx = quiver3(app.ax, x0, y0, z0, Tx(1), Tx(2), Tx(3), 0, 'r', 'LineWidth', 2);
+hVy = quiver3(app.ax, x0, y0, z0, Ty(1), Ty(2), Ty(3), 0, 'b', 'LineWidth', 2);
+hTp = surf(app.ax, x0+u, y0+v, Zp, ...
+    'FaceAlpha', 1, 'EdgeColor', 'none', 'FaceColor', [0 0 0]);
+updateTitle(D0, fxx0, g0)
 
 %% Precompute critical points for snap buttons
 % Local max / min: grid points that beat all 8 neighbours.
@@ -118,8 +145,9 @@ xSlider = app.addControl('slider', '$x_0 = $', 1, NumControls, @updatePlot, ...
 ySlider = app.addControl('slider', '$y_0 = $', 2, NumControls, @updatePlot, ...
     'Default', y0, 'Min', -max_val, 'Max', max_val);
 
-btnToggle = app.addControl('button', 'Tangent Plane', 3, NumControls, ...
-    @toggleApprox, 'ColorChange', true);
+btnToggle = app.addControl('button', '', 3, NumControls, ...
+    @toggleApprox, 'ColorChange', true, ...
+    'Toggle', ["Tangent Plane", "Tangent Paraboloid"]);
 
 app.addControl('button', 'Snap: Local Max',    4, NumControls, @goToMax);
 app.addControl('button', 'Snap: Local Min',    5, NumControls, @goToMin);
@@ -127,12 +155,7 @@ app.addControl('button', 'Snap: Saddle Point', 6, NumControls, @goToSaddle);
 
 %% Functions for UI elements
     function toggleApprox(~, ~)
-        useParaboloid = logical(btnToggle.Value);
-        if useParaboloid
-            btnToggle.String = 'Tangent Paraboloid';
-        else
-            btnToggle.String = 'Tangent Plane';
-        end
+        useParaboloid = logical(btnToggle.Value);   % text follows via 'Toggle'
         updatePlot()
     end
 
@@ -161,10 +184,18 @@ app.addControl('button', 'Snap: Saddle Point', 6, NumControls, @goToSaddle);
     end
 
 %% Main Draw update function.
+    % Moves the existing objects (no delete/re-create), and no longer
+    % resets the camera, so a view the student rotated to is kept.
     function updatePlot(~, ~)
-        delete(hPt); delete(hVx); delete(hVy); delete(hTp);
-        [hPt, hVx, hVy, hTp] = plot_geometry(xSlider.Value, ySlider.Value);
-        view(app.ax, -16, 47)
-        updateTitle()
+        x = xSlider.Value;
+        y = ySlider.Value;
+        [z, Tx, Ty, Zp, D, fxx, gradNorm] = geometry_at(x, y);
+        set(hPt, 'XData', x, 'YData', y, 'ZData', z);
+        set(hVx, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', Tx(1), 'VData', Tx(2), 'WData', Tx(3));
+        set(hVy, 'XData', x, 'YData', y, 'ZData', z, ...
+            'UData', Ty(1), 'VData', Ty(2), 'WData', Ty(3));
+        set(hTp, 'XData', x+u, 'YData', y+v, 'ZData', Zp);
+        updateTitle(D, fxx, gradNorm)
     end
 end
