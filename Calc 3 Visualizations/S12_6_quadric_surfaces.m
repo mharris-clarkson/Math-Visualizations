@@ -244,7 +244,7 @@ ylim(app.ax,yrange)
 % zlim(app.ax,zrange)
 
 %% Build UI
-NumControls = 6;
+NumControls = 7;
 sliderA = app.addControl('slider', '$A = $', 1, NumControls, @update,...
     'Default',A,'Min',SliderMin,'Max',SliderMax);
 sliderB = app.addControl('slider', '$B = $', 2, NumControls, @update,...
@@ -288,6 +288,19 @@ buttonI.UserData.Value = 1;
 
 sliderJ = app.addControl('slider', '$J = $', 6, NumControls, @update,...
     'Default',J,'Min',zrange(1)/2,'Max',zrange(2)/2);
+
+% A cone needs J = I^2/(4C) exactly, which the J slider practically never
+% hits: this preset sets x^2 + y^2 - z^2 + z - 1/4 = 0, i.e. x^2 + y^2 = (z - 1/2)^2
+app.addControl('button', 'Cone preset', 7, NumControls, @presetCone);
+    function presetCone(~,~)
+        app.UpdateUISlider(sliderA, 1);
+        app.UpdateUISlider(sliderB, 1);
+        app.UpdateUISlider(sliderD, 0);
+        buttonC.UserData.Value = -1;  buttonC.String = "$C = -1$";
+        buttonI.Value = 0;  buttonI.UserData.Value = 1;  buttonI.String = "$I = 1$";
+        app.UpdateUISlider(sliderJ, 1^2/(4*(-1)));
+        update();
+    end
 
 update();
 
