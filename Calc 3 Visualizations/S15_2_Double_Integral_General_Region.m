@@ -23,7 +23,6 @@ N0   = 1;    % initial number of subdivisions per side
 Nmax = 25;   % slider upper bound
 
 prismColor = [0.85, 0.85, 0.85];
-resExact   = 500;   % grid resolution for the "exact" integral
 resSurf    = 250;   % surface plotting resolution
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
@@ -51,14 +50,8 @@ end
 xlims = [min(Xb), max(Xb)];
 ylims = [min(Yb), max(Yb)];
 
-%% "Exact" integral: fine midpoint grid restricted to the region
-dxg           = (xlims(2)-xlims(1))/resExact;
-dyg           = (ylims(2)-ylims(1))/resExact;
-[xg, yg]      = meshgrid(linspace(xlims(1)+dxg/2, xlims(2)-dxg/2, resExact), ...
-                          linspace(ylims(1)+dyg/2, ylims(2)-dyg/2, resExact));
-inRegionFine  = Inside_Polygon_Grid(xg, yg, Xb, Yb);
-cellArea      = dxg*dyg;
-exactIntegral = sum(f(xg(inRegionFine), yg(inRegionFine)))*cellArea;
+%% Exact integral over the region
+exactIntegral = Polygon_Integral(f, Xb, Yb);
 
 %% Surface
 [xs, ys] = meshgrid(linspace(xlims(1), xlims(2), resSurf), ...
