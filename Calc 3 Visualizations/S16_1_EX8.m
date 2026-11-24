@@ -2,7 +2,7 @@ function S16_1_EX8()
 %% Example of a Conservative Vector Field
 % Plots the conservative field F = -grad(phi) for any potential phi(x,y),
 % together with contour lines of phi. The gradient is computed
-% numerically (central differences), so to try another potential just edit
+% numerically (central differences, Grad_f), so to try another potential just edit
 % the phi handle in the user parameters (it must work elementwise on matrices).
 %
 % The field is perpendicular to every contour line of phi.
@@ -22,23 +22,20 @@ lims    = [-2 2];                      % plot limits for both x and y
 sgn     = -1;    % -1: F = -grad(phi) ("downhill"); +1: F = +grad(phi)
 nGrid   = 21;    % arrows per side
 nContours = 10;  % number of contour levels
-h       = 1e-6;  % finite-difference step
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
 app = uiFigure('Conservative Vector Field', 1);
 ax = app.ax(1);
 
-Pretty_Plot(ax)
+% (uiFigure already applied Pretty_Plot, including the $x$, $y$ labels)
 axis(ax, 'equal')
-xlabel(ax, 'x'); ylabel(ax, 'y')
 title(ax, 'Conservative vector field with potential contours')
 
-%% Vector field F = sgn*grad(phi), by central differences
+%% Vector field F = sgn*grad(phi), by central differences (Grad_f helper)
 [X, Y] = meshgrid(linspace(lims(1), lims(2), nGrid));
-Fx = sgn*(phi(X+h, Y) - phi(X-h, Y))/(2*h);
-Fy = sgn*(phi(X, Y+h) - phi(X, Y-h))/(2*h);
-quiver(ax, X, Y, Fx, Fy)
+[Fx, Fy] = Grad_f(phi, X, Y);
+quiver(ax, X, Y, sgn*Fx, sgn*Fy)
 
 %% Contours of the potential
 [Xc, Yc] = meshgrid(linspace(lims(1), lims(2), 200));
