@@ -1,26 +1,29 @@
 %% Function to change and balance colour map and produce a cbar
 % cb = Pretty_Color_Centered(current_axis, cdata)
 %   current_axis  - axis to apply to
-%   current_axis  - colour data to balance out
+%   cdata         - colour data to balance out
 %   cb            - Returned colorbar
 function varargout = Pretty_Color_Centered(current_axis,cdata,options)
-% Pretty_Color_Centered is a helper function for changing to a divergence
-% frees color map (provided by Kristen Thyng's cmocean function, centering
-% it, adding a color bar and shifting the colorbar for better 3D function
-% placement.
+% Pretty_Color_Centered is a helper function for changing to a diverging
+% color map (provided by Kristen Thyng's cmocean function), centering
+% it at zero and optionally adding a color bar.
 %
 %% Syntax
 %
 % cb = Pretty_Color_Centered(current_axis,cdata)
+% cb = Pretty_Color_Centered(current_axis,cdata,'colorbar','off')
 %
 % Inputs:
 %
 % current_axis  - A axis handle for the axis to be modified.
 % cdata         - A tensor for the color data for the colorbar.
+% 'colorbar'    - 'on' (default) adds a colorbar, 'off' adds none and
+%                 removes one that is already attached to the axis
+%                 (same behaviour as Pretty_Color_Positive).
 %
 % Outputs:
 %
-% cb       - A handle to a colorbar.
+% cb       - A handle to a colorbar (empty when 'colorbar' is 'off').
 
 %
 %% Author Info
@@ -43,10 +46,11 @@ if isempty(cmax) || ~isfinite(cmax) || cmax <= 0
 end
 clim(current_axis,cmax*[-1,1]);
 
-% Place a colorbar and adjust its horizontal position
+% Place a colorbar only when asked to
 if strcmpi(options.colorbar, 'on')
     cb = colorbar(current_axis,'Location', 'eastoutside');
 else
+    colorbar(current_axis, 'off');   % as in Pretty_Color_Positive
     cb = gobjects(0); % nothing to return in the 'off' case
 end
 % Only hand back the colorbar when asked for it, so a call without a
