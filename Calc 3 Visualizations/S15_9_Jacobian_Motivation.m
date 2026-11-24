@@ -22,6 +22,9 @@ x0 = 0.2; y0 = 0.3;
 Dx = 0.5; Dy = 0.5;
 
 N_plot = 30;   % points used to trace each curved edge of the rectangle's image
+limitDelta = 1e-4;  % Delta x, Delta y used when a slider sits at its "-> 0" end
+                    % (much smaller than the slider minimum, so the area
+                    % ratio really matches |det J| to the digits shown)
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -29,9 +32,10 @@ app = uiFigure('Jacobian Motivation', 2);
 ax1 = app.ax(1);
 ax2 = app.ax(2);
 
-Pretty_Plot(app.ax)
-xlabel(ax1, 'x'); ylabel(ax1, 'y'); xlim(ax1, [0 2]); ylim(ax1, [0 2]);
-xlabel(ax2, 'u'); ylabel(ax2, 'v'); xlim(ax2, [0 2]); ylim(ax2, [0 2]);
+% (uiFigure already applied Pretty_Plot to each axes; Pretty_Plot takes
+%  one axes, so it is not called on the pair app.ax)
+xlabel(ax1, '$x$'); ylabel(ax1, '$y$'); xlim(ax1, [0 2]); ylim(ax1, [0 2]);
+xlabel(ax2, '$u$'); ylabel(ax2, '$v$'); xlim(ax2, [0 2]); ylim(ax2, [0 2]);
 
 %% Static graphics (created once; updated in place, never recreated)
 rect1 = patch(ax1, [x0 x0+Dx x0+Dx x0], [y0 y0 y0+Dy y0+Dy], 'b', 'FaceAlpha', 0.4);
@@ -59,10 +63,10 @@ sy0 = app.addControl('slider', '$y_0 = $', 2, NumControls, @updatePlot, ...
 'Default', y0, 'Min', 0.05, 'Max', 2, 'Number_format', '%.2f');
 sDx = app.addControl('slider', '$\Delta x = $', 3, NumControls, @updatePlot, ...
 'Default', Dx, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f', ...
-    'LimitLabel', '$\Delta x \to 0$', 'LimitAt', "min");
+    'LimitLabel', '$\Delta x \to 0$', 'LimitAt', "min", 'LimitValue', limitDelta);
 sDy = app.addControl('slider', '$\Delta y = $', 4, NumControls, @updatePlot, ...
 'Default', Dy, 'Min', 0.01, 'Max', 1, 'Number_format', '%.2f', ...
-    'LimitLabel', '$\Delta y \to 0$', 'LimitAt', "min");
+    'LimitLabel', '$\Delta y \to 0$', 'LimitAt', "min", 'LimitValue', limitDelta);
 btnEdgeVec  = app.addControl('button', 'Show Edge Vectors', 5, NumControls, @updatePlot, 'ColorChange', true);
 btnEdgePara = app.addControl('button', 'Show Edge Parallelogram', 6, NumControls, @updatePlot, 'ColorChange', true);
 btnTanPara  = app.addControl('button', 'Show Tangent Parallelogram', 7, NumControls, @updatePlot, 'ColorChange', true);
@@ -71,7 +75,8 @@ redraw(x0, y0, Dx, Dy)
 
 %% Callback
 function updatePlot(~, ~)
-    redraw(sx0.Value, sy0.Value, sDx.Value, sDy.Value)
+    % getValue returns limitDelta when a Delta slider is at its -> 0 end
+    redraw(sx0.Value, sy0.Value, app.getValue(sDx), app.getValue(sDy))
 end
 
 %% Redraw function: updates every graphics object in place for the
@@ -87,8 +92,24 @@ function redraw(x0, y0, Dx, Dy)
     % Ax2: curved image of the rectangle's boundary under (u,v)
     x_plot = [x0+zeros(1,N_plot), linspace(x0,x0+Dx,N_plot), x0+Dx+zeros(1,N_plot), linspace(x0+Dx,x0,N_plot)];
     y_plot = [linspace(y0,y0+Dy,N_plot), y0+Dy+zeros(1,N_plot), linspace(y0+Dy,y0,N_plot), y0+zeros(1,N_plot)];
-    set(rect2, 'XData', u(x_plot,y_plot), 'YData', v(x_plot,y_plot))
+    U_img = u(x_plot,y_plot);  V_img = v(x_plot,y_plot);
+    set(rect2, 'XData', U_img, 'YData', V_img)
     set(pt2, 'XData', u(x0,y0), 'YData', v(x0,y0))
+
+    % The three areas: curved image, edge parallelogram, tangent
+    % parallelogram (= |det J| Dx Dy). Their ratio to Dx Dy tends to
+    % |det J(x0,y0)| as Dx, Dy -> 0.
+    vec1 = [u(x0+Dx,y0)-u(x0,y0); v(x0+Dx,y0)-v(x0,y0)];
+    vec2 = [u(x0,y0+Dy)-u(x0,y0); v(x0,y0+Dy)-v(x0,y0)];
+    J    = jacob_mat(x0, y0, u, v);
+    detJ     = abs(det(J));
+    imgArea  = polyarea(U_img, V_img);
+    edgeArea = abs(det([vec1, vec2]));
+    title(ax1, sprintf('Rectangle: area $\\Delta x\\,\\Delta y = %.4g$', Dx*Dy))
+    title(ax2, {sprintf('Areas: image $%.4g$, edge par. $%.4g$, tangent par. $%.4g$', ...
+                        imgArea, edgeArea, detJ*Dx*Dy), ...
+                sprintf('image$/(\\Delta x\\,\\Delta y) = %.3f \\;\\to\\; |\\det J(x_0,y_0)| = %.3f$', ...
+                        imgArea/(Dx*Dy), detJ)})
 
     set(edge2a, 'XData', u(x0,y0), 'YData', v(x0,y0), ...
         'UData', u(x0+Dx,y0)-u(x0,y0), 'VData', v(x0+Dx,y0)-v(x0,y0))
@@ -98,8 +119,6 @@ function redraw(x0, y0, Dx, Dy)
 
     % Edge parallelogram: straight-line image of the two straight edges
     if logical(btnEdgePara.Value)
-        vec1 = [u(x0+Dx,y0)-u(x0,y0); v(x0+Dx,y0)-v(x0,y0)];
-        vec2 = [u(x0,y0+Dy)-u(x0,y0); v(x0,y0+Dy)-v(x0,y0)];
         base = [u(x0,y0); v(x0,y0)];
         pts  = [base, base+vec1, base+vec1+vec2, base+vec2];
         set(edgeParaPatch, 'XData', pts(1,:), 'YData', pts(2,:), 'Visible', 'on')
@@ -109,7 +128,6 @@ function redraw(x0, y0, Dx, Dy)
 
     % Tangent parallelogram: the Jacobian's linear approximation of the image
     if logical(btnTanPara.Value)
-        J  = jacob_mat(x0, y0, u, v);
         t1 = Dx*J(:,1); t2 = Dy*J(:,2);
         base = [u(x0,y0); v(x0,y0)];
         set(tangent1, 'XData', base(1), 'YData', base(2), 'UData', t1(1), 'VData', t1(2))
@@ -126,8 +144,9 @@ end
 
 %% Stateless helpers (ordinary local functions, not nested)
 function J = jacob_mat(x, y, funx, funy)
-h = 1e-8;
-J = 1/(2*h)*[funx(x+h,y)-funx(x-h,y), funx(x,y+h)-funx(x,y-h); ...
-             funy(x+h,y)-funy(x-h,y), funy(x,y+h)-funy(x,y-h)];
+% Jacobian matrix [u_x u_y; v_x v_y] by the shared central differences
+% (the old local step h = 1e-8 carried ~1e-8 relative rounding noise)
+J = [Diffx_f(funx, x, y), Diffy_f(funx, x, y); ...
+     Diffx_f(funy, x, y), Diffy_f(funy, x, y)];
 end
 
