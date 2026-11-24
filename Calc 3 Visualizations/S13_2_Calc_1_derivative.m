@@ -63,7 +63,7 @@ Point_R_t0dt = plot3(app.ax,p2(1),p2(2),p2(3), ...
 Sec_r_Vec = Diff_f_forward(r,t0,'Dt', dt0);
 m = Sec_r_Vec(2)/Sec_r_Vec(1);
 x_for_sec = p1(1) + Sec_Line_Scale*[-1,1];
-y_for_sec = m*x_for_sec + p1(2);
+y_for_sec = m*(x_for_sec - p1(1)) + p1(2);   % point-slope form through (x_0, f(x_0))
 Sec_Line = plot3(app.ax,x_for_sec,y_for_sec,0*x_for_sec, ...
     'r','LineWidth',2);
 
@@ -83,7 +83,7 @@ plot3(app.ax, linePoints(1,:), linePoints(2,:), linePoints(3,:), ...
 % Dashed lines for dx and dy
 hdx_Line = plot3(app.ax,Chord_DAT(1,:), [1,1]*Chord_DAT(2,2), Chord_DAT(3,:), ...
     'g','LineWidth',2);
-hdy_Line = plot3(app.ax,0*Chord_DAT(1,:), Chord_DAT(2,:), Chord_DAT(3,:), ...
+hdy_Line = plot3(app.ax,[1,1]*p1(1), Chord_DAT(2,:), Chord_DAT(3,:), ... % vertical leg at x_0 (was x = 0)
     '--g','LineWidth',2);
 
 %% Plot elements are done - Make pretty
@@ -159,7 +159,7 @@ app.addControl('button', 'Change Sign of $\Delta x$', 2, NumControls,  @updatePl
         Sec_r_Vec = Diff_f_forward(r,t0,'Dt', dt);
         m = Sec_r_Vec(2)/Sec_r_Vec(1);
         x_for_sec = p1(1) + Sec_Line_Scale*[-1,1];
-        y_for_sec = m*x_for_sec + p1(2);
+        y_for_sec = m*(x_for_sec - p1(1)) + p1(2);  % (was m*x + y_0: right only for x_0 = 0)
         set(Sec_Line,'xdata',x_for_sec,'ydata',y_for_sec);
 
         % r(t+dt) -r(t)
