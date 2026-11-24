@@ -3,8 +3,8 @@ function S15_2_Double_Integral_General_Region()
 % Visualizes a Riemann-sum approximation to the double integral of a bump
 % function over a leaf-shaped region bounded by a closed curve through the
 % origin, compared against a fine-grid estimate of the exact integral. A
-% slider controls grid resolution; a button toggles masking the surface
-% to show only the values inside the region.
+% slider controls grid resolution; a button shows the surface f only over
+% the region (as in the S15_3 double-integral demos).
 %
 %% Author Info
 %
@@ -20,7 +20,7 @@ f  = @(x,y) 2*exp(1)*exp(1 ./ (r2(x,y)-1 + (r2(x,y)>=1)));
 f  = @(x,y) (r2(x,y)<1) .* f(x,y);
 
 N0   = 1;    % initial number of subdivisions per side
-Nmax = 100;   % slider upper bound
+Nmax = 25;   % slider upper bound
 
 prismColor = [0.85, 0.85, 0.85];
 resExact   = 500;   % grid resolution for the "exact" integral
@@ -36,7 +36,9 @@ theta = linspace(0, pi, 300);
 Xc = (theta - pi/2)/pi/2;
 Yc = sin(theta) + 0.3*sin(2*theta);
 
-% Force the positive-x branch to a straight vertical line
+% Re-space the positive-x half so it starts exactly at x = 0. (Xc is
+% already linear in theta, so this does not make a vertical line; the
+% closing segment added below is the straight edge along y = 0.)
 posX    = Xc >= 0;
 Xc(posX) = linspace(0, max(Xc), nnz(posX));
 
@@ -51,22 +53,28 @@ end
 xlims = [min(Xb), max(Xb)];
 ylims = [min(Yb), max(Yb)];
 
-%% "Exact" integral, via a fine grid restricted to the region
-[xg, yg]      = meshgrid(linspace(xlims(1), xlims(2), resExact), ...
-                          linspace(ylims(1), ylims(2), resExact));
+%% "Exact" integral, via a fine midpoint grid restricted to the region
+% Sample at cell centres so each sample owns exactly one dxg*dyg cell.
+% (Sampling the cell corners with area/numel weights was ~0.65% low:
+% 0.3976 instead of 0.4002.)
+dxg           = (xlims(2)-xlims(1))/resExact;
+dyg           = (ylims(2)-ylims(1))/resExact;
+[xg, yg]      = meshgrid(linspace(xlims(1)+dxg/2, xlims(2)-dxg/2, resExact), ...
+                          linspace(ylims(1)+dyg/2, ylims(2)-dyg/2, resExact));
 inRegionFine  = inpolygon(xg, yg, Xb, Yb);
-cellArea      = (xlims(2)-xlims(1))*(ylims(2)-ylims(1))/numel(xg);
+cellArea      = dxg*dyg;
 exactIntegral = sum(f(xg(inRegionFine), yg(inRegionFine)))*cellArea;
 
 %% Surface
 [xs, ys] = meshgrid(linspace(xlims(1), xlims(2), resSurf), ...
                      linspace(ylims(1), ylims(2), resSurf));
 zs       = f(xs, ys);
-maskSurf = inpolygon(xs, ys, Xb, Yb);
+% The same surface with NaN outside the region (NaN faces are not drawn)
+zsRegion = zs;
+zsRegion(~inpolygon(xs, ys, Xb, Yb)) = NaN;
 
 hSurf = surf(app.ax, xs, ys, zs, zs, 'EdgeColor', 'none', 'FaceAlpha', 0.95);
-Pretty_Colormap('amp')
-colorbar(app.ax)
+Pretty_Color_Positive(app.ax, zs);   % amp colormap on [0, max f] + colorbar
 Pretty_Plot(app.ax)
 zlabel(app.ax, 'f(x,y)')
 
@@ -82,11 +90,17 @@ curtainFaces = (1:nSeg).' + [0, nSeg, 2*nSeg, 3*nSeg];
 patch(app.ax, 'Faces', curtainFaces, 'Vertices', V, ...
     'FaceColor', 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'k');
 
-%% Riemann-prism graphics: rebuilt (as 3 patch objects) each time N changes
-PrismTop    = gobjects(0);
-PrismBottom = gobjects(0);
-PrismSide   = gobjects(0);
-SamplePts   = gobjects(0);
+%% Riemann-prism graphics: 3 patch objects + 1 line, created once and
+% updated in place (set Faces/Vertices) each time N changes
+PrismBottom = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
+PrismSide   = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.6);
+PrismTop    = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
+    'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
+SamplePts   = plot3(app.ax, NaN, NaN, NaN, 'ko', ...
+    'MarkerFaceColor', 'k', 'MarkerSize', 4);
+Ncurrent    = NaN;   % N currently drawn (skip redraws when N has not changed)
 
 redraw(N0)
 
@@ -94,21 +108,20 @@ redraw(N0)
 NumControls = 2;
 nSlider = app.addControl('slider', '$N = $', 1, NumControls, @updatePlot, ...
 'colOrRow', 'row', 'Default', N0, 'Min', 1, 'Max', Nmax, 'Number_format', '%d');
-btnMask = app.addControl('button', 'Mask OFF', 2, NumControls, @toggleMask, ...
-'ColorChange', true, 'colOrRow', 'row');
+btnMask = app.addControl('button', '', 2, NumControls, @toggleMask, ...
+'colOrRow', 'row', 'Toggle', ["Show $f$ only over the region", "Show $f$ everywhere"]);
 
 %% Callbacks
 function updatePlot(~, ~)
     redraw(round(nSlider.Value))
 end
 
+% Surface over the region only, or over the whole window
 function toggleMask(~, ~)
-    if logical(btnMask.Value)
-        set(hSurf, 'ZData', zs.*maskSurf, 'CData', zs.*maskSurf)
-        btnMask.String = 'Mask ON';
+    if btnMask.Value
+        hSurf.ZData = zsRegion;
     else
-        set(hSurf, 'ZData', zs, 'CData', zs)
-        btnMask.String = 'Mask OFF';
+        hSurf.ZData = zs;
     end
 end
 
@@ -119,7 +132,10 @@ end
 % testing inpolygon one point at a time, and calling fill3 six times for
 % each cell that passes.
 function redraw(Nside)
-    delete([PrismTop, PrismBottom, PrismSide, SamplePts])
+    % The slider moves continuously but N is a whole number: only rebuild
+    % the prisms when N actually changes
+    if Nside == Ncurrent, return, end
+    Ncurrent = Nside;
 
     dx = (xlims(2) - xlims(1))/Nside;
     dy = (ylims(2) - ylims(1))/Nside;
@@ -136,19 +152,18 @@ function redraw(Nside)
 
     [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(x, y, z, dx, dy);
 
-    PrismBottom = patch(app.ax, 'Faces', bottomFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
-    PrismSide   = patch(app.ax, 'Faces', sideFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.6);
-    PrismTop    = patch(app.ax, 'Faces', topFaces, 'Vertices', V, ...
-        'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
-    SamplePts   = plot3(app.ax, x, y, z, 'ko', ...
-        'MarkerFaceColor', 'k', 'MarkerSize', 4);
+    % Vertices first, then Faces, in one set() call per object
+    set(PrismBottom, 'Vertices', V, 'Faces', bottomFaces)
+    set(PrismSide,   'Vertices', V, 'Faces', sideFaces)
+    set(PrismTop,    'Vertices', V, 'Faces', topFaces)
+    set(SamplePts,   'XData', x, 'YData', y, 'ZData', z)
 
-    title(app.ax, sprintf(['Double Integral Approximation over Curvy Region\n' ...
+    % splitlines: a newline inside one LaTeX string does not start a new
+    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
+    title(app.ax, splitlines(sprintf(['Double Integral Approximation over Curvy Region\n' ...
         'Number cubes = %d   Cubes inside region = %d\n' ...
-        'Riemann Approx = %.6f   |   Exact = %.6f'], ...
-        Nside^2, totalCubes, integral_approx, exactIntegral))
+        'Riemann Approx = %.6f   $|$   Exact = %.6f'], ...
+        Nside^2, totalCubes, integral_approx, exactIntegral)))
 end
 
 end
