@@ -149,12 +149,14 @@ updatePlot();
         else
             pathStr = sprintf('$y = %.2f x$', m);
         end
+        % At the ends the steep path hugs the y-axis, so name it x = 0
+        % (printing the stand-in slope gave 'y = 10000000000.00 x')
         if atEnd == 1
             mSlider.UserData.label.String = '$m \to \infty$';
-            pathStr = [pathStr ' $(m \to \infty)$'];
+            pathStr = '$x = 0$ $(m \to \infty)$';
         elseif atEnd == -1
             mSlider.UserData.label.String = '$m \to -\infty$';
-            pathStr = [pathStr ' $(m \to -\infty)$'];
+            pathStr = '$x = 0$ $(m \to -\infty)$';
         end
 
         lv = Limit_Along_Path(zp, tt, 'ZeroTol', E.zeroTol);
