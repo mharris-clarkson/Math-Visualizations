@@ -29,7 +29,7 @@ phi0   = 0;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure("Cylinder with Normal Plan",1);
+app = uiFigure("Cylinder with Normal Plane",1);
 
 %% Optional math functions for plot computations
 view(app.ax,65,40);
@@ -159,13 +159,19 @@ update()
         theta = thetaSlider.Value*pi/180;
         phi   = phiSlider.Value*pi/180;
 
-        % Turn on or off Theta
+        % Turn on or off Theta (theta does nothing when n is along the z-axis).
+        % Only touch the slider when its visibility actually changes: the
+        % forced refresh in UpdateUISlider calls drawnow, which slowed every
+        % slider move.
         if  abs(cos(phi)) > 1-1e-6
-            thetaSlider.Visible = "off";
+            newVis = "off";
         else
-            thetaSlider.Visible = "on";
+            newVis = "on";
         end
-        app.UpdateUISlider(thetaSlider, thetaSlider.Value);
+        if ~strcmp(thetaSlider.Visible, newVis)
+            thetaSlider.Visible = newVis;
+            app.UpdateUISlider(thetaSlider, thetaSlider.Value);
+        end
 
         % Plot and label normal vector for plane
         n = normal_to_plane(theta,phi);
