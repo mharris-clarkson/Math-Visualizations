@@ -134,7 +134,9 @@ function updatePlot(~,~)
     V = [xL(:) zeros(N,1); xR(:) zeros(N,1); xR(:) r(:); xL(:) r(:)];
     F = (1:N)' + [0, N, 2*N, 3*N];
     C = repmat([color1; color2], ceil(N/2), 1);
-    set(hRects, 'Vertices', V, 'Faces', F, 'FaceVertexCData', C(1:N,:))
+    % (Faces cleared first: when N drops, the old faces would point past
+    %  the end of the new, shorter vertex list for a moment)
+    set(hRects, 'Faces', [], 'Vertices', V, 'Faces', F, 'FaceVertexCData', C(1:N,:))
 
     % Title with the current Riemann sum next to the exact value
     title(app.ax, sprintf(['%s sum, $N = %d$: $%.4f$ ' ...
