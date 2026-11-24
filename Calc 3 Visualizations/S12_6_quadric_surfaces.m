@@ -57,8 +57,8 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
             %   Let w = z + I/(2C), then C w^2 + R - I^2/(4C) = 0
             %   => A x^2 + B y^2 + D xy + C w^2 = I^2/(4C) - J  := K
             %
-            % Ignore D for parametrization (handled by rotation below)
-            % and treat the equation as: A x^2 + B y^2 + C w^2 = K
+            [Vq, Lq] = eig([A, D/2; D/2, B]);
+            A = Lq(1,1);  B = Lq(2,2);
 
             K      = I^2/(4*C) - J;   % right-hand side after completing square
             z_shift = -I/(2*C);       % w = z - z_shift, so z = w + z_shift
@@ -70,16 +70,21 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
                 % CONE: x^2/a^2 + y^2/b^2 = w^2/c^2
                 title_val = '. Type: Cone';
                 % Parametrize as rays from apex: r in [0, rmax], v in [-pi, pi]
-                % x = a*r*cos(v),  y = b*r*cos(v),  w = +/-c*r  (two sheets)
+                % x = a*r*cos(v),  y = b*r*sin(v),  w = +/-c*r  (two sheets)
+                % with semi-axes a = 1/sqrt|A|, b = 1/sqrt|B|, c = 1/sqrt|C|
+                % (the coefficients themselves are not the semi-axes)
                 rmax = max(abs([xrange, yrange]));
                 [r, v] = meshgrid(linspace(0, rmax, N), linspace(-pi, pi, N));
-                Xp =  A * r .* cos(v);
-                Yp =  B * r .* sin(v);
-                Zp  =  C * r;
+                Xp =  r .* cos(v) / sqrt(abs(A) + 1e-12);
+                Yp =  r .* sin(v) / sqrt(abs(B) + 1e-12);
+                Zp  =  r / sqrt(abs(C));
+                % Back to (x,y) from the principal axes
+                Xr = Vq(1,1)*Xp + Vq(1,2)*Yp;
+                Yp = Vq(2,1)*Xp + Vq(2,2)*Yp;  Xp = Xr;
                 % Stack +sheet and -sheet with NaN separator
                 X = [Xp;         NaN(1,N); Xp        ];
                 Y = [Yp;         NaN(1,N); Yp        ];
-                Z  = [Zp;          NaN(1,N); -Zp        ];
+                Z  = [Zp;          NaN(1,N); -Zp        ] + z_shift;
                 return
             end
 
@@ -184,13 +189,12 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
                 return
             end
 
-            % Apply D rotation in xy (rotate Xp, Yp by theta)
-            if abs(D) > 1e-10
-                theta = 0.5 * atan2(D, A - B);
-                Xr = Xp*cos(theta) - Yp*sin(theta);
-                Yr = Xp*sin(theta) + Yp*cos(theta);
-                Xp = Xr;  Yp = Yr;
-            end
+            % Back to (x,y) from the principal axes (undoes the D xy
+            % rotation; when D = 0 this is the identity or an x<->y swap
+            % that matches the eigenvalue order)
+            Xr = Vq(1,1)*Xp + Vq(1,2)*Yp;
+            Yr = Vq(2,1)*Xp + Vq(2,2)*Yp;
+            Xp = Xr;  Yp = Yr;
 
             X = Xp;
             Y = Yp;
@@ -200,14 +204,18 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
             % ============================================================
             % Linear in z — one sheet, solve z = f(x,y) on fixed grid
             % ============================================================
-             nPos = (A>0) + (B>0);
-             nNeg = (A<0) + (B<0);
-             nZero = (A==0) + (B==0);
-            if (nPos == 2) || (nNeg == 2) || (nZero == 1 && ((nPos + nNeg) == 1))
-                title_val = '. Type: Parabolic sheet';
+            % Type from the eigenvalues of [A D/2; D/2 B] so the xy term
+            % counts (e.g. A = B = 0, D ~= 0 is a hyperbolic paraboloid)
+            lam  = eig([A, D/2; D/2, B]);
+            nPos = sum(lam >  1e-10);
+            nNeg = sum(lam < -1e-10);
+            if nPos == 2 || nNeg == 2
+                title_val = '. Type: Elliptic paraboloid';
             elseif nPos == 1 && nNeg == 1
-                title_val = '. Type: Hyperbolic sheet';
-            else 
+                title_val = '. Type: Hyperbolic paraboloid';
+            elseif nPos + nNeg == 1
+                title_val = '. Type: Parabolic cylinder';
+            else
                 title_val = '. Type: Plane';
             end
             [X, Y] = meshgrid(linspace(xrange(1),xrange(2),N), ...
@@ -232,7 +240,7 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
 coefficients = [A, B, C, D, I, J];
 [X, Y, Z] = quadric_surface_generator(coefficients, xrange,yrange, Resolution);
 Surface = surf(app.ax,X,Y,Z);
-view(30,50)
+view(app.ax,30,50)
 Pretty_Color_Centered(app.ax,Z,'colorbar','off');
 xlim(app.ax,xrange)
 ylim(app.ax,yrange)
@@ -252,7 +260,7 @@ sliderB = app.addControl('slider', '$B = $', 2, NumControls, @update,...
 % Button to switch c
 buttonC = app.addControl('button', '$C = 0$', 3, NumControls, @update_C, ...
     'Default',0);
-buttonI.UserData.Value = 0;
+buttonC.UserData.Value = 0;   
     function update_C(~,~)
         % Switch between states
         if buttonC.UserData.Value == 0
@@ -302,9 +310,9 @@ update();
         [X, Y, Z, title_val] = quadric_surface_generator(coefficients,xrange, yrange, Resolution);
         set(Surface, 'XData',X, 'YData',Y, 'ZData',Z)
         title(app.ax,[app.fig.Name title_val],'Interpreter','latex')
-        
-        if ~ min(Z(:)) == max(Z(:))
-        Pretty_Color_Centered(app.ax,Z,'colorbar','off');
+
+        if min(Z(:)) ~= max(Z(:))
+            Pretty_Color_Centered(app.ax,Z,'colorbar','off');
         end
     end
 end
