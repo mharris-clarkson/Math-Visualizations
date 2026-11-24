@@ -1,7 +1,9 @@
 function S15_8_Ex3()
 %% Spherical Coordinates Example: Region Between a Cone and a Sphere
 % Plots the cone z = r and the upper sphere z = 1/2 + sqrt(1/4 - r^2), plus
-% a point given by spherical coordinates (r, theta, phi) controlled by sliders.
+% a point given by spherical coordinates (rho, theta, phi) controlled by
+% sliders. (In the code r_val / s_r hold rho, the distance to the origin;
+% r in the surfaces is the cylindrical radius sqrt(x^2+y^2).)
 %
 %% Author Info
 %
@@ -20,8 +22,7 @@ app = uiFigure('Cone and Sphere', 1);
 ax = app.ax(1);
 
 Pretty_Plot(ax)
-axis(ax, 'equal')
-xlabel(ax, 'x'); ylabel(ax, 'y'); zlabel(ax, 'z')
+axis(ax, 'equal')   % (Pretty_Plot labels the axes $x$, $y$, $z$)
 view(ax, 3)
 
 %% Static surfaces (cone and upper sphere, masked to where cone <= sphere)
@@ -46,7 +47,7 @@ hPoint = plot3(ax, 0, 0, 0, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
 
 %% Build UI
 nC = 3;
-s_r     = app.addControl('slider', '$r = $',      1, nC, @updatePlot, 'Default', r_val,     'Min', 0, 'Max', 2,   'Number_format', '%.2f');
+s_r     = app.addControl('slider', '$\rho = $',   1, nC, @updatePlot, 'Default', r_val,     'Min', 0, 'Max', 2,   'Number_format', '%.2f');
 s_theta = app.addControl('slider', '$\theta = $', 2, nC, @updatePlot, 'Default', theta_val, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
 s_phi   = app.addControl('slider', '$\phi = $',   3, nC, @updatePlot, 'Default', phi_val,   'Min', 0, 'Max', pi,  'Number_format', 'pi');
 
