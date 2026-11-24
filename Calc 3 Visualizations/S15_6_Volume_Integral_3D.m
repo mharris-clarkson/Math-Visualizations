@@ -30,7 +30,6 @@ zlims = semiAxes(3)*[-1 1];
 N0       = 1;     % initial voxels per dimension
 Nmax     = 100;   % slider maximum. Reaching it shows the limit N -> infinity
 NdotsMax = 15;    % the voxel center dots are only drawn up to this N
-resExact = 200;   % resolution of the reference integral and volume
 
 voxelColor = [0.7 0.7 0.7];
 
@@ -43,23 +42,14 @@ Pretty_Plot(ax)
 axis(ax, 'equal')
 view(ax, 45, 30)
 
-%% Reference integral and volume (one z slab at a time)
+%% Exact integral and volume over the ellipsoid E
 boxSize = [diff(xlims) diff(ylims) diff(zlims)];
-cx = centers(xlims, resExact);
-cy = centers(ylims, resExact);
-cz = centers(zlims, resExact);
-[xg, yg] = ndgrid(cx, cy);
-count = 0;
-fsum  = 0;
-for k = 1:resExact
-    in    = region(xg, yg, cz(k));
-    fk    = f(xg, yg, cz(k));
-    count = count + nnz(in);
-    fsum  = fsum + sum(fk(in));
-end
-cellVolume    = prod(boxSize) / resExact^3;
-exactVolume   = count * cellVolume;   % volume of the region E
-exactIntegral = fsum  * cellVolume;   % integral of f over E
+[sa, sb, sc] = deal(semiAxes(1), semiAxes(2), semiAxes(3));
+exactVolume   = 4/3*pi*sa*sb*sc;
+yTop = @(x)   sb*sqrt(max(1 - (x/sa).^2, 0));
+zTop = @(x,y) sc*sqrt(max(1 - (x/sa).^2 - (y/sb).^2, 0));
+exactIntegral = integral3(f, -sa, sa, @(x) -yTop(x), yTop, @(x,y) -zTop(x,y), zTop, ...
+    'AbsTol', 1e-10, 'RelTol', 1e-10);
 
 %% Static graphics
 [xs, ys, zs] = ellipsoid(0, 0, 0, semiAxes(1), semiAxes(2), semiAxes(3), 40);
