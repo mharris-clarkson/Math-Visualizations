@@ -83,8 +83,8 @@ hold(ax,'off')
 Pretty_Plot(ax);
 axis(ax,'equal')
 xlim(ax,[xmin xmax]); ylim(ax,[ymin ymax]);
-xlabel(ax,'$x$','Interpreter','latex')
-ylabel(ax,'$y$','Interpreter','latex')
+xlabel(ax,'$x$')
+ylabel(ax,'$y$')
 title(ax,'Transport System Showing Divergence (Color)','FontSize',16)
 
 %% Build UI

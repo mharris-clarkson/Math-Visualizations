@@ -46,7 +46,7 @@ col2 = [0.85 0.33 0.10];   % solution 2: orange
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure('Visualization of the effects of the Initial conditions',1); % Plots_to_test is an optional argument to allow for more subplots
+app = uiFigure('Visualization of the effects of the Initial conditions',1);
 
 % The differential equation (and its parameters) in the title
 title(app.ax, {'Effect of the initial conditions on', ...
@@ -78,7 +78,7 @@ tPlot = linspace(t_Plot_range(1), t_Plot_range(2), 500);
 plot(app.ax, tPlot, 0*tPlot, '--k')
 
 % One set of graphics per solution: curve, y(0) dot, dashed tangent line
-% and y'(0) arrow. Created here (empty) and filled in by updatePlot.
+% and y'(0) arrow
 Sol_plot = gobjects(1,2);  Tan_plot = gobjects(1,2);
 Vel_Plot = gobjects(1,2);  Pos_plot = gobjects(1,2);
 for s = 2:-1:1                         % solution 1 drawn last, on top
@@ -99,15 +99,14 @@ xlabel(app.ax, '$t$'); ylabel(app.ax, '$y(t)$')
 
 %% Precompute math for updates
 % The ODE is linear, so y(t) = y(0)*u1(t) + y'(0)*u2(t) where u1 and u2
-% solve it with (y,y') = (1,0) and (0,1). Solving those two once makes
-% each slider move two vector multiplies instead of a new ode45 solve.
+% solve it with (y,y') = (1,0) and (0,1)
 u1 = Harmonic_occ(1, 0);
 u2 = Harmonic_occ(0, 1);
 
 %% Build UI
 % Column, read from the top: solution 1 sliders, the button, then the
 % solution 2 sliders (hidden until the button is pressed)
-NumControls = 5; % maximum number of controls
+NumControls = 5;
 
 ySlider  = app.addControl('slider', '$y_1(0) = $',  5, NumControls, @updatePlot, ...
     'Default', y0, 'Min', -5, 'Max', 5);
@@ -123,7 +122,7 @@ ypSlider2 = app.addControl('slider', '$y_2''(0) = $', 1, NumControls, @updatePlo
     'Default', y1b, 'Min', -5, 'Max', 5, 'Visible', 'off');
 
 %% Functions for UI elements
-% Show/hide the second solution and its two sliders (their labels follow)
+% Show/hide the second solution and its two sliders
     function toggleSecond(~,~)
         showSecond = logical(btnSecond.Value);
         set([ySlider2, ypSlider2], 'Visible', onoff(showSecond));

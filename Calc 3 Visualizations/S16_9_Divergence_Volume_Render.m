@@ -5,10 +5,8 @@ function S16_9_Divergence_Volume_Render()
 %  the opacity grows with |div F| and fades toward the sphere, so the
 %  regions where the field spreads out or piles up glow like clouds.
 %
-%  This reproduces the volshow picture inside a normal figure, with no
-%  toolbox: every pixel is a ray through the volume that blends color and
-%  opacity front to back (the same method volshow uses), and the result is
-%  shown as an image, which every graphics card draws.
+%  Every pixel is a ray through the volume that blends color and opacity
+%  front to back, shown as an image.
 %    Drag on the picture - rotate (draws a quick low-resolution preview)
 %    Azimuth / Elevation - set the viewing direction exactly
 %    Opacity slider      - overall opacity scale
@@ -28,14 +26,14 @@ F2 = @(x,y,z) y.^2 - z;
 F3 = @(x,y,z) z.^2 - x;
 
 N         = 60;                % grid points per side of the volume
-gammaA    = 0.8;               % opacity = |div F|^gammaA: below 1 lifts faint regions
+gammaA    = 0.8;               % opacity = |div F|^gammaA
 opacity0  = 0.35;              % overall opacity scale
-bgColor   = [0.8 0.8 0.8];     % background (solid, no gradient)
+bgColor   = [0.8 0.8 0.8];     % background
 cmapRB    = [linspace(0,1,256)' zeros(256,1) linspace(1,0,256)'];   % blue (sink) to red (source)
 
-az0 = 45;   el0 = 20;          % starting view (degrees, as in view(az, el)); side-on to grad(div F)
+az0 = 45;   el0 = 20;          % starting view (degrees)
 nPix     = 260;                % picture resolution (pixels per side)
-nPixDrag = 110;                % resolution while dragging (keeps rotation smooth)
+nPixDrag = 110;                % resolution while dragging
 dragRate = 0.4;                % degrees of rotation per pixel dragged
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
@@ -51,23 +49,22 @@ app.fig.Color = bgColor;
 divF = @(x,y,z) Diffx_f(F1,x,y,z) + Diffy_f(F2,x,y,z) + Diffz_f(F3,x,y,z);
 
 %% Precompute math for updates
-% Volume data, exactly as in the volshow version
 gv = linspace(-1, 1, N);
-[x, y, z] = ndgrid(gv);                 % ndgrid order (x, y, z) for griddedInterpolant
+[x, y, z] = ndgrid(gv);
 DIV = divF(x, y, z);
 r = sqrt(x.^2 + y.^2 + z.^2);
 DIV = DIV / max(abs(DIV(:)));           % normalize
 V = DIV;
-V(r > 1) = 0;                           % keep continuity outside the ball
+V(r > 1) = 0;
 Abase = (abs(V) .* max(1 - r, 0)).^gammaA;   % opacity before the overall scale
 
-% Interpolants for sampling along the rays (0 outside the cube)
+% Interpolants for sampling along the rays
 Vint = griddedInterpolant({gv, gv, gv}, V,     'linear', 'nearest');
 Aint = griddedInterpolant({gv, gv, gv}, Abase, 'linear', 'nearest');
-vRange = [min(V(:)), max(V(:))];        % colormap spans the data range, as volshow does
+vRange = [min(V(:)), max(V(:))];
 
-% Ray depths: only the ball can be seen, one sample per voxel spacing
-tSteps = linspace(1, -1, N);            % front (camera side) to back
+% Ray depths, front (camera side) to back
+tSteps = linspace(1, -1, N);
 
 %% Make the initial plots
 hImg = image(ax, [-1.1 1.1], [-1.1 1.1], repmat(reshape(bgColor, 1, 1, 3), 2, 2));
@@ -76,12 +73,11 @@ axis(ax, 'image', 'off')
 disableDefaultInteractivity(ax)
 colormap(ax, cmapRB);  clim(ax, vRange)
 cb = colorbar(ax);
-cb.Label.Interpreter = 'latex';         % before String: TeX cannot read \mathbf
+cb.Label.Interpreter = 'latex';         % before String
 cb.Label.String = '$\nabla\cdot\mathbf{F}$ (scaled)';
 
 %% Plot elements are done - Make pretty
-title(ax, '$\nabla\cdot\mathbf{F}$ inside the unit ball, $\mathbf{F} = \langle x^2 - y,\ y^2 - z,\ z^2 - x \rangle$', ...
-    'Interpreter', 'latex')
+title(ax, '$\nabla\cdot\mathbf{F}$ inside the unit ball, $\mathbf{F} = \langle x^2 - y,\ y^2 - z,\ z^2 - x \rangle$')
 
 %% Build UI
 NumControls = 3;
@@ -117,7 +113,7 @@ render(nPix)
         lastPt = pt;
         azNew = mod(sAz.Value - dragRate*d(1) + 180, 360) - 180;   % wrap to [-180, 180)
         elNew = min(max(sEl.Value - dragRate*d(2), -90), 90);
-        sAz.Value = azNew;            % slider labels follow
+        sAz.Value = azNew;
         sEl.Value = elNew;
         render(nPixDrag)
     end
@@ -125,7 +121,7 @@ render(nPix)
     function stopDrag(~, ~)
         if dragging
             dragging = false;
-            render(nPix)              % full resolution when the mouse is let go
+            render(nPix)              % full resolution on release
         end
     end
 
@@ -141,9 +137,9 @@ render(nPix)
         u = [cos(az), sin(az), 0];
         w = cross(c, u);
 
-        % Pixels; only those over the ball can pick up any color
+        % Only pixels over the ball pick up color
         g = linspace(-1.1, 1.1, np);
-        [a, b] = meshgrid(g, g);                 % a right, b up (row 1 at the bottom)
+        [a, b] = meshgrid(g, g);
         hit = a.^2 + b.^2 <= 1;
         a = a(hit);  b = b(hit);
 
@@ -156,13 +152,12 @@ render(nPix)
             alpha = min(1, op * Aint(px, py, pz));
             idx = round((Vint(px, py, pz) - vRange(1)) / diff(vRange) * 255) + 1;
             idx = min(max(idx, 1), 256);
-            wgt = (1 - Aacc) .* alpha;           % front-to-back compositing
+            wgt = (1 - Aacc) .* alpha;
             Cacc = Cacc + wgt .* cmapRB(idx, :);
             Aacc = Aacc + wgt;
-            if all(Aacc > 0.99), break, end      % every ray is already opaque
+            if all(Aacc > 0.99), break, end
         end
 
-        % Blend with the background and put the rays back into a picture
         img = repmat(reshape(bgColor, 1, 3), np*np, 1);
         img(hit, :) = Cacc + (1 - Aacc) .* bgColor;
         set(hImg, 'CData', reshape(img, np, np, 3))

@@ -47,27 +47,20 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
                 [x, y, Z] = peaks(50);
                 h = surf(app.ax, x, y, Z);
         end
-        h.FaceColor = [0 0 1];   % pure blue
-        h.FaceAlpha = 0.8;       % slightly see-through (0=transparent, 1=opaque)
+        h.FaceColor = [0 0 1];
+        h.FaceAlpha = 0.8;
         if idx == 5
-            h.FaceAlpha = 0.6;   % peaks example uses a lighter alpha
+            h.FaceAlpha = 0.6;
         end
-        Pretty_Plot(app.ax)   % also sets the x, y, z labels
+        Pretty_Plot(app.ax)
         view(app.ax, 45,45)
-        title(app.ax, exampleNames{idx}, 'Interpreter', 'latex')
+        title(app.ax, exampleNames{idx})
         app.fig.Name = exampleNames{idx};
     end
 %% Make the initial plots
 drawExample(exampleIdx)
-%% Precompute math for updates
-% Light weight — skip
 %% Build UI
 NumControls = 2;
-% Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
 app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample, 'colOrRow', 'row');
-app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
-%% Functions for UI elements
-% (Previous/Next handled by app.addPrevNext above)
-%% Main Draw update function.
-% (Handled directly by drawExample above)
+app.galleryIdx = exampleIdx;
 end

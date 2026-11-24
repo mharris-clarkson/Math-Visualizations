@@ -2,8 +2,7 @@ function S15_8_Ex3()
 %% Spherical Coordinates Example: Region Between a Cone and a Sphere
 % Plots the cone z = r and the upper sphere z = 1/2 + sqrt(1/4 - r^2), plus
 % a point given by spherical coordinates (rho, theta, phi) controlled by
-% sliders. (In the code r_val / s_r hold rho, the distance to the origin;
-% r in the surfaces is the cylindrical radius sqrt(x^2+y^2).)
+% sliders.
 %
 %% Author Info
 %
@@ -14,7 +13,7 @@ function S15_8_Ex3()
 close all
 
 %% User parameters for math objects
-r_val = 1;  theta_val = 0;  phi_val = 0;   % initial point (spherical coordinates)
+r_val = 1;  theta_val = 0;  phi_val = 0;   % initial point (rho, theta, phi)
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -22,7 +21,7 @@ app = uiFigure('Cone and Sphere', 1);
 ax = app.ax(1);
 
 Pretty_Plot(ax)
-axis(ax, 'equal')   % (Pretty_Plot labels the axes $x$, $y$, $z$)
+axis(ax, 'equal')
 view(ax, 3)
 
 %% Static surfaces (cone and upper sphere, masked to where cone <= sphere)
@@ -41,7 +40,7 @@ surf(ax, x, y, z_sphere, 'FaceAlpha', 0.6, 'EdgeColor', 'none');
 camlight(ax)
 lighting(ax, 'phong')
 
-%% Moving line + point (created once, updated in place)
+%% Moving line and point
 hLine  = plot3(ax, [0 0], [0 0], [0 0], 'r', 'LineWidth', 3);
 hPoint = plot3(ax, 0, 0, 0, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
 
@@ -58,7 +57,7 @@ function updatePlot(~, ~)
     redraw(s_r.Value, s_theta.Value, s_phi.Value)
 end
 
-%% Redraw: moves the line and point to the new spherical coordinates
+%% Main Draw update function.
 function redraw(r, theta, phi)
     p = r*[cos(theta)*sin(phi), sin(theta)*sin(phi), cos(phi)];
     set(hLine,  'XData', [0 p(1)], 'YData', [0 p(2)], 'ZData', [0 p(3)])

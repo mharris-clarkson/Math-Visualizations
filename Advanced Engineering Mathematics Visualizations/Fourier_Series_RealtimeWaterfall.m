@@ -41,7 +41,7 @@ cleanupObj = onCleanup(@() release(reader));
 
 buffer        = zeros(fftSize, 1);
 waterfallData = -120*ones(nBins, history, 'single');
-w             = 0.5*(1 - cos(2*pi*(0:fftSize-1).'/(fftSize-1)));  % = hann(fftSize), no Signal Processing Toolbox needed
+w             = 0.5*(1 - cos(2*pi*(0:fftSize-1).'/(fftSize-1)));  % Hann window
 winGain       = sum(w)/2;          % so a full-scale sine reads 0 dB
 histIdx       = 1;                 % next column to write (circular)
 pending       = -120*ones(nBins, 1, 'single');   % max-hold within a column
@@ -83,15 +83,14 @@ btnFreq = app.addControl('button', 'Show 0-1000 Hz', 1, NumControls, @onFreqTogg
 btnWave = app.addControl('button', 'Hide Waveform', 2, NumControls, @onWaveToggle, ...
     'ColorChange', true, 'colOrRow', 'row');
 
-% Capture the subplot positions now that uiFigure has finished laying out
-% the axes around both buttons, and compute the "waterfall only" position
-% by extending the waterfall plot down to the bottom of the waveform plot.
+% Subplot positions after layout, and the "waterfall only" position that
+% extends the waterfall down to the bottom of the waveform plot
 posWaterWithWave = axW.Position;
 posWave          = axS.Position;
 posWaterNoWave   = [posWaterWithWave(1), posWave(2), ...
     posWaterWithWave(3), sum(posWaterWithWave([2 4])) - posWave(2)];
 
-% Waveform plot starts hidden, per showWaveform0.
+
 if ~showWaveform0
     btnWave.Value  = 1;
     btnWave.String = 'Show Waveform';
@@ -131,7 +130,7 @@ lastDraw = tic;
 while ishandle(app.fig)
     newAudio = reader();
 
-    % Slide the audio buffer (cheap: fftSize samples).
+    % Slide the audio buffer
     buffer = [buffer(hop+1:end); newAudio(:,1)];
 
     % FFT -> dBFS, with max-hold accumulated into the pending column.
@@ -150,7 +149,7 @@ while ishandle(app.fig)
         histIdx = mod(histIdx, history) + 1;
     end
 
-    % Throttle drawing by wall-clock time (also lets button callbacks run).
+    % Limit the drawing rate (also lets button callbacks run)
     if toc(lastDraw) >= 1/dispRate
         lastDraw = tic;
         set(hWater, 'CData', waterfallData(:, order(histIdx:histIdx+history-1)))

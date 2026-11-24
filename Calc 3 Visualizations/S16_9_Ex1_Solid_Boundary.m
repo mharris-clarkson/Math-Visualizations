@@ -24,7 +24,7 @@ F1 = @(x,y,z) x.*y;                    % vector field F = <F1, F2, F3>
 F2 = @(x,y,z) y.^2 + exp(x.*z.^2);
 F3 = @(x,y,z) sin(x.*y);
 
-nGrid    = 40;      % grid points per side for each face (original 200)
+nGrid    = 40;      % grid points per side for each face
 explodeD = 0.35;    % how far the faces move apart when exploded
 arrowLen = 0.3;     % length of the normal arrows
 faceCols = [0.8 0.2 0.2; 0.2 0.6 0.8; 0.2 0.8 0.4; 0.8 0.6 0.2];
@@ -101,7 +101,7 @@ edges = [t, 0*t, 1 - t.^2;          nanRow;   % top meets y = 0
          t, 2 + 0*t, 0*t];                    % bottom meets y + z = 2
 hEdges = plot3(ax, edges(:,1), edges(:,2), edges(:,3), 'k', 'LineWidth', 2);
 
-legend(ax, hFace, legStr, 'Location', 'northeast', 'Interpreter', 'latex')
+legend(ax, hFace, legStr, 'Location', 'northeast')
 
 %% Plot elements are done - Make pretty
 axis(ax, 'equal')
@@ -109,10 +109,8 @@ view(ax, 3)
 camlight(ax); lighting(ax, 'gouraud')
 title(ax, {'$E$: $z = 1 - x^2$, $z = 0$, $y = 0$, $y + z = 2$, \quad $\mathbf{F} = \langle xy,\ y^2 + e^{xz^2},\ \sin(xy) \rangle$', ...
     sprintf('$\\int\\!\\!\\int_S \\mathbf{F}\\cdot d\\mathbf{S} = %.4f$, \\quad $\\int\\!\\!\\int\\!\\!\\int_E \\nabla\\cdot\\mathbf{F}\\,dV = %.4f$ \\quad $(184/35 = %.4f)$', ...
-        sum(flux), volInt, 184/35)}, 'Interpreter', 'latex')
+        sum(flux), volInt, 184/35)})
 
-%% Precompute math for updates
-% Face data and normals are stored in face(i); the buttons only move or hide them.
 
 %% Build UI
 NumControls = 2;
@@ -120,9 +118,6 @@ btnExplode = app.addControl('button', '', 1, NumControls, @updatePlot, ...
     'Toggle', ["Explode faces", "Join faces"], 'ColorChange', true);
 btnNormals = app.addControl('button', '', 2, NumControls, @updatePlot, ...
     'Toggle', ["Show normals", "Hide normals"], 'ColorChange', true);
-
-%% Functions for UI elements
-% (Both buttons call updatePlot directly.)
 
 %% Main Draw update function.
     function updatePlot(~, ~)

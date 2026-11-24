@@ -11,11 +11,11 @@ close all
 
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
-% Points defining the cylinder. Values below are for a nice triagle
+% Cross-section of the cylinder. A triangle:
 x = [0,                   -0.5,            0.5];
 y = [1/sqrt(3), -1/(2*sqrt(3)), -1/(2*sqrt(3))];
 
-% For any curve x(t), y(t) you can use/modify the below
+% or any curve x(t), y(t) (this one overrides the triangle)
 t = linspace(0,1,50);
 x = cos(2*pi*t);
 y = sin(2*pi*t);
@@ -53,7 +53,6 @@ view(app.ax,65,40);
         e1 = e1 / norm(e1);
         e2 = cross(n, e1')';
         e2 = e2 / norm(e2);
-        % Compute normal-aligned cylinder
         t = linspace(-2,2,2);
         Xc = zeros(size(T,1),numel(t));
         Yc = Xc; Zc = Xc;
@@ -74,95 +73,62 @@ view(app.ax,65,40);
 
 
 %% ============== Make the initial plots =================================
-% Build grids
-% Close cylinder
 T = [x', y'];
-T = [T; T(1,:)];
-% Compute dimensions on plane
-u = linspace(-2, 2, 2);
-v = linspace(-2, 2, 2);
-[U,V] = meshgrid(u,v);
+T = [T; T(1,:)];      % close the curve
+[U,V] = meshgrid(linspace(-2, 2, 2));
 
-% Read angles and convert to radian
-theta = theta0;
-phi   = phi0;
-
-% Plot and label normal vector for plane
-n = normal_to_plane(theta,phi);
+n = normal_to_plane(theta0,phi0);
 Normal_vec = quiver3(app.ax,0,0,0, ...
     n(1), n(2), n(3), ...
     1, 'r','LineWidth',4,'MaxHeadSize',0.2);
 Normal_vec_text = text(app.ax, ...
     n(1), n(2), n(3), ...
     '$\vec n$', 'color','r', ...
-    'Interpreter','latex', ...
     'FontSize',18);
 
-% Compute data to plot
 [Xc, Yc, Zc, Xp, Yp, Zp, Xint, Yint, Zint] = cylinder_and_plane(n);
 
-% Plot cylinder
 cylinder = surf(app.ax,Xc,Yc,Zc, ...
     'FaceAlpha',0.5, ...
     'FaceColor',[0.85 0.4 0.1], ...
     'EdgeColor','none');
 
-% Plot plane
 plane = surf(app.ax, Xp, Yp, Zp, ...
     'FaceAlpha',0.9, ...
     'EdgeColor','none', ...
     'FaceColor',[0.2 0.6 0.9]);
 
-% Plot intersection
 intersection = plot3(app.ax, Xint, Yint, Zint, ...
     'b','LineWidth', 2);
 
-% Plot standard basis vectors
 plot_xyz_axis(app.ax, 1, 1, 1)
 
-% Add legend
-leg = legend(app.ax,'Normal Vector to Plane','Cylinder','Plane','Intersection of Cylinder and Plane');
-leg.Location = "northwest";
+legend(app.ax,'Normal Vector to Plane','Cylinder','Plane','Intersection of Cylinder and Plane', ...
+    'Location', 'northwest');
 
-% Set limits for fixed view
 xlim(app.ax, [-2.5,2.5])
 ylim(app.ax, [-2.5,2.5])
 zlim(app.ax,[-2.5,2.5])
 
-
-
-
 %% Build UI
 title(app.ax,app.fig.Name)
-NumControls = 2; % maximum number of controls
-% Theta
+NumControls = 2;
 thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls,  @update,...
     'Default',theta0,'Min',0,'Max',360,'Number_format','%d','AddToEnd','$^\circ$');
-thetaSlider.SliderStep = 10/360*[1, 1]; % force bigger and integer slider step
+thetaSlider.SliderStep = 10/360*[1, 1];
 
-% Phi
 phiSlider = app.addControl('slider', '$\phi = $', 2, NumControls,  @update,...
     'Default',phi0,'Min',0,'Max',360,'Number_format','%d','AddToEnd','$^\circ$');
-phiSlider.SliderStep = 10/360*[1, 1]; % force bigger  and integer slider step
+phiSlider.SliderStep = 10/360*[1, 1];
 
-
-% Launch update function
 update()
-
-%% Functions for UI elements
-
-
 
 %% Main Draw update function. All initial plot functions are updated below.
     function update(~,~)
-        % Read angles and convert to radian
         theta = thetaSlider.Value*pi/180;
         phi   = phiSlider.Value*pi/180;
 
-        % Turn on or off Theta (theta does nothing when n is along the z-axis).
-        % Only touch the slider when its visibility actually changes: the
-        % forced refresh in UpdateUISlider calls drawnow, which slowed every
-        % slider move.
+        % Hide theta when n is along the z-axis (it does nothing there)
         if  abs(cos(phi)) > 1-1e-6
             newVis = "off";
         else
@@ -173,12 +139,10 @@ update()
             app.UpdateUISlider(thetaSlider, thetaSlider.Value);
         end
 
-        % Plot and label normal vector for plane
         n = normal_to_plane(theta,phi);
         set(Normal_vec, 'UData',n(1), 'VData',n(2), 'WData',n(3))
         set(Normal_vec_text, 'Position', [n(1), n(2), n(3)])
 
-        % compute and update plots
         [Xc, Yc, Zc, Xp, Yp, Zp, Xint, Yint, Zint] = cylinder_and_plane(n);
         set(cylinder, 'XData',Xc, 'YData',Yc, 'ZData',Zc)
         set(plane, 'XData',Xp, 'YData',Yp, 'ZData',Zp)

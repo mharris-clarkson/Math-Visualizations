@@ -23,7 +23,7 @@ clc; clear; close all;
 %  =========================================================================
 
 % --- Grid ---
-Nx = 180;  Ny = 180;   % Grid points (180 is suboptimal for FFT but keeps file <50 MB)
+Nx = 180;  Ny = 180;   % Grid points (keeps the data file under 50 MB)
 Lx = 10;   Ly = 10;    % Domain size
 
 % --- Time ---
@@ -33,7 +33,7 @@ T_plot_and_save = 1;  % Output interval (plots + saves)
 
 % --- Flow ---
 U0 = 2;             % Peak jet velocity
-Re = 500 * 1.25;    % Reynolds number (Re ~500–625 captures both KHI and vortex roll-up)
+Re = 500 * 1.25;    % Reynolds number
 nu = 1 / Re;        % Kinematic viscosity
 
 % --- Jet geometry ---
@@ -46,11 +46,7 @@ delta = 0.01 / k0;  % Shear-layer thickness (thin -> fast KHI onset)
 amp = 1e-3;         % Amplitude of vortex-sheet perturbation
 
 % --- I/O ---
-if isfile('KH_data.mat') % if there is no data then save
-    save_data = false;
-else
-    save_data = true;
-end
+save_data = ~isfile('KH_data.mat');   % save only if there is no data yet
 plot_data = true;
 filename  = 'KH_data.mat';
 
@@ -200,12 +196,7 @@ end
 
 function omega_new = rk4_step(omega0, u, v, K2, KX, KY, dealias, nu, dt)
 %RK4_STEP  One RK4 step for the spectral vorticity equation.
-%
-%  All fields are in spectral space except u and v (physical, used only to
-%  seed the first velocity evaluation; subsequent stages recompute from psi).
 
-    % Stage array, complex like omega0 (a real array was converted to
-    % complex, i.e. re-allocated, on the first assignment of every step)
     k_all = zeros([size(omega0), 4], 'like', omega0);
 
     w = omega0;
@@ -247,7 +238,7 @@ function plot_fields(x, y, vel, u, v, vort, t)
     % Panel 1: velocity magnitude with quivers
     subplot(1,2,1)
     pcolor(x, y, vel);  shading flat;  axis xy equal
-    Pretty_Colormap('amp');  colorbar       % cached cmocean('amp')
+    Pretty_Colormap('amp');  colorbar
     hold on
     stride = 16;
     quiver(x(1:stride:end), y(1:stride:end), ...
@@ -260,7 +251,7 @@ function plot_fields(x, y, vel, u, v, vort, t)
     % Panel 2: vorticity
     subplot(1,2,2)
     imagesc(x, y, vort);  axis xy equal
-    Pretty_Colormap('balance');  colorbar   % cached cmocean('balance')
+    Pretty_Colormap('balance');  colorbar
     xlim([0, x(end)]);  ylim([y(1), y(end)])
     title('Vorticity (KH structures)')
     set(gca, 'FontSize', 18)

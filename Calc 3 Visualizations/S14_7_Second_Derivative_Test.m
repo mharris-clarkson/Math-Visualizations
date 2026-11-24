@@ -15,7 +15,7 @@ close all
 f         = @peaks;
 max_val   = 2;
 Delta_val = 0.005;   % grid spacing used to find the critical points
-Delta_plot = 0.02;   % grid spacing of the drawn surface (looks the same, 16x fewer faces)
+Delta_plot = 0.02;   % grid spacing of the drawn surface
 critTol   = 0.1;     % |grad f| below this counts as a critical point in the title
 x0        = 0;
 y0        = 0;
@@ -32,8 +32,7 @@ xlim(app.ax, max_val*[-1, 1])
 ylim(app.ax, max_val*[-1, 1])
 
 %% Optional math functions for plot computations
-    % Point, tangent vectors and the local plane/paraboloid at (x,y).
-    % Derivatives come from the Diff*_f helpers (step sizes tuned there).
+% Point, tangent vectors and the local plane/paraboloid at (x,y)
     function [z, Tx, Ty, Zp, D, fxx, gradNorm] = geometry_at(x, y)
         z   = f(x, y);
         fx  = Diffx_f(f, x, y);
@@ -54,7 +53,7 @@ ylim(app.ax, max_val*[-1, 1])
         end
     end
 
-    % Title: which approximation, D and f_xx, and the test's verdict
+% Title: approximation, D, f_xx and the test's verdict
     function updateTitle(D, fxx, gradNorm)
         if useParaboloid
             approxStr = 'Tangent Paraboloid';
@@ -73,29 +72,23 @@ ylim(app.ax, max_val*[-1, 1])
             verdict = 'test inconclusive ($D = 0$)';
         end
         title(app.ax, {['Second Derivative Test --- ' approxStr], ...
-            sprintf('$D = f_{xx}f_{yy} - f_{xy}^2 = %.2f$, $f_{xx} = %.2f$: %s', D, fxx, verdict)}, ...
-            'Interpreter', 'latex')
+            sprintf('$D = f_{xx}f_{yy} - f_{xy}^2 = %.2f$, $f_{xx} = %.2f$: %s', D, fxx, verdict)})
     end
 
 %% Make the initial plots
-% Fine grid (Delta_val) for finding critical points below; the drawn
-% surface and contours use the coarser Delta_plot grid. A transparent
-% 801 x 801 surface was very slow to render and rotate on weak laptops.
+% Fine grid for finding critical points, coarser grid for drawing
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
 [Xs, Ys] = meshgrid(-max_val:Delta_plot:max_val);
 Zs = f(Xs, Ys);
 surf(app.ax, Xs, Ys, Zs, 'EdgeColor', 'none', 'FaceAlpha', 0.5)
 colormap(app.ax, parula)
-hold(app.ax, 'on')
 contour3(app.ax, Xs, Ys, Zs, 20, 'k', 'LineWidth', 1)
 Pretty_Plot(app.ax)
 
-% Local (u,v) patch for the plane/paraboloid, built once
 tp_size = 0.25;
 [u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
 
-% Point, tangent vectors and plane: created once, updated in place
 [z0, Tx, Ty, Zp, D0, fxx0, g0] = geometry_at(x0, y0);
 hPt = plot3(app.ax, x0, y0, z0, 'ko', 'MarkerSize', 8, ...
     'LineWidth', 2, 'MarkerFaceColor', 'k');
@@ -106,8 +99,7 @@ hTp = surf(app.ax, x0+u, y0+v, Zp, ...
 updateTitle(D0, fxx0, g0)
 
 %% Precompute critical points for snap buttons
-% Local max / min: grid points that beat all 8 neighbours.
-% Local_Extrema_2D is base MATLAB (no Image Processing Toolbox needed).
+% Local max / min: grid points that beat all 8 neighbours
 [localMaxMask, localMinMask] = Local_Extrema_2D(Z);
 maxList = [X(localMaxMask), Y(localMaxMask)];
 minList = [X(localMinMask), Y(localMinMask)];
@@ -126,8 +118,7 @@ fxy_g = (circshift(circshift(Z,[-1 0]),[0 -1]) ...
        + circshift(circshift(Z,[ 1 0]),[0  1])) / (4*h_fd^2);
 gradMag   = sqrt(fx_g.^2 + fy_g.^2);
 detH      = fxx_g.*fyy_g - fxy_g.^2;
-% Keep only the grid point where |grad f| is smallest in each cluster, so
-% each saddle appears once (the old version listed 5 points for 3 saddles)
+% One grid point per saddle: where |grad f| is smallest in its cluster
 [~, gradMin] = Local_Extrema_2D(gradMag);
 saddleMask = gradMin & (gradMag < 0.05) & (detH < 0);
 saddleList = [X(saddleMask), Y(saddleMask)];
@@ -155,7 +146,7 @@ app.addControl('button', 'Snap: Saddle Point', 6, NumControls, @goToSaddle);
 
 %% Functions for UI elements
     function toggleApprox(~, ~)
-        useParaboloid = logical(btnToggle.Value);   % text follows via 'Toggle'
+        useParaboloid = logical(btnToggle.Value);
         updatePlot()
     end
 
@@ -184,8 +175,6 @@ app.addControl('button', 'Snap: Saddle Point', 6, NumControls, @goToSaddle);
     end
 
 %% Main Draw update function.
-    % Moves the existing objects (no delete/re-create), and no longer
-    % resets the camera, so a view the student rotated to is kept.
     function updatePlot(~, ~)
         x = xSlider.Value;
         y = ySlider.Value;

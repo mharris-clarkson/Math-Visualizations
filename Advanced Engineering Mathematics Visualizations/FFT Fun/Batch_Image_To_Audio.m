@@ -3,12 +3,8 @@ function Batch_Image_To_Audio()
 % Converts every PNG in the "PNGs to Convert" folder into its own WAV file
 % (edges -> sequential tones, no intermodulation), saved to a "wav files"
 % subfolder, then concatenates all of them into one combined file in that
-% same subfolder. This only synthesizes and writes audio -- it never
-% reads anything back for analysis.
-%
-% Needs only base MATLAB: the edge detection and image resizing that used
-% to come from the Image Processing Toolbox (edge, imresize, rgb2gray,
-% im2double) are done by the local functions at the bottom of this file.
+% same subfolder. Needs only base MATLAB (edge detection and resizing are
+% local functions at the bottom of this file).
 %
 %% Author Info
 %
@@ -24,7 +20,7 @@ fs           = 44100;    % sample rate (Hz)
 f_min        = 500;      % lowest tone frequency (Hz)
 f_max        = 15000;    % highest tone frequency (Hz)
 total_dur    = 8;        % target duration per image (s)
-min_tone_ms  = 3;        % minimum tone duration (ms) -- keeps tones clean, avoids clicks
+min_tone_ms  = 3;        % minimum tone duration (ms)
 gapSec       = 0.5;      % silence inserted between images in the combined file
 inDir        = 'PNGs to Convert';
 outDir       = 'wav files';
@@ -35,7 +31,7 @@ if ~exist(outDir, 'dir')
     mkdir(outDir)
 end
 
-%% Find every PNG in the input folder (fullfile works on Windows, Mac and Linux)
+%% Find every PNG in the input folder
 pngFiles = dir(fullfile(inDir, '*.png'));
 if isempty(pngFiles)
     fprintf('No PNG files found in %s\n', fullfile(pwd, inDir));
@@ -67,14 +63,14 @@ end
 y_combined = [allAudio{:}];
 audiowrite(combinedFile, y_combined', fs);
 if print_Progress
-fprintf('Combined WAV written: %s  (%.2f s, %d images)\n', ...
-    combinedFile, length(y_combined)/fs, numel(pngFiles));
-fprintf('Total batch time: %.2f s\n', toc(tBatch));
+    fprintf('Combined WAV written: %s  (%.2f s, %d images)\n', ...
+        combinedFile, length(y_combined)/fs, numel(pngFiles));
+    fprintf('Total batch time: %.2f s\n', toc(tBatch));
 end
 end
 
 %% ========================================================================
-% Per-image encoder (synthesis + write only -- no decoding/analysis)
+% Per-image encoder
 % ========================================================================
 
 function y_total = Image_To_Edge_Audio(imgFile, f_min, f_max, fs, total_dur, min_tone_ms, outDir)
@@ -102,10 +98,7 @@ I = loadGrayImage(imgFile);
 
 max_pixels = floor((total_dur*fs)/min_tone_samp);
 
-% Pre-shrink before the first edge call: the target is only ~max_pixels
-% edge pixels, so running Canny at a multi-megapixel source resolution
-% is wasted work that was the main cause of multi-minute hangs on large
-% photos. Cap the long side generously up front.
+% Shrink large images before the first edge pass
 maxStartDim = 800;
 [origRows, origCols] = size(I);
 if max(origRows, origCols) > maxStartDim
@@ -115,9 +108,7 @@ end
 [rows, cols] = size(I);
 edges = cannyEdges(I);
 
-% Shrink loop, with a safety margin so every step shrinks meaningfully
-% (guarantees fast convergence even when the edge count barely exceeds
-% the target) and a hard iteration cap so this can never hang forever.
+% Shrink until the edge count fits (with an iteration cap)
 maxIter = 15;
 iter = 0;
 while sum(edges(:)) > max_pixels && rows > 2 && cols > 2 && iter < maxIter
@@ -139,11 +130,6 @@ end
 function y_total = synthesizeEdgeTones(edges, freq_rows, tone_dur, fs)
 % One tone per edge pixel in a column, concatenated column by column, with
 % a short raised-cosine fade in/out on every tone to avoid clicks.
-%
-% Vectorized per column: instead of looping over every edge pixel and
-% calling sin() once each, each column's whole batch of tones is built as
-% one (numActiveTones x tone_dur) matrix and flattened in one shot -- the
-% only remaining loop is over columns, not over individual edge pixels.
 numCols = size(edges, 2);
 
 fade_samp = min(round(fs*0.002), floor(tone_dur/2));   % 2 ms, or half a tone if shorter
@@ -165,8 +151,7 @@ for col = 1:numCols
         continue
     end
 
-    % Starting phase of each tone in this column, carried from the
-    % previous tone (or from the previous column for the first one).
+    % Starting phase of each tone, carried on from the previous tone
     phaseInc   = 2*pi*freqs*tone_dur/fs;                      % n x 1
     phaseStart = phase + [0; cumsum(phaseInc(1:end-1))];      % n x 1
 

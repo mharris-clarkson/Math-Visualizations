@@ -36,9 +36,7 @@ theta = linspace(0, pi, 300);
 Xc = (theta - pi/2)/pi/2;
 Yc = sin(theta) + 0.3*sin(2*theta);
 
-% Re-space the positive-x half so it starts exactly at x = 0. (Xc is
-% already linear in theta, so this does not make a vertical line; the
-% closing segment added below is the straight edge along y = 0.)
+% Re-space the positive-x half so it starts exactly at x = 0
 posX    = Xc >= 0;
 Xc(posX) = linspace(0, max(Xc), nnz(posX));
 
@@ -53,15 +51,12 @@ end
 xlims = [min(Xb), max(Xb)];
 ylims = [min(Yb), max(Yb)];
 
-%% "Exact" integral, via a fine midpoint grid restricted to the region
-% Sample at cell centres so each sample owns exactly one dxg*dyg cell.
-% (Sampling the cell corners with area/numel weights was ~0.65% low:
-% 0.3976 instead of 0.4002.)
+%% "Exact" integral: fine midpoint grid restricted to the region
 dxg           = (xlims(2)-xlims(1))/resExact;
 dyg           = (ylims(2)-ylims(1))/resExact;
 [xg, yg]      = meshgrid(linspace(xlims(1)+dxg/2, xlims(2)-dxg/2, resExact), ...
                           linspace(ylims(1)+dyg/2, ylims(2)-dyg/2, resExact));
-inRegionFine  = inpolygon(xg, yg, Xb, Yb);
+inRegionFine  = Inside_Polygon_Grid(xg, yg, Xb, Yb);
 cellArea      = dxg*dyg;
 exactIntegral = sum(f(xg(inRegionFine), yg(inRegionFine)))*cellArea;
 
@@ -69,17 +64,16 @@ exactIntegral = sum(f(xg(inRegionFine), yg(inRegionFine)))*cellArea;
 [xs, ys] = meshgrid(linspace(xlims(1), xlims(2), resSurf), ...
                      linspace(ylims(1), ylims(2), resSurf));
 zs       = f(xs, ys);
-% The same surface with NaN outside the region (NaN faces are not drawn)
+% Same surface with NaN outside the region
 zsRegion = zs;
-zsRegion(~inpolygon(xs, ys, Xb, Yb)) = NaN;
+zsRegion(~Inside_Polygon_Grid(xs, ys, Xb, Yb)) = NaN;
 
 hSurf = surf(app.ax, xs, ys, zs, zs, 'EdgeColor', 'none', 'FaceAlpha', 0.95);
-Pretty_Color_Positive(app.ax, zs);   % amp colormap on [0, max f] + colorbar
+Pretty_Color_Positive(app.ax, zs);
 Pretty_Plot(app.ax)
 zlabel(app.ax, 'f(x,y)')
 
-%% Vertical boundary "curtain" along the region's edge -- one patch object
-% for all segments instead of one fill3 call per curve segment.
+%% Vertical boundary curtain along the region's edge
 zmax = max(zs(:));
 nSeg = numel(Xb) - 1;
 V = [Xb(1:end-1).', Yb(1:end-1).', zeros(nSeg,1); ...
@@ -90,8 +84,7 @@ curtainFaces = (1:nSeg).' + [0, nSeg, 2*nSeg, 3*nSeg];
 patch(app.ax, 'Faces', curtainFaces, 'Vertices', V, ...
     'FaceColor', 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'k');
 
-%% Riemann-prism graphics: 3 patch objects + 1 line, created once and
-% updated in place (set Faces/Vertices) each time N changes
+%% Riemann prisms: created once, updated in place
 PrismBottom = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
     'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
 PrismSide   = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
@@ -100,7 +93,7 @@ PrismTop    = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
     'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
 SamplePts   = plot3(app.ax, NaN, NaN, NaN, 'ko', ...
     'MarkerFaceColor', 'k', 'MarkerSize', 4);
-Ncurrent    = NaN;   % N currently drawn (skip redraws when N has not changed)
+Ncurrent    = NaN;
 
 redraw(N0)
 
@@ -125,15 +118,8 @@ function toggleMask(~, ~)
     end
 end
 
-%% Riemann-prism builder.
-% Vectorized: finds which candidate cell centers lie inside the region
-% with one inpolygon call, then builds all of those prisms as three patch
-% objects in one shot -- instead of looping over every candidate cell,
-% testing inpolygon one point at a time, and calling fill3 six times for
-% each cell that passes.
+%% Riemann-prism builder (cells whose centres are inside the region)
 function redraw(Nside)
-    % The slider moves continuously but N is a whole number: only rebuild
-    % the prisms when N actually changes
     if Nside == Ncurrent, return, end
     Ncurrent = Nside;
 
@@ -152,14 +138,11 @@ function redraw(Nside)
 
     [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(x, y, z, dx, dy);
 
-    % Vertices first, then Faces, in one set() call per object
     set(PrismBottom, 'Vertices', V, 'Faces', bottomFaces)
     set(PrismSide,   'Vertices', V, 'Faces', sideFaces)
     set(PrismTop,    'Vertices', V, 'Faces', topFaces)
     set(SamplePts,   'XData', x, 'YData', y, 'ZData', z)
 
-    % splitlines: a newline inside one LaTeX string does not start a new
-    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
     title(app.ax, splitlines(sprintf(['Double Integral Approximation over Curvy Region\n' ...
         'Number cubes = %d   Cubes inside region = %d\n' ...
         'Riemann Approx = %.6f   $|$   Exact = %.6f'], ...

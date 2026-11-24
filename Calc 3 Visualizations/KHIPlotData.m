@@ -20,10 +20,7 @@ scale  = 0.15;  % quiver arrow scale factor
 %% Load libraries
 run('setup.m')
 
-%% Load data or if it does not exist, create it
-
-% The data file lives next to this file (run() saves it there too), so the
-% demo works from any current folder.
+%% Load data, or run the simulation to create it
 dataFile = fullfile(fileparts(mfilename('fullpath')), 'KH_data.mat');
 if isfile(dataFile)
      data = load(dataFile);
@@ -47,7 +44,7 @@ yLim = [min(y), max(y)];
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Kelvin-Helmholtz Instability', 1);
-delete(app.ax)  % we manage axes manually
+delete(app.ax)  % axes are built by buildAxes
 
 % State
 plotVorticity = false;
@@ -57,11 +54,9 @@ hImgVel  = [];
 hQuiver  = [];
 hImgVort = [];
 
-%% Build UI first — so Subplot_Mover runs and reserves the bottom strip
+%% Build UI first, so the plot area above the controls is known
 NumControls = 2;
 
-% 'Step',1: every arrow click moves one snapshot (default 1% steps often
-% left round(idx) unchanged)
 tSlider = app.addControl('slider', '$t$ Index $ = $', 1, NumControls, @updatePlot, ...
     'Default', 1, 'Min', 1, 'Max', num_snapshots, 'Number_format', '%d', 'colOrRow', 'row', ...
     'Step', 1);
@@ -70,21 +65,19 @@ btnVort = app.addControl('button', '', 2, NumControls, ...
     @toggleVorticity, 'ColorChange', true, 'colOrRow', 'row', ...
     'Toggle', ["Vorticity: OFF", "Vorticity: ON"]);
 
-%% Read back the plot area that Subplot_Mover reserved so axes fill it exactly
-% Subplot_Mover shifts axes up to pos(2)+pos(4)+0.1 for 'row' layout.
-% The slider occupies the lowest control — read its position to get the boundary.
+%% Plot area above the controls
 ctrlBottom   = tSlider.Position(2);
 ctrlHeight   = tSlider.Position(4);
-PLOT_BOTTOM  = ctrlBottom + ctrlHeight + 0.12;  % same padding Subplot_Mover uses
+PLOT_BOTTOM  = ctrlBottom + ctrlHeight + 0.12;
 PLOT_HEIGHT  = 1 - PLOT_BOTTOM - 0.05;
 MARGIN_L     = 0.07;
 MARGIN_R     = 0.04;
 GAP          = 0.03;
 
 %% Make the initial plots
-buildAxes()   % (buildAxes ends with updatePlot)
+buildAxes()
 
-%% Layout helper — builds or rebuilds plot axes without touching controls
+%% Build or rebuild the plot axes
     function buildAxes()
         if ~isempty(ax_vel)  && isvalid(ax_vel);  delete(ax_vel);  end
         if ~isempty(ax_vort) && isvalid(ax_vort); delete(ax_vort); end
@@ -117,30 +110,28 @@ buildAxes()   % (buildAxes ends with updatePlot)
         hold(ax_vel, 'off')
         Pretty_Plot(ax_vel)
 
-
         % --- Vorticity panel ---
         if plotVorticity
             hImgVort = pcolor(ax_vort, x, y, VORT_store(:,:,idx));
             shading(ax_vort,'interp')
-        Pretty_Color_Centered(ax_vort, VORT_store(:,:,end));
-            title(ax_vort, 'Vorticity', 'Interpreter', 'latex')
+            Pretty_Color_Centered(ax_vort, VORT_store(:,:,end));
+            title(ax_vort, 'Vorticity')
             Pretty_Plot(ax_vort)
             ylabel(ax_vort,'')
-yticks(ax_vort,[])
+            yticks(ax_vort,[])
         end
 
-        updatePlot()   % sets the data and the title
+        updatePlot()
     end
 
 %% Functions for UI elements
     function toggleVorticity(~, ~)
-        plotVorticity = logical(btnVort.Value);   % label follows Value ('Toggle')
+        plotVorticity = logical(btnVort.Value);
         buildAxes()
     end
 
     function updateTitle(idx)
-        title(ax_vel, sprintf('Velocity Field,  $t = %.2f$', T_store(idx)), ...
-            'Interpreter', 'latex')
+        title(ax_vel, sprintf('Velocity Field,  $t = %.2f$', T_store(idx)))
     end
 
 %% Main Draw update function.
@@ -159,8 +150,7 @@ yticks(ax_vort,[])
     end
 end
 
-%% Run the simulation script in its own workspace: Run_KHI_Sim starts with
-%  'clc; clear; close all', which would otherwise wipe this file's variables.
+%% Run the simulation script in its own workspace (it clears variables)
 function runSimulation()
 run(fullfile(fileparts(mfilename('fullpath')), 'Run_KHI_Sim.m'))
 close all   % the simulation's own preview figure

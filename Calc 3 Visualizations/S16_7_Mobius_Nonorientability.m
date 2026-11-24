@@ -20,8 +20,8 @@ close all
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
 halfWidth = 0.3;     % strip is -halfWidth <= v <= halfWidth
-nU        = 150;     % surface grid along the strip (original 250)
-nV        = 20;      % surface grid across the strip (original 40)
+nU        = 150;     % surface grid along the strip
+nV        = 20;      % surface grid across the strip
 nPath     = 400;     % points on the centerline
 arrowLen  = 0.35;    % length of the normal arrows
 uMax      = 2*pi;    % one lap
@@ -40,7 +40,7 @@ mobius = @(u,v) [(1 + v.*cos(u/2)).*cos(u), ...
                  (1 + v.*cos(u/2)).*sin(u), ...
                   v.*sin(u/2)];
 
-% Normal n = r_u x r_v at (u, v = 0), partials from the helper Diff_f
+% Unit normal n = r_u x r_v at (u, v = 0)
     function nv = mobiusNormal(u)
         ru = Diff_f(@(t) mobius(t, 0), u);
         rv = Diff_f(@(t) mobius(u, t), 0);
@@ -84,8 +84,6 @@ legend(ax, [hN hNneg], {'$\mathbf{n} = \mathbf{r}_u \times \mathbf{r}_v$', '$-\m
 axis(ax, 'equal')
 view(ax, 3)
 
-%% Precompute math for updates
-% Nothing heavy: one point and two finite differences per slider move.
 
 %% Build UI
 NumControls = 1;
@@ -94,9 +92,6 @@ sU = app.addControl('slider', '$u = $', 1, NumControls, @updatePlot, ...
     'colOrRow', 'row');
 
 updatePlot()
-
-%% Functions for UI elements
-% (The slider calls updatePlot directly.)
 
 %% Main Draw update function.
     function updatePlot(~, ~)
@@ -114,8 +109,6 @@ updatePlot()
         set(hNneg, 'XData', p(1), 'YData', p(2), 'ZData', p(3), ...
             'UData', -arrowLen*n(1), 'VData', -arrowLen*n(2), 'WData', -arrowLen*n(3))
 
-        % Title: how the normal compares with the starting one
-        d = dot(n, n0);
         msg = '';
         if abs(u - 2*pi) < 1e-9
             msg = ': same point, opposite normal!';

@@ -6,7 +6,7 @@ function PI_Controlled_Car()
 % This function was written by Dr Matthew Harris an assistant professor at
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
-close all % Close all Windows
+close all
 
 %% User parameters for math objects. Adjust these to modify all math objects
 %  below.
@@ -38,16 +38,15 @@ SlideriMax = 1;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure("PI Controlled Car",1); % 3 is an optional argument to allow for more subplots
+app = uiFigure("PI Controlled Car",1);
 
 %% Optional math functions for plot computations
     function [Controlled_velocity] = Compute_Vel (ki, kp)
         % Car: m v' = -mu v + u, controller u = kp e + ki int e, e = r - v.
         % Transfer function V/R = (kp s + ki)/(m s^2 + (mu+kp) s + ki), i.e.
         %   num = [kp/m  ki/m],  den = [1  (mu+kp)/m  ki/m]
-        % (tf/lsim need the Control System Toolbox). Same system in state
-        % space, stepped exactly over each dt with the input held constant
-        % (zero-order hold), using base MATLAB only:
+        % Same system in state space, stepped exactly over each dt with the
+        % input held constant (zero-order hold):
         A = [0, 1; -ki/m, -(mu+kp)/m];
         B = [0; 1];
         C = [ki/m, kp/m];
@@ -67,17 +66,13 @@ app = uiFigure("PI Controlled Car",1); % 3 is an optional argument to allow for 
 Controlled_velocity = Compute_Vel (ki, kp);
 
 plot(app.ax, t, Desired_Path,'r')
-Car_Path = plot(app.ax, t,Controlled_velocity,'k');   % (uiFigure already set hold on)
+Car_Path = plot(app.ax, t,Controlled_velocity,'k');
 title(app.ax, 'PI Controlled Car')
 Pretty_Plot(app.ax);
 xlabel(app.ax, 'Time $t$')
 ylabel(app.ax, 'Speed $v(t)$')
 legend(app.ax, {'Desired speed', 'Car speed'}, 'Location', 'southeast')
 
-
-
-%% Precompute math for updates
-% Skip
 
 
 %% UI layout and updates

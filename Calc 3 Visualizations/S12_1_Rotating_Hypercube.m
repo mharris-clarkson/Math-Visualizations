@@ -40,7 +40,7 @@ planeAxes = [1 2;   % xy
              2 3;   % yz
              2 4;   % yw
              3 4];  % zw
-planeOn0  = [true true true false true false];   % xy, xz, xw, yw (as the original)
+planeOn0  = [true true true false true false];   % which planes start switched on
 
 % Perspective projection 4D -> 3D (viewer on the w axis at w = distance)
 distance0   = 2;        % starting viewer distance
@@ -68,14 +68,13 @@ run('setup.m')
 app = uiFigure('Rotating Hypercube', 1);
 
 %% Optional math functions for plot computations
-% Rotation by angle t (radians) in the plane of axes i and j of R^n: the
-% identity matrix except for the block [cos -sin; sin cos] in rows/cols i,j.
+% Rotation by angle t in the plane of axes i and j of R^n
     function R = planeRotation(i, j, t)
         R = eye(n);
         R([i j], [i j]) = [cos(t) -sin(t); sin(t) cos(t)];
     end
 
-% All active plane rotations, applied one after the other (list order)
+% All active plane rotations, applied in list order
     function R = totalRotation(t)
         R = eye(n);
         for iP = find(planeOn)
@@ -83,17 +82,13 @@ app = uiFigure('Rotating Hypercube', 1);
         end
     end
 
-% Perspective projection 4D -> 3D from a viewer at w = dist. Points with
-% larger w are closer to the viewer and so drawn larger. The factor
-% (dist - 1) is only a zoom: it keeps the picture inside [-1,1]^3 for
-% every distance, so the axes never have to change.
+% Perspective projection 4D -> 3D from a viewer at w = dist. The factor
+% (dist - 1) keeps the picture inside [-1,1]^3 for every distance.
     function P3 = project(P4, dist)
         P3 = P4(:,1:3) .* ((dist - 1) ./ (dist - P4(:,4)));
     end
 
-% Line data for a set of edges, with NaN breaks between edges, so that all
-% edges of one colour are a single line object (much lighter than one
-% line per edge).
+% Line data for a set of edges, NaN-separated so each colour is one line
     function [X, Y, Z] = edgeLines(P, E)
         gap = nan(size(E,1), 1);
         X = reshape([P(E(:,1),1) P(E(:,2),1) gap].', [], 1);
@@ -102,7 +97,7 @@ app = uiFigure('Rotating Hypercube', 1);
     end
 
 %% Precompute math for updates
-n       = size(vertices, 2);   % dimension
+n       = size(vertices, 2);
 nPlanes = size(planeAxes, 1);
 planeOn = planeOn0;
 
@@ -116,8 +111,7 @@ for a = 1:size(vertices,1)
     end
 end
 
-% Sort the edges by the axis they are parallel to (the one coordinate
-% that differs between their two vertices)
+% Group the edges by the axis they are parallel to
 [~, edgeDir] = max(vertices(edges(:,1),:) ~= vertices(edges(:,2),:), [], 2);
 edgesByDir   = cell(1, n);
 for d = 1:n
@@ -137,7 +131,6 @@ legend(app.ax, hEdges, compose('edges parallel to $%s$', string(axisNames.')), .
 
 hTitle = title(app.ax, app.fig.Name);
 
-% Fixed view so the hypercube does not jump while it turns
 axis(app.ax, 'equal')
 axis(app.ax, [-1 1 -1 1 -1 1])
 view(app.ax, 3)
@@ -146,14 +139,13 @@ axis(app.ax, 'off')
 %% Animation state
 animTimer = timer('ExecutionMode', 'fixedRate', ...
     'Period',   framePeriod, ...
-    'BusyMode', 'drop', ...       % skip frames rather than queue them
+    'BusyMode', 'drop', ...
     'TimerFcn', @timerStep);
 
-% Stop AND delete the timer when the figure is closed
 app.fig.DeleteFcn = @(~,~) cleanupTimer();
 
 %% Build UI
-NumControls = 3 + nPlanes; % maximum number of controls
+NumControls = 3 + nPlanes;
 
 thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls, @updatePlot, ...
     'Default', theta0, 'Min', 0, 'Max', 360, ...
@@ -170,10 +162,9 @@ for p = 1:nPlanes
     planeButtons(p) = app.addControl('button', ...
         ['Rotate in $' axisNames(planeAxes(p,:)) '$-plane'], 3 + p, NumControls, ...
         @planeToggled, 'ColorChange', true);
-    planeButtons(p).Value = double(planeOn0(p));   % listener sets the highlight
+    planeButtons(p).Value = double(planeOn0(p));
 end
 
-% Draw the initial state
 updateTitle();
 updatePlot();
 
@@ -185,7 +176,7 @@ updatePlot();
         updatePlot();
     end
 
-% Title lists the active planes (only redrawn when they change)
+% Title lists the active planes
     function updateTitle()
         names = arrayfun(@(p) ['$' axisNames(planeAxes(p,:)) '$'], find(planeOn), ...
             'UniformOutput', false);
@@ -209,12 +200,10 @@ updatePlot();
 % One animation frame: advance the slider and redraw
     function timerStep(~, ~)
         if ~isvalid(app.fig), cleanupTimer(); return, end
-        thetaSlider.Value = mod(thetaSlider.Value + dTheta, 360); % label follows
+        thetaSlider.Value = mod(thetaSlider.Value + dTheta, 360);
         updatePlot();
     end
 
-% The timer may already be gone (e.g. a test teardown ran
-% delete(timerfindall) before closing the figure), so check isvalid first.
     function cleanupTimer()
         if isvalid(animTimer)
             stop(animTimer);

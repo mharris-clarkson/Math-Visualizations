@@ -21,10 +21,8 @@ v = @(x,y) y.*sqrt(x);
 x0 = 0.2; y0 = 0.3;
 Dx = 0.5; Dy = 0.5;
 
-N_plot = 30;   % points used to trace each curved edge of the rectangle's image
-limitDelta = 1e-4;  % Delta x, Delta y used when a slider sits at its "-> 0" end
-                    % (much smaller than the slider minimum, so the area
-                    % ratio really matches |det J| to the digits shown)
+N_plot = 30;        % points per curved edge of the image
+limitDelta = 1e-4;  % Delta x, Delta y used at the "-> 0" slider end
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -32,12 +30,10 @@ app = uiFigure('Jacobian Motivation', 2);
 ax1 = app.ax(1);
 ax2 = app.ax(2);
 
-% (uiFigure already applied Pretty_Plot to each axes; Pretty_Plot takes
-%  one axes, so it is not called on the pair app.ax)
 xlabel(ax1, '$x$'); ylabel(ax1, '$y$'); xlim(ax1, [0 2]); ylim(ax1, [0 2]);
 xlabel(ax2, '$u$'); ylabel(ax2, '$v$'); xlim(ax2, [0 2]); ylim(ax2, [0 2]);
 
-%% Static graphics (created once; updated in place, never recreated)
+%% Static graphics
 rect1 = patch(ax1, [x0 x0+Dx x0+Dx x0], [y0 y0 y0+Dy y0+Dy], 'b', 'FaceAlpha', 0.4);
 pt1   = plot(ax1, x0, y0, '.k', 'MarkerSize', 20);
 edge1 = quiver(ax1, x0, y0, Dx, 0, 0, 'r', 'LineWidth', 2, 'Visible', 'off');
@@ -54,8 +50,6 @@ tangent2      = quiver(ax2, 0, 0, 0, 0, 0, 'b', 'LineWidth', 2, 'Visible', 'off'
 tanParaPatch  = patch(ax2, NaN, NaN, 'k', 'FaceAlpha', 0.4, 'Visible', 'off');
 
 %% Build UI
-% (Built before the first redraw() call below, since redraw() reads the
-% toggle buttons' .Value directly -- they must exist first.)
 NumControls = 7;
 sx0 = app.addControl('slider', '$x_0 = $', 1, NumControls, @updatePlot, ...
 'Default', x0, 'Min', 0.05, 'Max', 2, 'Number_format', '%.2f');
@@ -79,8 +73,7 @@ function updatePlot(~, ~)
     redraw(sx0.Value, sy0.Value, app.getValue(sDx), app.getValue(sDy))
 end
 
-%% Redraw function: updates every graphics object in place for the
-% current (x0,y0,Dx,Dy) and the current toggle states.
+%% Main Draw update function.
 function redraw(x0, y0, Dx, Dy)
     % Ax1: rectangle, point, edge vectors
     set(rect1, 'XData', [x0 x0+Dx x0+Dx x0], 'YData', [y0 y0 y0+Dy y0+Dy])
@@ -142,11 +135,9 @@ end
 
 end
 
-%% Stateless helpers (ordinary local functions, not nested)
+%% Stateless helpers
 function J = jacob_mat(x, y, funx, funy)
-% Jacobian matrix [u_x u_y; v_x v_y] by the shared central differences
-% (the old local step h = 1e-8 carried ~1e-8 relative rounding noise)
-J = [Diffx_f(funx, x, y), Diffy_f(funx, x, y); ...
-     Diffx_f(funy, x, y), Diffy_f(funy, x, y)];
+% Jacobian matrix [u_x u_y; v_x v_y]
+J = [Grad_f(funx, [x; y]).'; Grad_f(funy, [x; y]).'];
 end
 

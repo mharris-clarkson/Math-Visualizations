@@ -33,7 +33,6 @@ view(app.ax, 100, 40)
 %% Optional math functions for plot computations
     function drawExample(idx)
         cla(app.ax)
-        hold(app.ax, 'on')
         view(app.ax, 100, 40)
 
         switch idx
@@ -43,7 +42,7 @@ view(app.ax, 100, 40)
                 surf(app.ax, x, y, z, ...
                     'EdgeColor', 'k', 'FaceColor', 'b', 'FaceAlpha', 0.5);
                 plot_xyz_axis(app.ax, 5, 5, 8)
-                legend(app.ax, '$z = 5$', 'Interpreter', 'latex')
+                legend(app.ax, '$z = 5$')
 
             case 2  % y = x
                 [x, z] = meshgrid(linspace(-2, 5, 10));
@@ -51,7 +50,7 @@ view(app.ax, 100, 40)
                 surf(app.ax, x, y, z, ...
                     'EdgeColor', 'k', 'FaceColor', 'b', 'FaceAlpha', 0.5);
                 plot_xyz_axis(app.ax, 5, 5, 8)
-                legend(app.ax, '$x = y$ in 3D', 'Interpreter', 'latex')
+                legend(app.ax, '$x = y$ in 3D')
 
             case 3  % Cylinder x^2+z^2=4 and plane y=3
                 [theta, Y] = meshgrid(linspace(0, 2*pi, 50), linspace(-1, 4, 2));
@@ -68,8 +67,7 @@ view(app.ax, 100, 40)
                     '.-k', 'LineWidth', 4)
                 plot_xyz_axis(app.ax, 3, 4, 3)
                 axis(app.ax, 'equal')
-                legend(app.ax, '$x^2+z^2 = 4$', '$y = 3$', 'Intersection', ...
-                    'Interpreter', 'latex')
+                legend(app.ax, '$x^2+z^2 = 4$', '$y = 3$', 'Intersection')
 
             case 4  % Solid between two cylinders
                 [theta, Z_cyl] = meshgrid(linspace(0, 2*pi, 100), linspace(-2, 2, 2));
@@ -86,8 +84,7 @@ view(app.ax, 100, 40)
                     'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeAlpha', 0.5);
                 plot_xyz_axis(app.ax, 3, 3, 3)
                 axis(app.ax, 'equal')
-                legend(app.ax, '$x^2+y^2 = 4$', '$x^2+y^2 = 1$', 'Caps', ...
-                    'Interpreter', 'latex')
+                legend(app.ax, '$x^2+y^2 = 4$', '$x^2+y^2 = 1$', 'Caps')
 
             case 5  % Solid bounded by spheres and z=0 plane
                 [xs, ys, zs] = sphere(50);
@@ -109,31 +106,20 @@ view(app.ax, 100, 40)
                 plot_xyz_axis(app.ax, 3, 3, 1)
                 axis(app.ax, 'equal')
                 xlim(app.ax, [-3, 3]); ylim(app.ax, [-3, 3])
-                legend(app.ax, '$x^2+y^2+z^2 = 1$', '$x^2+y^2+z^2 = 4$', '$z = 0$', ...
-                    'Interpreter', 'latex')
+                legend(app.ax, '$x^2+y^2+z^2 = 1$', '$x^2+y^2+z^2 = 4$', '$z = 0$')
         end
 
         Pretty_Plot(app.ax)
-        title(app.ax, exampleNames{idx}, 'Interpreter', 'latex')
+        title(app.ax, exampleNames{idx})
         app.fig.Name = exampleNames{idx};
     end
 
 %% Make the initial plots
 drawExample(exampleIdx)
 
-%% Precompute math for updates
-% Light weight — skip
-
 %% Build UI
 NumControls = 2;
 
-% Previous/Next pair from uiFigure (wraps around the examples)
 app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
-app.galleryIdx = exampleIdx; % start the gallery on the chosen example
-
-%% Functions for UI elements
-% (Previous/Next handled by app.addPrevNext)
-
-%% Main Draw update function.
-% (Handled directly by drawExample above)
+app.galleryIdx = exampleIdx;
 end

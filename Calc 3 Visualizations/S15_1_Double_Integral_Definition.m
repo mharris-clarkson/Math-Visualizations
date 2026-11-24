@@ -33,17 +33,16 @@ view(app.ax, 45, 30)
 
 exactIntegral = integral2(f, a, b, c, d, 'AbsTol', 1e-12, 'RelTol', 1e-12);
 
-%% Plot the true surface once -- it never changes as N changes
+%% Surface
 res = 140;
 [xs, ys] = meshgrid(linspace(a, b, res), linspace(c, d, res));
 zs = f(xs, ys);
 surf(app.ax, xs, ys, zs, zs, 'EdgeColor', 'none', 'FaceAlpha', 0.95)
-Pretty_Color_Positive(app.ax, zs);   % amp colormap on [0, max f] + colorbar
+Pretty_Color_Positive(app.ax, zs);
 Pretty_Plot(app.ax)
 zlabel(app.ax, 'f(x,y)')
 
-%% Riemann-prism graphics: 3 patch objects + 1 line, created once and
-% updated in place (set Faces/Vertices) each time N changes
+%% Riemann prisms: created once, updated in place
 PrismBottom = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
     'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.25);
 PrismSide   = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
@@ -52,7 +51,7 @@ PrismTop    = patch(app.ax, 'Faces', zeros(0,4), 'Vertices', zeros(0,3), ...
     'FaceColor', prismColor, 'EdgeColor', 'k', 'FaceAlpha', 0.9);
 SamplePts   = plot3(app.ax, NaN, NaN, NaN, 'ko', ...
     'MarkerFaceColor', 'k', 'MarkerSize', 4);
-Ncurrent    = NaN;   % N currently drawn (skip redraws when N has not changed)
+Ncurrent    = NaN;
 
 redraw(N0)
 
@@ -66,14 +65,8 @@ function updatePlot(~, ~)
     redraw(round(nSlider.Value))
 end
 
-%% Riemann-prism builder.
-% Vectorized: builds the whole grid of prisms as three patch objects (top
-% faces, bottom faces, side faces) in one shot instead of looping over
-% every cube and calling fill3 six times each -- this is what keeps the
-% slider responsive even at N = 50 (2500 prisms, 15000 faces).
+%% Riemann-prism builder
 function redraw(Nside)
-    % The slider moves continuously but N is a whole number: only rebuild
-    % the prisms when N actually changes
     if Nside == Ncurrent, return, end
     Ncurrent = Nside;
 
@@ -87,14 +80,11 @@ function redraw(Nside)
 
     [V, bottomFaces, topFaces, sideFaces] = buildPrismMesh(x(:), y(:), z(:), dx, dy);
 
-    % Vertices first, then Faces, in one set() call per object
     set(PrismBottom, 'Vertices', V, 'Faces', bottomFaces)
     set(PrismSide,   'Vertices', V, 'Faces', sideFaces)
     set(PrismTop,    'Vertices', V, 'Faces', topFaces)
     set(SamplePts,   'XData', x(:), 'YData', y(:), 'ZData', z(:))
 
-    % splitlines: a newline inside one LaTeX string does not start a new
-    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
     title(app.ax, splitlines(sprintf(['Double Integral Approximation with %d cubes\n' ...
         'Riemann Approximation = %.6f   $|$   Exact Integral = %.6f'], ...
         Nside^2, integral_approx, exactIntegral)))

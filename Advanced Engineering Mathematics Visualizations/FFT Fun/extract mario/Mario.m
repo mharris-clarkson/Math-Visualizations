@@ -1,4 +1,4 @@
-% --- Read the text file that was grabbed from a github ---
+% --- Read the note list (text file from GitHub) ---
 filename = 'extract mario/mario.txt';
 fileText = fileread(filename);
 
@@ -10,12 +10,12 @@ Note_HZ = cellfun(@(x) str2double(x{1}), freqMatches);
 % --- Extract all note lengths ---
 lengthPattern = "length=(\d+)ms";
 lengthMatches = regexp(fileText, lengthPattern, 'tokens');
-Note_time = cellfun(@(x) str2double(x{1}), lengthMatches)/1000;  % convert ms to seconds
+Note_time = cellfun(@(x) str2double(x{1}), lengthMatches)/1000;  % seconds
 
 % --- Extract all delays ---
 delayPattern = ":delay (\d+)ms";
 delayMatches = regexp(fileText, delayPattern, 'tokens');
-Note_pause = cellfun(@(x) str2double(x{1}), delayMatches)/1000;  % convert ms to seconds
+Note_pause = cellfun(@(x) str2double(x{1}), delayMatches)/1000;  % seconds
 
 % --- Optional Display results ---
 if false

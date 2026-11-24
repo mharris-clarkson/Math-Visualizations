@@ -12,8 +12,8 @@ close all
 
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
-maxRadius  = 8;       % Maximum sphere radius (sqrt of max level value)
-n0         = 1;       % Initial contour
+maxRadius  = 8;       % maximum sphere radius (sqrt of max level value)
+n0         = 1;       % initial level
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -25,10 +25,9 @@ axis(app.ax, [-maxRadius maxRadius -maxRadius maxRadius -maxRadius maxRadius])
 axis(app.ax, 'equal')
 view(app.ax, 3)
 camlight(app.ax, 'headlight'); lighting(app.ax, 'gouraud')
-title(app.ax, app.fig.Name, 'Interpreter', 'latex')
+title(app.ax, app.fig.Name)
 
 %% Precompute math for updates
-% Build the 3D grid once — expensive to recompute
 [X, Y, Z] = meshgrid(-maxRadius:0.25:maxRadius, ...
                      -maxRadius:0.25:maxRadius, ...
                      -maxRadius:0.25:maxRadius);
@@ -48,22 +47,13 @@ NumControls = 1;
 nSlider = app.addControl('slider', '$f = $', 1, NumControls, @updatePlot, ...
     'Default', n0, 'Min', 1, 'Max', 64);
 
-% Launch update to sync title
-update();
+updatePlot();
 
 %% Main Draw update function.
     function updatePlot(~, ~)
-        update();
-    end
-
-    function update()
-        n    = nSlider.Value;
-
-        % Update the isosurface in place (no delete/recreate of the patch;
-        % the axis limits were fixed above and do not change)
+        n = nSlider.Value;
         s = isosurface(X, Y, Z, F, n);
         set(isoH, 'Vertices', s.vertices, 'Faces', s.faces);
-        title(app.ax, sprintf('Isosurface of $f(x,y,z)=x^2+y^2+z^2$,  $f = %.2f$', n), ...
-            'Interpreter', 'latex')
+        title(app.ax, sprintf('Isosurface of $f(x,y,z)=x^2+y^2+z^2$,  $f = %.2f$', n))
     end
 end

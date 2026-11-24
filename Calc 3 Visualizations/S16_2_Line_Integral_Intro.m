@@ -2,7 +2,7 @@ function S16_2_Line_Integral_Intro()
 %% Line Integral of a Scalar Function: 2D "Normal Integral" vs 3D Picture
 % Evaluates  int_C f ds  along a curve C in the xy-plane. Two views, with a
 % button to switch between them:
-%   2D (start): f along the curve plotted against arc length s -- the line
+%   2D (start): f along the curve plotted against arc length s; the line
 %               integral looks like an ordinary integral over its domain.
 %   3D:         the surface z = f(x,y), the curve C on it, and the "curtain"
 %               under the curve, whose area is what the integral computes.
@@ -16,13 +16,13 @@ function S16_2_Line_Integral_Intro()
 close all
 
 %% User parameters for math objects
-f = @(x,y) x.^2+y.^2;          % surface z = f(x,y); on the line y = x this is s^2
+f = @(x,y) x.^2+y.^2;             % surface z = f(x,y)
 t = linspace(0, 1, 200);          % curve parameter
 x = t;  y = t;                    % curve C: (x(t), y(t))
 gridLim = [-1 1];                 % extent of the displayed surface
 nGrid = 80;
 
-%% Math: values along the curve, arc length, and the line integral
+%% Values along the curve, arc length and the line integral
 z = f(x, y);
 s = [0, cumsum(hypot(diff(x), diff(y)))];    % arc length along C
 lineIntegral = trapz(s, z);                  % int_C f ds
@@ -32,13 +32,12 @@ run('setup.m')
 app = uiFigure('Area Under a Curve', 1);
 ax = app.ax(1);
 
-% (uiFigure already applied Pretty_Plot)
 axis(ax, 'equal')
 colormap(ax, parula)
 
 %% 3D graphics (surface, curve on it, curtain, reference plane)
 [xg, yg] = meshgrid(linspace(gridLim(1), gridLim(2), nGrid));
-Xc = [x; x];  Yc = [y; y];  Zc = [zeros(size(z)); z];   % curtain: drop each point to z = 0
+Xc = [x; x];  Yc = [y; y];  Zc = [zeros(size(z)); z];   % curtain down to z = 0
 
 g3 = [ ...
     surf(ax, xg, yg, f(xg, yg), 'EdgeColor', 'none', 'FaceAlpha', 0.6), ...
@@ -46,7 +45,7 @@ g3 = [ ...
     surf(ax, Xc, Yc, Zc, 'FaceColor', [1 0.6 0.6], 'FaceAlpha', 0.8, 'EdgeColor', 'none'), ...
     surf(ax, xg, yg, zeros(size(xg)), 'FaceColor', [0.9 0.9 0.9], 'EdgeColor', 'none', 'FaceAlpha', 0.4)];
 
-%% 2D graphics: f along the curve vs arc length (the area is the same as the curtain's)
+%% 2D graphics: f along the curve vs arc length
 g2 = [ ...
     patch(ax, [s fliplr(s)], [zeros(size(s)) fliplr(z)], [1 0.6 0.6], 'FaceAlpha', 0.8, 'EdgeColor', 'none'), ...
     plot(ax, s, z, 'k', 'LineWidth', 2)];
@@ -63,7 +62,7 @@ function toggleView(~, ~)
     showView()
 end
 
-%% Show one view: toggles which objects are visible and sets the axes to match
+%% Main Draw update function.
 function showView()
     set(g3, 'Visible', onoff(is3D))
     set(g2, 'Visible', onoff(~is3D))
@@ -76,7 +75,7 @@ function showView()
     else
         xlim(ax, [0 s(end)]); ylim(ax, [0 1.05*max(z)])
         xlabel(ax, 'Arc length $s$'); ylabel(ax, '$f(s)$'); zlabel(ax, '')
-        title(ax, sprintf('$\\int_C f(s)\\,ds = %.4f$', lineIntegral), 'Interpreter', 'latex')
+        title(ax, sprintf('$\\int_C f(s)\\,ds = %.4f$', lineIntegral))
         view(ax, 2)
     end
 end

@@ -31,15 +31,15 @@ dy0  = 0.6;
 dMax = 1;     % dx, dy sliders run from -dMax to dMax
 
 surfLim = 2;          % surface drawn on [-surfLim, surfLim]^2
-dragLim = 1.2;        % the base point can be dragged in [-dragLim, dragLim]^2
-zLims   = [-2 10];    % fixed vertical range (the plane may run off it)
-L       = 2.6;        % side length of the tangent plane patch (holds any step)
-nloc    = 2;          % a plane only needs a 2 x 2 grid
+dragLim = 1.2;        % base point stays in [-dragLim, dragLim]^2
+zLims   = [-2 10];    % fixed vertical range
+L       = 2.6;        % side length of the tangent plane patch
+nloc    = 2;          % plane grid
 nSurf   = 80;         % surface grid resolution
-viewAngle = [40, 28];% [azimuth elevation]: low enough to see the vertical rises
+viewAngle = [40, 28]; % [azimuth elevation]
 
-colDz  = [0.10 0.60 0.20];   % dz: green
-colErr = [0.85 0.10 0.10];   % Delta z - dz: red
+colDz  = [0.10 0.60 0.20];   % dz
+colErr = [0.85 0.10 0.10];   % Delta z - dz
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -55,8 +55,7 @@ fx = @(x,y) Diffx_f(f,x,y);
 fy = @(x,y) Diffy_f(f,x,y);
 
 %% Optional math functions for plot computations
-    % Tangent plane z = f(xc,yc) + dz with dz = f_x dx + f_y dy, on a
-    % square of side L around (xc,yc)
+% Tangent plane at (xc,yc) on a square of side L
     function [xl, yl, zl] = differentialData(xc, yc)
         [xl, yl] = meshgrid(linspace(xc-L/2, xc+L/2, nloc), ...
             linspace(yc-L/2, yc+L/2, nloc));
@@ -90,13 +89,11 @@ Pretty_Plot(app.ax)
 view(app.ax, viewAngle(1), viewAngle(2))
 xlim(app.ax, surfLim*[-1 1]);  ylim(app.ax, surfLim*[-1 1]);  zlim(app.ax, zLims)
 
-% Current base point (moved by dragging)
-px = x0;  py = y0;
+px = x0;  py = y0;   % current base point
 
-%% Dragging: clicks in the axes move the base point to the surface under the mouse
+%% Build UI: drag the base point, sliders for dx and dy
 Drag_Point_On_Surface(app.ax, f, dragLim*[-1 1], dragLim*[-1 1], @movePoint);
 
-%% Build UI
 NumControls = 2;
 
 dxSlider = app.addControl('slider', '$dx = $', 1, NumControls, @updatePlot, ...
@@ -108,7 +105,6 @@ dySlider = app.addControl('slider', '$dy = $', 2, NumControls, @updatePlot, ...
 updatePlot()
 
 %% Functions for UI elements
-    % Called by Drag_Point_On_Surface with the new base point
     function movePoint(x, y)
         px = x;  py = y;
         updatePlot()
@@ -137,7 +133,6 @@ updatePlot()
         set(hDz,  'XData', [x1 x1], 'YData', [y1 y1], 'ZData', z0 + [0 dz])
         set(hErr, 'XData', [x1 x1], 'YData', [y1 y1], 'ZData', z0 + [dz Deltaz])
 
-        % Move the plane in place (the legend keeps its entry)
         [xl, yl, zl] = differentialData(px, py);
         set(plane, 'XData', xl, 'YData', yl, 'ZData', zl)
 

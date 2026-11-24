@@ -27,7 +27,6 @@ close all
 % boundary. Any f(x,y) written with elementwise operators (.*  ./  .^) works.
 f = @(x,y) -0.5*x - x.^2 + 2*x.*y - 2*y.^2 + x.^3;
 
-% (Derivatives come from the Diff*_f helpers, which set their own steps)
 nStart = 5;       % Newton starting points per direction (interior search)
 nS     = 2001;    % samples per boundary piece when searching for f' = 0
 nPlot  = 200;     % boundary plot resolution
@@ -60,8 +59,6 @@ fc = {[0 0 0], colEdge, colArc, colCorner};
 run('setup.m')
 app = uiFigure('Absolute Extrema on the Half Disk', 2);
 ax2 = app.ax(1);  ax3 = app.ax(2);
-% (uiFigure already applied Pretty_Plot to each axes; Pretty_Plot takes
-%  one axes, so calling it on the pair app.ax is not needed)
 
 %% View 1: the 3D graph of f over D, with the boundary curves lifted onto it
 surf(ax2, Xr, Yr, Fr, 'EdgeColor', 'none', 'FaceAlpha', 0.9);
@@ -109,7 +106,6 @@ for q = 1:4
         plot(ax3, sx, sy, mk{q}, 'MarkerFaceColor', fc{q}, 'MarkerEdgeColor', 'w', 'MarkerSize', 11, 'LineStyle', 'none');
     end
 end
-% (the corner (-1,0) is the start AND end of the boundary loop, so it shows at both ends of the 1D graph)
 
 %% The selected candidate (created once, moved by selectCandidate)
 selOpts = {'p', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'k', 'MarkerSize', 24, 'LineWidth', 1.5, 'LineStyle', 'none'};
@@ -224,7 +220,7 @@ C(end+1) = struct('x',  1, 'y', 0, 'type', 'corner', 'note', 'corner (1,0): endp
 end
 
 function H = hessAt(f, x, y)
-% Numerical Hessian of f at (x,y) (shared Diff*_f helpers)
+% Numerical Hessian of f at (x,y)
 Hxx = Diffxx_f(f, x, y);
 Hyy = Diffyy_f(f, x, y);
 Hxy = Diffxy_f(f, x, y);

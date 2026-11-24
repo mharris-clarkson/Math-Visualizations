@@ -51,19 +51,13 @@ hT     = quiver(app.ax, r0(1), r0(2), T(1), T(2), 0, ...
 hN     = quiver(app.ax, r0(1), r0(2), N(1), N(2), 0, ...
     'm', 'LineWidth', 2, 'MaxHeadSize', 2);
 
-legend(app.ax, [hT, hN], {'$\vec{T}$', '$d\vec{T}/ds$'}, ...
-    'Interpreter', 'latex', 'FontSize', 16)
-% Keep the title handle: setting its String is much faster than title()
+legend(app.ax, [hT, hN], {'$\vec{T}$', '$d\vec{T}/ds$'}, 'FontSize', 16)
 hTitle = title(app.ax, sprintf('Curvature $\\kappa = %.3f$', kappa));
-
-%% Precompute math for updates
-% None
 
 %% Build UI
 NumControls = 2;
 
-% The s slider holds s/pi, so its label reads as a decimal multiple of pi
-% ('$s = $' + '1.25' + '$\pi$' -> s = 1.25 pi). One lap is s = 2 pi r.
+% The s slider holds s/pi so its label reads e.g. s = 1.25 pi
 sSlider = app.addControl('slider', '$s = $', 1, NumControls, @updateS, ...
     'Default', s0/pi, 'Min', 0, 'Max', 2*r_val, ...
     'Number_format', '%.2f', 'AddToEnd', '$\pi$');
@@ -73,20 +67,16 @@ rSlider = app.addControl('slider', '$r = $', 2, NumControls, @updateR, ...
 
 %% Functions for UI elements
     function updateS(~, ~)
-        s = pi*sSlider.Value;      % slider holds s/pi
-        redraw(r_val, s);
+        redraw(r_val, pi*sSlider.Value);
     end
 
     function updateR(~, ~)
         r_val = rSlider.Value;
 
-        % Send the point back to s = 0. Setting Value first (0 is inside
-        % any range) and then Max avoids app.UpdateUISlider, which sets the
-        % value twice (two LaTeX label redraws) and calls drawnow.
+        % Back to s = 0; one lap is s = 2 pi r
         sSlider.Value = 0;
-        sSlider.Max   = 2*r_val;      % one lap is s = 2 pi r (slider holds s/pi)
+        sSlider.Max   = 2*r_val;
 
-        % Redraw circle
         set(hCurve, 'XData', r_val*cosT, 'YData', r_val*sinT);
         redraw(r_val, 0);
     end
@@ -98,7 +88,4 @@ rSlider = app.addControl('slider', '$r = $', 2, NumControls, @updateR, ...
         set(hN, 'XData', r0(1), 'YData', r0(2), 'UData', N(1), 'VData', N(2));
         hTitle.String = sprintf('Curvature $\\kappa = %.3f$', kappa);
     end
-
-%% Main Draw update function.
-% (Handled directly in updateS / updateR above)
 end

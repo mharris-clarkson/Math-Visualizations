@@ -58,7 +58,7 @@ lineInt = trapz(tq, sum([F1(P(:,1),P(:,2),P(:,3)), F2(P(:,1),P(:,2),P(:,3)), ...
     end
 surfInt = integral2(@curlDotN, 0, 1, 0, 2*pi, 'AbsTol', 1e-10);
 
-% Both are 0 here; do not print round-off as -0.0000
+% Both are 0 here; avoid printing -0.0000
 lineInt(abs(lineInt) < 1e-9) = 0;
 surfInt(abs(surfInt) < 1e-9) = 0;
 
@@ -93,7 +93,7 @@ hFC = quiver3(ax, PA(:,1), PA(:,2), PA(:,3), FA(:,1), FA(:,2), FA(:,3), 0, ...
 
 % curl F and unit normals on S (hidden at start)
 [Rq, Tq] = meshgrid([0 0.45 0.85], linspace(0, 2*pi, 9));
-Rq = Rq(:);  Tq = Tq(:);  keep = [true; Rq(2:end) > 0];   % one point at the center
+Rq = Rq(:);  Tq = Tq(:);  keep = [true; Rq(2:end) > 0];
 xq = Rq(keep).*cos(Tq(keep));  yq = Rq(keep).*sin(Tq(keep));  zq = zS(xq, yq);
 [c1, c2, c3] = curl_f(F1, F2, F3, xq, yq, zq);
 Nq = [-Diffx_f(zS,xq,yq), -Diffy_f(zS,xq,yq), ones(size(xq))];
@@ -110,10 +110,8 @@ box(ax, 'on')
 camlight(ax); lighting(ax, 'gouraud')
 title(ax, {'$S$: $x^2 + y^2 + z^2 = 4$ inside $x^2 + y^2 = 1$, $z \ge 0$, \quad $\mathbf{F} = \langle xz, yz, xy \rangle$', ...
     sprintf('$\\int\\!\\!\\int_S (\\nabla\\times\\mathbf{F})\\cdot d\\mathbf{S} = %.4f$, \\quad $\\oint_C \\mathbf{F}\\cdot d\\mathbf{r} = %.4f$', ...
-        surfInt, lineInt)}, 'Interpreter', 'latex')
+        surfInt, lineInt)})
 
-%% Precompute math for updates
-% Everything above is fixed; the buttons only change visibility.
 
 %% Build UI
 NumControls = 4;
@@ -126,9 +124,6 @@ btnF      = app.addControl('button', '', 3, NumControls, @updatePlot, ...
 btnCurl   = app.addControl('button', '', 4, NumControls, @updatePlot, ...
     'Toggle', ["Show $\nabla\times\mathbf{F}$ on $S$", "Hide $\nabla\times\mathbf{F}$ on $S$"], ...
     'ColorChange', true);
-
-%% Functions for UI elements
-% (All buttons call updatePlot directly.)
 
 %% Main Draw update function.
     function updatePlot(~, ~)

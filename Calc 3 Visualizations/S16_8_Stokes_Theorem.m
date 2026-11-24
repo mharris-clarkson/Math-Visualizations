@@ -47,7 +47,7 @@ Nmax     = 60;          % largest finite N; the slider end is N -> infinity
 Ninf     = 2000;        % N used to draw the limit
 nR       = 30;          % surface grid: radial points
 nT       = 60;          % surface grid: angular points
-numPerRing = [1 6 10 14 18 20 24 28 32];   % arrows on the surface, ring by ring
+numPerRing = ceil([1 6 10 14 18 20 24 28 32]/3);   % arrows on the surface, ring by ring
 arrowLen = 0.25;        % length of the arrows on the surface
 cPos     = [0.2 0.4 0.8];    % blue: F . dr > 0 (F helps the motion)
 cNeg     = [0.85 0.2 0.2];   % red:  F . dr < 0 (F opposes it)
@@ -132,7 +132,6 @@ hSurf = surf(axL, Xs, Ys, sd.Z, sd.C, 'EdgeColor', 'none', 'FaceColor', 'interp'
 plot3(axL, CL(:,1), CL(:,2), CL(:,3), 'k', 'LineWidth', 2);
 hFS = quiver3(axL, xa, ya, sd.za, sd.F(:,1), sd.F(:,2), sd.F(:,3), 0, 'b', 'LineWidth', 1.2);
 hNS = quiver3(axL, xa, ya, sd.za, sd.N(:,1), sd.N(:,2), sd.N(:,3), 0, 'g', 'LineWidth', 1.2);
-%axis(axL, 'equal')
 xlim(axL, [-1.2 1.2]); ylim(axL, [-1.2 1.2]); zlim(axL, [-0.8 1.3])
 view(axL, -35, 25)
 
@@ -149,16 +148,12 @@ hF = quiver3(axM, 0, 0, 0, 0, 0, 0, 0, 'b', 'LineWidth', 2.5);
 hT = quiver3(axM, 0, 0, 0, 0, 0, 0, 0, 'g', 'LineWidth', 2.5);
 hP = quiver3(axM, 0, 0, 0, 0, 0, 0, 0, 'r', 'LineWidth', 2.5);
 legend(axM, [hF hT hP], {'$\mathbf{F}$', '$\mathbf{T}$', ...
-    '$(\mathbf{F}\cdot\mathbf{T})\,\mathbf{T}$'}, 'Location', 'northeast', 'Interpreter', 'latex')
-%axis(axM, 'equal')
+    '$(\mathbf{F}\cdot\mathbf{T})\,\mathbf{T}$'}, 'Location', 'northeast')
 xlim(axM, [-1.6 1.6]); ylim(axM, [-1.6 1.6]); zlim(axM, [-0.5 1.5])
 view(axM, -35, 25)
 
 % ---- Right panel: F . dr / ds and the running total against arc length
-% Boxes over each piece (height F . dr / ds, so area F . dr), as in
-% S16_4_Greens_theorem: solid once the point has passed them, faint ahead.
-% Order: passed +, ahead +, passed -, ahead -. In the limit the boxes are so
-% thin that they fill the area under the curve.
+% Boxes (area F . dr): passed +, ahead +, passed -, ahead -
 boxCol   = {cPos, cPos, cNeg, cNeg};
 boxAlpha = [0.60 0.15 0.60 0.15];
 hBox = gobjects(1, 4);
@@ -174,8 +169,8 @@ hTarget = yline(axR, surfInt(surfIdx), 'g--', 'LineWidth', 3, ...
     'Label', '$\int\!\!\int_S (\nabla\times\mathbf{F})\cdot d\mathbf{S}$', ...
     'Interpreter', 'latex', 'LabelHorizontalAlignment', 'left', 'FontSize', 16);
 xlim(axR, [0 L])
-xlabel(axR, 'arc length $s$', 'Interpreter', 'latex')
-ylabel(axR, '$\mathbf{F}\cdot\mathbf{T}$ and running total', 'Interpreter', 'latex')
+xlabel(axR, 'arc length $s$')
+ylabel(axR, '$\mathbf{F}\cdot\mathbf{T}$ and running total')
 zlabel(axR, '')
 
 %% Build UI
@@ -190,7 +185,6 @@ btnSurf = app.addControl('button', 'Next surface', 3, NumControls, @nextSurface,
 
 drawSurface()
 drawPieces()
-drawStep()
 
 %% Functions for UI elements
     function changeN(~, ~)
@@ -226,26 +220,25 @@ drawStep()
         set(hFS, 'ZData', sd.za, 'UData', sd.F(:,1), 'VData', sd.F(:,2), 'WData', sd.F(:,3))
         set(hNS, 'ZData', sd.za, 'UData', sd.N(:,1), 'VData', sd.N(:,2), 'WData', sd.N(:,3))
         title(axL, {surfNames{surfIdx}, ...
-            sprintf('$\\int\\!\\!\\int_S (\\nabla\\times\\mathbf{F})\\cdot d\\mathbf{S} = %.4f$', surfInt(surfIdx))}, ...
-            'Interpreter', 'latex')
+            sprintf('$\\int\\!\\!\\int_S (\\nabla\\times\\mathbf{F})\\cdot d\\mathbf{S} = %.4f$', surfInt(surfIdx))})
         hTarget.Value = surfInt(surfIdx);
-        drawStep()                    % right-panel title quotes the surface integral
+        drawStep()
     end
 
 % Pieces of C and the bars (only when N changes)
     function drawPieces()
         atLimit = app.isAtLimit(sN);
         if atLimit
-            % The limit: no polygon, F . T as a smooth curve, boxes without outlines
+            % The limit: F . T as a smooth curve, boxes without outlines
             set(hPoly, 'Visible', 'off')
             set(hDens, 'XData', ld.sM, 'YData', ld.dens, 'Visible', 'on')
             set(hBox, 'EdgeColor', 'none')
-            title(axM, 'Line integral along $C$', 'Interpreter', 'latex')
+            title(axM, 'Line integral along $C$')
         else
             set(hPoly, 'XData', ld.P(:,1), 'YData', ld.P(:,2), 'ZData', ld.P(:,3), 'Visible', 'on')
             set(hDens, 'Visible', 'off')
             set(hBox, 'EdgeColor', 'k')
-            title(axM, sprintf('$C$ cut into $N = %d$ pieces', N), 'Interpreter', 'latex')
+            title(axM, sprintf('$C$ cut into $N = %d$ pieces', N))
         end
         lo = min([0; ld.dens; ld.cum]);
         hi = max([ld.dens; ld.cum; surfInt(:)]);
@@ -273,8 +266,7 @@ drawStep()
         set(hCum, 'XData', sx, 'YData', sy)
         set(hNow, 'XData', s, 'YData', sy(end))
 
-        % Color in the area as it is integrated. The piece the point is on
-        % is split at s, so the coloring moves smoothly with the slider.
+        % Color the area integrated so far (the current piece is split at s)
         x0 = ld.sE(1:end-1).';  x1 = ld.sE(2:end).';
         xs = min(max(s, x0), x1);                 % where s cuts each piece
         hgt = ld.dens.';  zer = zeros(size(hgt));
@@ -291,11 +283,11 @@ drawStep()
         if app.isAtLimit(sN)
             title(axR, {sprintf('$\\int_0^{%.2f} \\mathbf{F}\\cdot\\mathbf{T}\\,ds = %.4f$', s, sy(end)), ...
                 sprintf('$\\oint_C \\mathbf{F}\\cdot d\\mathbf{r} = %.4f$, \\quad surface integral: $%.4f$', ...
-                    ld.cum(end), surfInt(surfIdx))}, 'Interpreter', 'latex')
+                    ld.cum(end), surfInt(surfIdx))})
         else
             title(axR, {sprintf('Running sum to $s = %.2f$: $%.4f$', s, sy(end)), ...
                 sprintf('all $N = %d$ pieces: $%.4f$, \\quad surface integral: $%.4f$', ...
-                    N, ld.cum(end), surfInt(surfIdx))}, 'Interpreter', 'latex')
+                    N, ld.cum(end), surfInt(surfIdx))})
         end
         drawnow limitrate
     end

@@ -21,12 +21,11 @@ run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Tangent Plane EPIC Fail', 1);
-hold(app.ax, 'on')
 view(app.ax, 3)
-title(app.ax, app.fig.Name, 'Interpreter', 'latex')
+title(app.ax, app.fig.Name)
 
 %% Make the initial plots
-% Surface grid (fine near 0 to capture the axis spikes)
+% Grid is fine near 0 to capture the spikes along the axes
 xv = [-1:0.01:-0.01, -1e-4, 0, 1e-4, 0.01:0.01:1];
 [xg, yg] = meshgrid(xv);
 zg = zfun(xg, yg);
@@ -34,10 +33,9 @@ surf(app.ax, xg, yg, zg, 'EdgeColor', 'none');
 colormap(app.ax, Pretty_Colormap('balance'))
 Pretty_Plot(app.ax)
 
-% Base point at origin
 plot3(app.ax, 0, 0, 1, 'ko', 'MarkerSize', 12, 'MarkerFaceColor', 'g')
 
-% Axis curves through origin
+% Traces along the x and y axes
 t   = linspace(-1, 1, 400);
 C1  = @(t) [t;   0*t; zfun(t, 0)];
 C2  = @(t) [0*t;   t; zfun(0, t)];
@@ -45,7 +43,6 @@ C1p = C1(t); C2p = C2(t);
 plot3(app.ax, C1p(1,:), C1p(2,:), C1p(3,:), 'r', 'LineWidth', 2)
 plot3(app.ax, C2p(1,:), C2p(2,:), C2p(3,:), 'b', 'LineWidth', 2)
 
-% Placeholders for tangent lines and plane
 hT1    = plot3(app.ax, nan, nan, nan, 'g', 'LineWidth', 2);
 hT2    = plot3(app.ax, nan, nan, nan, 'g', 'LineWidth', 2);
 [Xp0, Yp0] = meshgrid(nan(10));
@@ -54,7 +51,11 @@ hPlane = surf(app.ax, Xp0, Yp0, Zp0, ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', [0 0.6 0]);
 
 %% Precompute math for updates
-% Light weight — skip
+% Both partials are 0 at the origin, so the "tangent plane" is z = 1
+s  = [-1 1];
+p1 = s.*Diff_f_unit(C1, 0);
+p2 = s.*Diff_f_unit(C2, 0);
+[xp, yp] = meshgrid([-1 1]);
 
 %% Build UI
 NumControls = 2;
@@ -65,24 +66,16 @@ btnTangent = app.addControl('button', 'Show Tangent Lines', 1, NumControls, ...
 btnPlane = app.addControl('button', 'Show Tangent Plane', 2, NumControls, ...
     @updatePlot, 'ColorChange', true);
 
-%% Functions for UI elements
-
 %% Main Draw update function.
     function updatePlot(~, ~)
-        % Tangent lines (both have zero slope at origin so point along axes)
         if btnTangent.Value
-            p1 = Diff_f_unit(C1, 0);
-            p2 = Diff_f_unit(C2, 0);
-            s  = [-1 1];
-            set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', s*p1(3) + 1);
-            set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', s*p2(3) + 1);
+            set(hT1, 'XData', p1(1,:), 'YData', p1(2,:), 'ZData', p1(3,:) + 1);
+            set(hT2, 'XData', p2(1,:), 'YData', p2(2,:), 'ZData', p2(3,:) + 1);
         else
             set([hT1 hT2], 'XData', nan, 'YData', nan, 'ZData', nan)
         end
 
-        % "Tangent plane" at z=1 (the value at the origin)
         if btnPlane.Value
-            [xp, yp] = meshgrid([-1 1]);
             set(hPlane, 'XData', xp, 'YData', yp, 'ZData', ones(size(xp)))
         else
             set(hPlane, 'XData', Xp0, 'YData', Yp0, 'ZData', Zp0)

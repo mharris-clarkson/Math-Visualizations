@@ -29,11 +29,8 @@ run('setup.m')
 
 %% Build app
 app = uiFigure('Visualization of the Definition for $\int_a^b f(x)dx$',1);
-title(app.ax,app.fig.Name,'Interpreter','latex')
+title(app.ax,app.fig.Name)
 view(app.ax,0,90)
-hold(app.ax,'on')
-
-%% Initial function plot
 x = linspace(xlims(1), xlims(2), 200);
 f_DAT = f(x);
 
@@ -70,13 +67,8 @@ NSlider = app.addControl('slider', '$N = $', 1, NumControls, @updatePlot,...
     'default', N_min,'Min', N_min, 'Max', N_max + 1,'Number_format','%d',...
     'Step', 1, 'LimitLabel', '$N \to \infty$');
 
-% Left button
 app.addControl('button','Left Sum',2,NumControls,@(~,~) setMethod('Left'));
-
-% Midpoint button
 app.addControl('button','Midpoint Rule',3,NumControls,@(~,~) setMethod('Midpoint'));
-
-% Right button
 app.addControl('button','Right Sum',4,NumControls,@(~,~) setMethod('Right'));
 
 %% Helper to change method
@@ -97,25 +89,20 @@ function updatePlot(~,~)
         hDots.Visible  = 'off';
         hArea.Visible  = 'on';
         title(app.ax, sprintf(['$N \\to \\infty$: every %s sum becomes ' ...
-            '$\\int_a^b f(x)\\,dx = %.4f$'], lower(Method), exactArea), ...
-            'Interpreter','latex')
+            '$\\int_a^b f(x)\\,dx = %.4f$'], lower(Method), exactArea))
         return
     end
     hRects.Visible = 'on';
     hDots.Visible  = 'on';
     hArea.Visible  = 'off';
 
-    % Get N
-    N = round(NSlider.Value);
-
-    % Partition
+    N  = round(NSlider.Value);
     dx = (b - a)/N;
 
     xL   = a + (0:N-1)*dx;
     xR   = xL + dx;
     xMid = xL + dx/2;
 
-    % Choose sample points
     switch Method
         case 'Left'
             xSample = xL;
@@ -126,22 +113,17 @@ function updatePlot(~,~)
     end
 
     r = f(xSample);
-
-    % Sample points
     set(hDots, 'XData', xSample, 'YData', r)
 
     % Rectangles: 4 corners each, alternating colours, all in one patch
     V = [xL(:) zeros(N,1); xR(:) zeros(N,1); xR(:) r(:); xL(:) r(:)];
     F = (1:N)' + [0, N, 2*N, 3*N];
     C = repmat([color1; color2], ceil(N/2), 1);
-    % (Faces cleared first: when N drops, the old faces would point past
-    %  the end of the new, shorter vertex list for a moment)
+    % Faces cleared first so they never index past the new vertices
     set(hRects, 'Faces', [], 'Vertices', V, 'Faces', F, 'FaceVertexCData', C(1:N,:))
 
-    % Title with the current Riemann sum next to the exact value
     title(app.ax, sprintf(['%s sum, $N = %d$: $%.4f$ ' ...
-        '(exact $\\int_a^b f(x)\\,dx = %.4f$)'], Method, N, sum(r)*dx, exactArea), ...
-        'Interpreter','latex')
+        '(exact $\\int_a^b f(x)\\,dx = %.4f$)'], Method, N, sum(r)*dx, exactArea))
 end
 
 end

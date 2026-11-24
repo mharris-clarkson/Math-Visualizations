@@ -3,7 +3,7 @@ function S16_2_Line_Integral_3d_scalar()
 % The scalar field F(x,y,z) is shown as a set of translucent level surfaces.
 % A path C winds through it. Drag the slider to walk along C:
 %   Left  : the path (black), the part traveled so far (red) and the current point
-%   Right : F along the path vs. arc length s -- the shaded area up to the
+%   Right : F along the path vs. arc length s; the shaded area up to the
 %           current point is the line integral of F over the part traveled.
 %
 %% Author Info
@@ -30,27 +30,26 @@ t = linspace(0, 2*pi, N);
 maxRadius = 2;                 % plot window: [-maxRadius, maxRadius]^3
 gridStep  = 0.05;              % grid spacing for the level surfaces
 levels    = (1:10).^2;         % values of F drawn as level surfaces
-Fclamp    = 1e3;               % F is infinite at the charges; clamp so the grid stays finite
+Fclamp    = 1e3;               % clamp F near the charges
 areaColor = [1 0.6 0.6];
 
-%% Math along the path: arc length, F along the path, and the running line integral
+%% Arc length, F along the path and the running line integral
 xp = x(t);  yp = y(t);  zp = z(t);
 s = [0, cumsum(sqrt(diff(xp).^2 + diff(yp).^2 + diff(zp).^2))];   % arc length
 fLine = Ffun(xp, yp, zp);
-Icum  = cumtrapz(s, fLine);                                      % integral of F ds up to each point
+Icum  = cumtrapz(s, fLine);
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
 app = uiFigure('Line Integral of a 3D Scalar Field', 2);
 axL = app.ax(1);
 axR = app.ax(2);
-% (uiFigure already applied Pretty_Plot, including the $x$, $y$, $z$ labels)
 
-%% Left axes: level surfaces of F (computed once)
+%% Left axes: level surfaces of F
 axis(axL, 'equal')
 xlim(axL, maxRadius*[-1 1]); ylim(axL, maxRadius*[-1 1]); zlim(axL, maxRadius*[-1 1])
 xticks(axL, -maxRadius:2:maxRadius); yticks(axL, -maxRadius:2:maxRadius); zticks(axL, -maxRadius:2:maxRadius)
-title(axL, ['3D Level Surfaces of $f$ and a Path $C$'],'Interpreter','latex')
+title(axL, ['3D Level Surfaces of $f$ and a Path $C$'])
 
 [X, Y, Z] = meshgrid(-maxRadius:gridStep:maxRadius);
 F = min(Ffun(X, Y, Z), Fclamp);
@@ -63,7 +62,7 @@ end
 camlight(axL, 'headlight'); lighting(axL, 'gouraud')
 view(axL, 3)
 
-%% Path graphics (created once; the red trail, the point and the area are updated in place)
+%% Path, trail and current point
 plot3(axL, xp, yp, zp, 'k', 'LineWidth', 2);
 plot3(axL, xp(1), yp(1), zp(1), '^m', 'MarkerFaceColor', 'm', 'MarkerSize', 8);   % start
 trail = plot3(axL, xp(1), yp(1), zp(1), 'r', 'LineWidth', 2);
@@ -86,16 +85,14 @@ redraw(0)
         redraw(sslider.Value)
     end
 
-%% Redraw: moves the red trail, the point, and the shaded area to path index n
+%% Main Draw update function.
     function redraw(sval)
-        % Last path index with arc length <= s ('<=' so the end of the
-        % slider reaches the end of C and shows the full line integral)
-        n = max(1, sum(s <= sval));
+        n = max(1, sum(s <= sval));   % last path index with arc length <= s
         set(trail, 'XData', xp(1:n), 'YData', yp(1:n), 'ZData', zp(1:n))
         set(point, 'XData', xp(n), 'YData', yp(n), 'ZData', zp(n))
         set(area, 'XData', [s(1:n), s(n), 0], 'YData', [fLine(1:n), 0, 0])
         title(axR, sprintf('Line Integral Along Path: $\\int f\\,ds$ so far $= %.3f$', Icum(n)))
-        drawnow limitrate   % do not queue frames while the slider is dragged
+        drawnow limitrate
     end
 
 end

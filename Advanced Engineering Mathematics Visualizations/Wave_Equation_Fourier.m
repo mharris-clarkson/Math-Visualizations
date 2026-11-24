@@ -24,9 +24,7 @@ function Wave_Equation_Fourier()
 %     - Single mode / sum of modes toggle. Single mode plots only the n-th
 %       mode with coefficient 1 (not the Fourier coefficient).
 %     - Slider for the number of modes N (1 to Max_N). The last step stands
-%       for N -> infinity: it switches to ALL the modes the FFT grid can
-%       hold (Nfft of them) summed with an inverse FFT, and the slider
-%       label reads N -> infinity.
+%       for N -> infinity and sums all Nfft modes with an inverse FFT.
 %     - Slider for time t (0 to t_max). Pushing any toggle or the initial
 %       condition button resets t = 0.
 %
@@ -39,15 +37,10 @@ close all
 
 %% User parameters for math objects.
 % Adjust these to modify selected math objects below.
+L = 1;          % length of the string, domain [0, L]
+c = 1;          % wave speed
 
-L = 1;          % Length of the string. Domain is [0, L]
-c = 1;          % Wave speed in u_tt = c^2*u_xx. The D-D fundamental has
-                % period 2*L/c.
-
-% Initial conditions u(x,0) = f(x) on [0,L]. Each row is {button label, f}.
-% The initial velocity u_t(x,0) = 0 for all of them.
-% Each f must be vectorized (use .*, .^, ./ and logical masks). Add or
-% remove rows freely. The button cycles through the rows in order.
+% Initial conditions u(x,0) = f(x), u_t(x,0) = 0: {button label, vectorized f}
 ICs = {
     'Narrow pulse', @(x) exp(-5000*(x-L/2).^2);   
     '$x(L-x)$', @(x) x.*(L-x);
@@ -56,20 +49,14 @@ ICs = {
     'Constant', @(x) 1+0*x;
     '$x^2$',    @(x) x.^2
     };
-IC0 = 1;        % Row of ICs used when the figure opens
+IC0 = 1;        % starting initial condition
 
-% Slider limits
-N0    = 1;      % Initial number of modes
-Max_N = 100;    % Maximum number of modes on the slider. At this value the
-                % plot switches to all Nfft modes (see below).
-t_max = 4*L/c;  % Maximum time (two periods of the D-D fundamental)
+N0    = 1;      % starting number of modes
+Max_N = 100;    % slider maximum; shown as N -> infinity (all Nfft modes)
+t_max = 4*L/c;  % two periods of the D-D fundamental
 
-% Resolution
-Nx   = 3001;    % Number of points used to plot the solution
-Nfft = 2^15;    % Number of samples of f used by the FFT to compute the
-                % coefficients. This is also the number of modes the grid
-                % can hold, so it is the N used when the slider is at Max_N.
-                % Keep it much larger than Max_N.
+Nx   = 3001;    % plot points
+Nfft = 2^15;    % FFT samples = modes used for N -> infinity (>> Max_N)
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates and update ================
 %% Load libraries
@@ -77,23 +64,21 @@ run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('1D Wave Equation: Fourier Series Solution', 1);
-title(app.ax, app.fig.Name, 'Interpreter', 'latex')
+title(app.ax, app.fig.Name)
 
-%% Grids and mode shapes (these do not depend on the initial condition)
+%% Grids and mode shapes
 x   = linspace(0, L, Nx);
 n   = 1:Max_N;
 nIC = size(ICs, 1);
 
 % Family index = 1 + (left is Neumann) + 2*(right is Neumann)
 %   1: D-D    2: N-D    3: D-N    4: N-N
-kk     = {n*pi/L, (n-0.5)*pi/L, (n-0.5)*pi/L, n*pi/L};  % spatial frequencies
+kk     = {n*pi/L, (n-0.5)*pi/L, (n-0.5)*pi/L, n*pi/L};
 isCos  = [false, true, false, true];
 shift  = [0, 0.5, 0.5, 0];          % n - shift = k_n*L/pi
 bcName = {'Dirichlet', 'Neumann'};
 
-% Mode shapes (each column is one mode) and temporal frequencies. The
-% Fourier coefficients are applied at update time so every IC shares these.
-Phi   = cell(1, 4);
+Phi   = cell(1, 4);                 % mode shapes, one column per mode
 omega = cell(1, 4);
 for i = 1:4
     if isCos(i)
@@ -101,35 +86,31 @@ for i = 1:4
     else
         Phi{i} = sin(x(:)*kk{i});
     end
-    omega{i} = c*kk{i}(:);          % column of angular frequencies
+    omega{i} = c*kk{i}(:);          % angular frequencies
 end
 
 %% Precompute Fourier coefficients of every IC for all four BC pairs
-% Sample f at the midpoints of Nfft equal cells. With these samples every
-% coefficient integral, int f(x) exp(i*k*x) dx, is a sum that two FFTs
-% evaluate for all modes at once:
+% f is sampled at the midpoints of Nfft cells, so every coefficient is a
+% sum that two FFTs evaluate for all modes at once:
 %   A_m = sum_j f_j exp(i*pi*m*(j-1/2)/M),       m = 0..M       (integer k)
 %   B_m = sum_j f_j exp(i*pi*(m-1/2)*(j-1/2)/M), m = 1..M       (half integer k)
 % Real parts give the cosine integrals and imaginary parts the sine ones.
-% All M = Nfft coefficients are kept. The slider uses the first Max_N and
-% the full grid view uses all of them.
 M  = Nfft;
-xm = ((1:M) - 0.5)*L/M;             % cell midpoints
+xm = ((1:M) - 0.5)*L/M;
 j  = 1:M;
 
-cf  = cell(nIC, 4);                 % coefficient columns c_n (length M)
-a0v = zeros(1, nIC);                % N-N constant mode (average of f)
+cf  = cell(nIC, 4);                 % coefficients c_n (length M)
+a0v = zeros(1, nIC);                % N-N constant mode
 fxs = cell(1, nIC);                 % f on the plot grid
 for ic = 1:nIC
-    fxs{ic} = ICs{ic,2}(x) + 0*x;   % +0*x lets f be a constant
+    fxs{ic} = ICs{ic,2}(x) + 0*x;
     [cf(ic,:), a0v(ic)] = Fourier_Coefs(ICs{ic,2});
 end
 
 %% Optional math functions for plot computations
     function [cfs, a0] = Fourier_Coefs(fun)
-        % c_n = (2/L)*int f*phi_n dx for the four families, from two FFTs
         fm = fun(xm) + 0*xm;
-        A  = 2*M*ifft(fm, 2*M);     % zero padded to 2M so exponents are pi*m*(j-1)/M
+        A  = 2*M*ifft(fm, 2*M);
         A  = A(1:M+1) .* exp(1i*pi*(0:M)/(2*M));
         B  = 2*M*ifft(fm .* exp(1i*pi*(j-1)/(2*M)), 2*M);
         B  = B(1:M) .* exp(1i*pi*(j-0.5)/(2*M));
@@ -140,12 +121,9 @@ end
                (2/M)*real(A(2:end)).'};      % N-N: cos(n*pi*x/L)
     end
 
+% Solution on x at time t from modes 1 to N (N <= Max_N)
     function u = Wave_Solution(ic, fam, oneMode, N, t)
-        % Returns the (row vector) solution on the grid x at time t using
-        % modes 1 to N (N <= Max_N). Initial velocity is zero so each mode
-        % oscillates as cos(omega_n*t).
         if oneMode
-            % Only mode N and scaled by 1 instead of the Fourier coefficient
             if isCos(fam)
                 phi = cos(kk{fam}(N)*x);
             else
@@ -153,23 +131,19 @@ end
             end
             u = phi * cos(omega{fam}(N)*t);
         else
-            % Sum of modes 1 to N. Nothing decays, so every mode is kept.
             w  = cf{ic,fam}(1:N) .* cos(omega{fam}(1:N)*t);
             u  = Phi{fam}(:, 1:N) * w;
             if fam == 4
-                u = u + a0v(ic);     % constant mode, does not move
+                u = u + a0v(ic);
             end
             u = u.';
         end
     end
 
+% Solution on xm at time t from all M modes, summed with an inverse FFT
     function u = Wave_Solution_Full(ic, fam, oneMode, t)
-        % Returns the (row vector) solution on the FFT grid xm at time t
-        % using ALL M modes the grid can hold. The sum over n is an inverse
-        % FFT of the time-evolved coefficients so no mode matrix is needed.
-        kf = ((1:M) - shift(fam))*pi/L;          % k_n for n = 1..M
+        kf = ((1:M) - shift(fam))*pi/L;
         if oneMode
-            % Highest mode only, scaled by 1
             if isCos(fam)
                 u = cos(kf(M)*xm);
             else
@@ -178,20 +152,18 @@ end
             u = u * cos(c*kf(M)*t);
             return
         end
-        d = cf{ic,fam}.' .* cos(c*kf*t);         % c_n*cos(omega_n t)
+        d = cf{ic,fam}.' .* cos(c*kf*t);
         if shift(fam) == 0
-            % Integer k: phi_n(xm_j) is Re/Im of exp(i*pi*n*(j-1/2)/M)
             if fam == 1
-                d(M) = d(M)/2;   % last sine vector has twice the norm of the others
+                d(M) = d(M)/2;   % last sine vector has twice the norm
             end
-            g = [0, d] .* exp(1i*pi*(0:M)/(2*M));     % n = 0..M
+            g = [0, d] .* exp(1i*pi*(0:M)/(2*M));
             if fam == 4
-                g(1) = a0v(ic);                       % constant mode
+                g(1) = a0v(ic);
             end
             Z = 2*M*ifft(g, 2*M);
             Z = Z(1:M);
         else
-            % Half integer k: factor out exp(i*pi*(j-1)/(2M))
             h = d .* exp(1i*pi*((1:M)-0.5)/(2*M));
             Z = 2*M*ifft(h, 2*M);
             Z = Z(1:M) .* exp(1i*pi*((1:M)-1)/(2*M));
@@ -204,7 +176,6 @@ end
     end
 
     function u = Solve(ic, fam, oneMode, N, t)
-        % Slider at Max_N means use every mode the grid can hold
         if N >= Max_N
             u = Wave_Solution_Full(ic, fam, oneMode, t);
         else
@@ -212,12 +183,8 @@ end
         end
     end
 
-% y limits for the sum of modes view: 20% above max|f|. With zero initial
-% velocity the exact solution is an average of two shifted copies of the
-% (extended) initial profile, so |u| <= max|f| at every t. Partial sums
-% overshoot near jumps of the extension (Gibbs, about 9% of the jump, i.e.
-% up to 18% of max|f|: 1.18 for 'Constant' with Dirichlet ends), so 1.1
-% clipped the overshoot the demo is meant to show.
+% y limits for the sum of modes view: |u| <= max|f|, plus room for the
+% Gibbs overshoot (up to 18% of max|f|)
 yl   = cell(nIC, 4);
 for ic = 1:nIC
     for fam = 1:4
@@ -226,43 +193,29 @@ for ic = 1:nIC
 end
 
 %% ============== Make the initial plots =================================
-icIdx = IC0;     % Row of ICs currently shown
+icIdx = IC0;
 
-% Initial condition
 hF = plot(app.ax, x, fxs{icIdx}, 'k--', 'LineWidth', 1.5);
-
-% Solution
 hU = plot(app.ax, x, Solve(icIdx, 1, false, N0, 0), 'r', 'LineWidth', 2);
 
 %% Plot elements are done - Make pretty
-leg = legend(app.ax, '$f(x)$', '$u_N(x,t)$');
-set(leg, 'Interpreter', 'latex')
-leg.Location = "best";
-set(leg, 'FontSize', 18)
-
-Pretty_Plot(app.ax);
-xlabel(app.ax, '$x$', 'Interpreter', 'latex')
-ylabel(app.ax, '$u(x,t)$', 'Interpreter', 'latex')
+leg = legend(app.ax, '$f(x)$', '$u_N(x,t)$', 'Location', 'best', 'FontSize', 18);
+ylabel(app.ax, '$u(x,t)$')
 xlim(app.ax, [0, L])
 
 %% Build UI
-NumControls = 6; % maximum number of controls
+NumControls = 6;
 
-% Time. Arrow click = 0.01 and clicking the track = 0.1 (in time units).
-tSlider = app.addControl('slider', '$t = $', 1, NumControls, @changeT, ...
+tSlider = app.addControl('slider', '$t = $', 1, NumControls, @(~,~) updateTime(), ...
     'Number_format', '%.2f', 'Default', 0, 'Min', 0, 'Max', t_max);
 tSlider.SliderStep = [0.01/t_max, 0.1/t_max];
-% Also update while the slider is being dragged
 addlistener(tSlider, 'ContinuousValueChange', @(~,~) updateTime());
 
-% Number of modes
 NSlider = app.addControl('slider', '$N = $', 2, NumControls, @changeN, ...
     'Number_format', '%d', 'Default', N0, 'Min', 1, 'Max', Max_N, ...
-    'LimitLabel', '$N \to \infty$');   % shown at N = Max_N (all Nfft modes)
-% Arrow click moves one mode and clicking in the track moves ten
+    'LimitLabel', '$N \to \infty$');
 NSlider.SliderStep = [1/(Max_N-1), 10/(Max_N-1)];
 
-% Toggles. The button text shows the current state.
 btnMode = app.addControl('button', 'Sum of modes', 3, NumControls, ...
     @changeToggle, 'ColorChange', true);
 
@@ -272,18 +225,15 @@ btnR = app.addControl('button', 'Right: Dirichlet', 4, NumControls, ...
 btnL = app.addControl('button', 'Left: Dirichlet', 5, NumControls, ...
     @changeToggle, 'ColorChange', true);
 
-% Initial condition. Each click moves to the next row of ICs.
 btnIC = app.addControl('button', ['IC: ' ICs{icIdx,1}], 6, NumControls, ...
     @changeIC);
 
 %% Functions for UI elements
-    % Any toggle: reset the time slider to t = 0 and redraw
     function changeToggle(~,~)
         app.UpdateUISlider(tSlider, 0);
         updatePlot()
     end
 
-    % Initial condition: go to the next IC, reset t = 0 and redraw
     function changeIC(~,~)
         icIdx = mod(icIdx, nIC) + 1;
         set(hF, 'YData', fxs{icIdx});
@@ -291,22 +241,15 @@ btnIC = app.addControl('button', ['IC: ' ICs{icIdx,1}], 6, NumControls, ...
         updatePlot()
     end
 
-    % Number of modes: snap the slider to an integer (the label switches
-    % to N -> infinity by itself at Max_N via 'LimitLabel')
     function changeN(~,~)
         NSlider.Value = round(NSlider.Value);
         updatePlot()
     end
 
-    % Time: only the curve changes so skip the title, legend and limits
-    function changeT(~,~)
-        updateTime()
-    end
-
 updatePlot()
 
 %% Draw update functions. All initial plot functions are updated below.
-    % Cheap update used when only time changes
+% Only the curve changes with t
     function updateTime(~,~)
         fam = 1 + double(btnL.Value) + 2*double(btnR.Value);
         set(hU, 'YData', Solve(icIdx, fam, logical(btnMode.Value), ...
@@ -314,18 +257,15 @@ updatePlot()
         drawnow limitrate
     end
 
-    % Full update used when a toggle, the IC or the number of modes changes
     function updatePlot(~,~)
-        % Read the UI state
         bcL     = double(btnL.Value);          % 0 = Dirichlet, 1 = Neumann
         bcR     = double(btnR.Value);
         fam     = 1 + bcL + 2*bcR;
-        oneMode = logical(btnMode.Value);      % false = sum, true = single mode
+        oneMode = logical(btnMode.Value);
         N       = round(NSlider.Value);
         t       = tSlider.Value;
-        isFull  = N >= Max_N;                  % slider at its maximum
+        isFull  = N >= Max_N;
 
-        % Button text shows the current state
         btnL.String  = ['Left: '  bcName{bcL+1}];
         btnR.String  = ['Right: ' bcName{bcR+1}];
         btnIC.String = ['IC: ' ICs{icIdx,1}];
@@ -335,7 +275,6 @@ updatePlot()
             btnMode.String = 'Sum of modes';
         end
 
-        % Compute and plot the solution. The full view lives on the FFT grid.
         if isFull
             xg = xm;
             N  = M;
@@ -344,7 +283,6 @@ updatePlot()
         end
         set(hU, 'XData', xg, 'YData', Solve(icIdx, fam, oneMode, N, t));
 
-        % Axis limits, legend and title depend on the display type
         if oneMode
             ylim(app.ax, [-1.1, 1.1])
             leg.String = {'$f(x)$', '$\cos(\omega_n t)\phi_n(x)$'};
@@ -352,7 +290,7 @@ updatePlot()
         else
             ylim(app.ax, yl{icIdx,fam})
             if isFull
-                leg.String = {'$f(x)$', '$u(x,t)$'};   % the full series
+                leg.String = {'$f(x)$', '$u(x,t)$'};
                 desc = 'sum of all modes, $N \to \infty$';
             else
                 leg.String = {'$f(x)$', '$u_N(x,t)$'};
@@ -360,7 +298,7 @@ updatePlot()
             end
         end
         title(app.ax, sprintf('1D Wave Equation, %s at $x=0$, %s at $x=L$: %s', ...
-            bcName{bcL+1}, bcName{bcR+1}, desc), 'Interpreter', 'latex')
+            bcName{bcL+1}, bcName{bcR+1}, desc))
         drawnow limitrate
     end
 end

@@ -11,9 +11,8 @@ function S16_9_Divergence_Theorem()
 %    R slider               - radius of the ball
 %    Previous / Next        - step through several vector fields
 %    Vectors button         - hide/show the arrows on the sphere
-%    Volume button          - swap the slices for the volume picture. It is
-%                             redrawn every time the axes are rotated, so it
-%                             behaves like any other 3D plot.
+%    Volume button          - swap the slices for the volume picture
+%                             (redrawn whenever the axes are rotated)
 %
 %% Author Info
 %
@@ -45,9 +44,9 @@ arrowFrac = 0.35;   % arrow length as a fraction of R
 
 % Volume picture (same look as S16_9_Divergence_Volume_Render)
 volN       = 48;              % grid points per side of the volume
-volNr      = 60;              % picture resolution: rays across the radius ...
-volNt      = 120;             % ... and around the circle
-volGamma   = 0.8;             % opacity = |div F|^volGamma: below 1 lifts faint regions
+volNr      = 60;              % rays across the radius
+volNt      = 120;             % rays around the circle
+volGamma   = 0.8;             % opacity = |div F|^volGamma
 volOpacity = 0.35;            % overall opacity scale
 volBg      = [0.8 0.8 0.8];   % background behind the ball
 cmapRB     = [linspace(0,1,256)' zeros(256,1) linspace(1,0,256)'];   % blue (sink) to red (source)
@@ -74,7 +73,7 @@ axL = app.ax(1);  axR = app.ax(2);
     end
 
 %% Precompute math for updates
-% Quadrature on the unit ball / unit sphere; a radius R only rescales it.
+% Quadrature on the unit ball / unit sphere (R only rescales it)
 [rq, wr] = gaussLegendre(nQuad, 0, 1);
 [pq, wp] = gaussLegendre(nQuad, 0, pi);
 tq = (0:2*nQuad-1).' * pi/nQuad;   wt = pi/nQuad;   % periodic: equal weights
@@ -87,16 +86,15 @@ Wvol = Wr .* Wp * wt .* Rr.^2 .* sin(Pp);         % rho^2 sin(phi) drho dphi dth
 Usurf = {sin(P2).*cos(T2), sin(P2).*sin(T2), cos(P2)};
 Wsurf = Wp2 * wt .* sin(P2);                      % sin(phi) dphi dtheta
 
-% Volume grid on [-1, 1]^3; a radius R only rescales it
+% Volume grid on [-1, 1]^3
 gvU = linspace(-1, 1, volN);
 [xu, yu, zu] = ndgrid(gvU);
 ru = sqrt(xu.^2 + yu.^2 + zu.^2);
-tSteps = linspace(1, -1, volN);       % ray depths, front to back, one per voxel
-volKey = [NaN NaN];                   % [field R] the volume was last built for
+tSteps = linspace(1, -1, volN);       % ray depths, front to back
+volKey = [NaN NaN];                   % [field R] of the last built volume
 Vint = [];  Aint = [];                % interpolants, made by buildVolume
 volMode = false;
-% The picture is drawn on a disk through the center that faces the camera:
-% one ray per grid point of the disk (polar grid, unit radius)
+% The picture is drawn on a camera-facing disk, one ray per grid point
 [rhoV, phiV] = meshgrid(linspace(0, 1, volNr), linspace(0, 2*pi, volNt));
 aV = rhoV.*cos(phiV);  bV = rhoV.*sin(phiV);
 
@@ -106,7 +104,7 @@ D1 = Rd.*cos(Td);  D2 = Rd.*sin(Td);  D0 = 0*Rd;
 [Ts, Ps] = meshgrid(linspace(0, 2*pi, 2*nSphere), linspace(0, pi, nSphere));
 S1 = sin(Ps).*cos(Ts);  S2 = sin(Ps).*sin(Ts);  S3 = cos(Ps);
 [Ta, Pa] = meshgrid(linspace(0, 2*pi, 13), linspace(pi/8, 7*pi/8, 6));
-Ta = Ta(:, 1:end-1);  Pa = Pa(:, 1:end-1);               % drop the repeated theta = 2 pi
+Ta = Ta(:, 1:end-1);  Pa = Pa(:, 1:end-1);
 A1 = sin(Pa(:)).*cos(Ta(:));  A2 = sin(Pa(:)).*sin(Ta(:));  A3 = cos(Pa(:));
 
 %% Make the initial plots
@@ -119,7 +117,7 @@ Sw = {sin(Pw).*cos(Tw), sin(Pw).*sin(Tw), cos(Pw)};
 hWire = surf(axL, Sw{:}, 'FaceColor', 'none', 'EdgeColor', [0.3 0.3 0.3], 'EdgeAlpha', 0.4);
 setColor(axL, 1, '$\nabla\cdot\mathbf{F}$')
 hVol = surf(axL, 0*aV, 0*aV, 0*aV, zeros([size(aV) 3]), ...
-    'EdgeColor', 'none', 'FaceColor', 'interp', 'Visible', 'off');   % volume picture
+    'EdgeColor', 'none', 'FaceColor', 'interp', 'Visible', 'off');
 
 % ---- Right: the sphere colored by F . n, with normals and F
 hSphere = surf(axR, S1, S2, S3, 0*S3, 'EdgeColor', 'none', 'FaceColor', 'interp', 'FaceAlpha', 0.8);
@@ -127,12 +125,11 @@ setColor(axR, 1, '$\mathbf{F}\cdot\mathbf{n}$')
 hNormal = quiver3(axR, A1, A2, A3, A1, A2, A3, 0, 'k', 'LineWidth', 1.2);
 hField  = quiver3(axR, A1, A2, A3, A1, A2, A3, 0, 'm', 'LineWidth', 1.2);
 legend(axR, [hNormal hField], {'$\mathbf{n}$', '$\mathbf{F}$'}, ...
-    'Location', 'northeast', 'Interpreter', 'latex')
+    'Location', 'northeast')
 
 %% Plot elements are done - Make pretty
 lim = Rmax + 0.6;
 for axi = [axL axR]
-   % axis(axi, 'equal')
     xlim(axi, [-lim lim]); ylim(axi, [-lim lim]); zlim(axi, [-lim lim])
     view(axi, 35, 25)
 end
@@ -153,10 +150,10 @@ addlistener(axL, 'View', 'PostSet', @(~,~) viewChanged());
 updatePlot()
 
 %% Functions for UI elements
-    % Centered colormap, colorbar and its LaTeX label
+% Centered colormap, colorbar and its LaTeX label
     function setColor(axh, data, labelStr)
         cb = Pretty_Color_Centered(axh, data);
-        cb.Label.Interpreter = 'latex';   % before String: TeX cannot read \mathbf
+        cb.Label.Interpreter = 'latex';   % before String
         cb.Label.String = labelStr;
     end
 
@@ -165,13 +162,13 @@ updatePlot()
         updatePlot()
     end
 
-    % Swap the left panel between the slices and the volume picture
+% Swap the left panel between the slices and the volume picture
     function toggleVolume(~, ~)
         volMode = logical(btnVol.Value);
         set(hSlice, 'Visible', onoff(~volMode))
         set(hVol,   'Visible', onoff(volMode))
         if volMode
-            axL.Color = volBg;              % same background as the volshow version
+            axL.Color = volBg;
         else
             axL.Color = 'w';
         end
@@ -185,19 +182,18 @@ updatePlot()
     end
 
 %% Volume picture
-% div F on the volume grid (scaled as in the volshow version) and its opacity
+% Scaled div F on the volume grid and its opacity
     function buildVolume(j, R)
         D = divF(j, R*xu, R*yu, R*zu);
         D = D / max(max(abs(D(:))), eps);       % normalize over the cube
-        D(ru > 1) = 0;                          % keep continuity outside the ball
+        D(ru > 1) = 0;
         Abase = (abs(D) .* max(1 - ru, 0)).^volGamma;
         Vint = griddedInterpolant({gvU, gvU, gvU}, D,     'linear', 'nearest');
         Aint = griddedInterpolant({gvU, gvU, gvU}, Abase, 'linear', 'nearest');
         volKey = [j R];
     end
 
-% One ray per grid point of the camera-facing disk, color and opacity
-% blended front to back, then the disk is turned to face the camera
+% Blend color and opacity front to back along one ray per disk point
     function renderVolume()
         [azd, eld] = view(axL);
         az = deg2rad(azd);  el = deg2rad(eld);
@@ -238,10 +234,9 @@ updatePlot()
         % Both sides of the theorem
         volInt  = R^3 * sum(divF(j, R*Uvol{1}, R*Uvol{2}, R*Uvol{3}) .* Wvol, 'all');
         surfInt = R^2 * sum(fluxDensity(j, R, Usurf{:}) .* Wsurf, 'all');
-        volInt(abs(volInt) < 1e-9)   = 0;      % no -0.0000 from round-off
+        volInt(abs(volInt) < 1e-9)   = 0;      % avoid -0.0000
         surfInt(abs(surfInt) < 1e-9) = 0;
 
-        % Left: volume picture or slices of div F, inside the wire-frame sphere
         set(hWire, 'XData', R*Sw{1}, 'YData', R*Sw{2}, 'ZData', R*Sw{3})
         if volMode
             if ~isequal(volKey, [j R])
@@ -264,16 +259,13 @@ updatePlot()
             leftName = '$\nabla\cdot\mathbf{F}$ on three slices of the ball $E$';
         end
         title(axL, {leftName, ...
-            sprintf('$\\int\\!\\!\\int\\!\\!\\int_E \\nabla\\cdot\\mathbf{F}\\,dV = %.4f$', volInt)}, ...
-            'Interpreter', 'latex')
+            sprintf('$\\int\\!\\!\\int\\!\\!\\int_E \\nabla\\cdot\\mathbf{F}\\,dV = %.4f$', volInt)})
 
-        % Right: flux density on the sphere
         Cs = fluxDensity(j, R, S1, S2, S3);
         set(hSphere, 'XData', R*S1, 'YData', R*S2, 'ZData', R*S3, 'CData', Cs)
         setColor(axR, Cs, '$\mathbf{F}\cdot\mathbf{n}$')
         title(axR, {['$\mathbf{F} = ' fields(j).name '$'], ...
-            sprintf('$\\int\\!\\!\\int_S \\mathbf{F}\\cdot\\mathbf{n}\\,dS = %.4f$', surfInt)}, ...
-            'Interpreter', 'latex')
+            sprintf('$\\int\\!\\!\\int_S \\mathbf{F}\\cdot\\mathbf{n}\\,dS = %.4f$', surfInt)})
 
         showVec = ~btnVec.Value;
         set([hNormal hField], 'Visible', onoff(showVec))

@@ -50,31 +50,27 @@ axPay = app.ax(2);
     end
 
 %% Precompute math for updates
-% All nMax games are played once per roll. The slider only chooses how many
-% of them to show, so moving it never changes the games already played.
+% All nMax games are played once per roll; the slider chooses how many to show
 [Payout, Flips] = play_games(nMax);
 RunningAvg      = cumsum(Payout) ./ (1:nMax);
 games           = 1:nMax;
 
 %% Make the initial plots
-% Running average (left). Created once and updated in place.
-% (400 log-spaced points draw the same smooth curve on the log axis as
-%  all nMax points, at a fraction of the cost)
+% Running average (left), drawn at 400 log-spaced points
 gRef = unique(round(logspace(0, log10(nMax), 400)));
 hRef = plot(axAvg, gRef, log2(gRef), 'k--', 'LineWidth', 1.5);
 hAvg = plot(axAvg, NaN, NaN, 'b-', 'LineWidth', 2);
 set(axAvg, 'XScale', 'log')
-xlabel(axAvg, 'Number of games $n$', 'Interpreter', 'latex')
-ylabel(axAvg, 'Average payout (\$)', 'Interpreter', 'latex')
-legend(axAvg, [hAvg, hRef], {'Running average payout', '$\log_2 n$'}, ...
-    'Interpreter', 'latex', 'Location', 'northwest')
+xlabel(axAvg, 'Number of games $n$')
+ylabel(axAvg, 'Average payout (\$)')
+legend(axAvg, [hAvg, hRef], {'Running average payout', '$\log_2 n$'}, 'Location', 'northwest')
 
 % Payout of every game (right)
 hPay = plot(axPay, NaN, NaN, '.', 'Color', [0.3 0.3 0.3], 'MarkerSize', 8);
 hMax = plot(axPay, NaN, NaN, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 9);
 set(axPay, 'YScale', 'log')
-xlabel(axPay, 'Game number', 'Interpreter', 'latex')
-ylabel(axPay, 'Payout $2^k$ (\$)', 'Interpreter', 'latex')
+xlabel(axPay, 'Game number')
+ylabel(axPay, 'Payout $2^k$ (\$)')
 
 %% Build UI
 NumControls = 2;
@@ -84,7 +80,6 @@ nSlider = app.addControl('slider', 'Games $n = $', 1, NumControls, @updatePlot, 
 
 app.addControl('button', 'Reroll', 2, NumControls, @reroll, 'colOrRow', 'row');
 
-% Launch update function
 updatePlot();
 
 %% Functions for UI elements
@@ -111,14 +106,11 @@ updatePlot();
         xlim(axPay, [0, max(n, 2)])
         ylim(axPay, [1, 2*biggest])
 
-        % splitlines: LaTeX ignores a newline inside one string, so each
-        % line is passed as its own cell
         title(axAvg, splitlines(sprintf(['Average payout after $n = %d$ games: \\$%.2f\n' ...
             'Expected payout per game $= \\sum_{k=1}^{\\infty} 2^k \\cdot 2^{-k} = \\infty$'], ...
-            n, RunningAvg(n))), 'Interpreter', 'latex')
+            n, RunningAvg(n))))
         title(axPay, splitlines(sprintf(['Largest payout: \\$%d in game %d ' ...
             '(first heads on flip %d)\nMedian payout: \\$%d'], ...
-            biggest, iBig, Flips(iBig), round(median(Payout(1:n))))), ...
-            'Interpreter', 'latex')
+            biggest, iBig, Flips(iBig), round(median(Payout(1:n))))))
     end
 end

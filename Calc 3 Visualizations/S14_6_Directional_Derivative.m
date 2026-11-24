@@ -18,9 +18,9 @@ close all
 r2 = @(x,y) x.^2 + y.^2;
 f  = @(x,y) (r2(x,y) < 1) .* exp(1./(r2(x,y) - 1));  % smooth bump function
 
-x0     = -0.1;   % initial x (on the side of the bump, where grad f is not 0)
-y0     = -0.5;   % initial y
-theta0 = 0;     % initial rotation angle (rad) away from the gradient
+x0     = -0.1;   % initial point
+y0     = -0.5;
+theta0 = 0;      % initial angle (rad) away from the gradient
 
 max_val   = 1.4;   % domain is -max_val <= x, y <= max_val
 Delta_val = 0.05;  % grid spacing for the surface mesh
@@ -37,17 +37,15 @@ zlim(app.ax, [0, 0.6])
     function redraw(x, y, theta)
         z    = f(x,y);
         grad = Grad_f(f, [x; y]);
-        % Unit direction u: the gradient direction rotated by theta. (The
-        % old code used the rotated gradient itself, which is not a unit
-        % vector, so the title showed |grad f|^2 cos(theta) as D_u f.)
+        % Unit direction u: the gradient direction rotated by theta
         if norm(grad) > 1e-12
             ghat = grad / norm(grad);
         else
             ghat = [1; 0];          % grad f = 0: measure theta from the x-axis
         end
         R  = [cos(theta) -sin(theta); sin(theta) cos(theta)];
-        u  = R*ghat;                                % unit direction
-        Du = grad(1)*u(1) + grad(2)*u(2);           % D_u f = grad f . u = |grad f| cos(theta)
+        u  = R*ghat;
+        Du = grad(1)*u(1) + grad(2)*u(2);           % D_u f = |grad f| cos(theta)
         set(hPt,  'XData', x, 'YData', y, 'ZData', z);
         set(hVec, 'XData', x, 'YData', y, 'ZData', z, ...
             'UData', u(1), 'VData', u(2), 'WData', Du);
@@ -60,25 +58,21 @@ zlim(app.ax, [0, 0.6])
 [X, Y] = meshgrid(-max_val:Delta_val:max_val);
 Z = f(X, Y);
 surf(app.ax, X, Y, Z, 'EdgeColor', 'none')
-colormap(app.ax, Pretty_Colormap('amp'))   % (redraw used to reapply this on every move)
+colormap(app.ax, Pretty_Colormap('amp'))
 contour3(app.ax, X, Y, Z, 20, 'k', 'LineWidth', 1)
 Pretty_Plot(app.ax)
 zlim(app.ax, [0, 0.6])
 
-% Point and direction arrow: created once, updated in place by redraw()
 hPt  = plot3(app.ax, NaN, NaN, NaN, 'bo', 'MarkerFaceColor', 'b', ...
     'MarkerSize', 10, 'LineWidth', 2);
 hVec = quiver3(app.ax, 0, 0, 0, 0, 0, 0, 1, ...
     'Color', 'b', 'LineWidth', 2, 'MaxHeadSize', 0.5);
 
-% Current point (moved by dragging)
-px = x0;  py = y0;
+px = x0;  py = y0;   % current point
 redraw(px, py, theta0)
-%% Precompute math for updates
-% Light weight — skip
-%% Dragging: clicks in the axes move the point to the surface under the mouse
+
+%% Build UI: drag the point on the surface, slider for theta
 Drag_Point_On_Surface(app.ax, f, max_val*[-1 1], max_val*[-1 1], @movePoint);
-%% Build UI
 NumControls = 1;
 thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls, @updatePlot, ...
 'colOrRow', 'row', 'Default', theta0, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
@@ -87,11 +81,8 @@ thetaSlider = app.addControl('slider', '$\theta = $', 1, NumControls, @updatePlo
         redraw(px, py, thetaSlider.Value)
     end
 
-    % Called by Drag_Point_On_Surface with the new point
     function movePoint(x, y)
         px = x;  py = y;
         redraw(px, py, thetaSlider.Value)
     end
-%% Main Draw update function.
-% Handled above by redraw(), called from updatePlot() and movePoint().
 end

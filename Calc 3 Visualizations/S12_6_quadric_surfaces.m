@@ -7,17 +7,16 @@ function S12_6_quadric_surfaces()
 % This function was written by Dr Matthew Harris an assistant professor at
 % Clarkson university for visually teaching MA 231: Calculus 3.
 %
-close all % Close all Windows
+close all
 
-%% User parameters for math objects. Adjust these to modify all math objects
-%  below.
-% xy plot ranges
+%% User parameters for math objects.
+% Adjust these to modify selected math objects below.
 xrange = [-10,10];
 yrange = xrange;
 zrange = 50*[-1,1];
 Resolution = 25;
 
-% Set default values for coefficients
+% Starting coefficients
 A = 2; B = -2; C = 0; D = 0; I = 1; J = 0;
 % Slider range
 SliderMin = -2;
@@ -27,7 +26,7 @@ SliderMax = 2;
 run('setup.m')
 
 %% Build an applet that holds the figure, plot and all UI elements
-app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$ ",1); % 3 is an optional argument to allow for more subplots
+app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$ ",1);
 
 %% Optional math functions for plot computations
     function [X, Y, Z,title_val] = quadric_surface_generator(Coef, xrange, yrange, N)
@@ -235,8 +234,6 @@ app = uiFigure("Quadratic Surfaces: $A x^2 + B y^2 + C z^2 + D xy + I z + J = 0$
     end
 
 %% Make the initial plots
-
-% Generate the initial quadric surface
 coefficients = [A, B, C, D, I, J];
 [X, Y, Z] = quadric_surface_generator(coefficients, xrange,yrange, Resolution);
 Surface = surf(app.ax,X,Y,Z);
@@ -246,23 +243,18 @@ xlim(app.ax,xrange)
 ylim(app.ax,yrange)
 % zlim(app.ax,zrange)
 
-%% Precompute math for updates
-% Skip
-
 %% Build UI
 NumControls = 6;
-% Create sliders for coefficients A, B, C, D, I, J
 sliderA = app.addControl('slider', '$A = $', 1, NumControls, @update,...
     'Default',A,'Min',SliderMin,'Max',SliderMax);
 sliderB = app.addControl('slider', '$B = $', 2, NumControls, @update,...
     'Default',B,'Min',SliderMin,'Max',SliderMax);
 
-% Button to switch c
+% C cycles 0 -> 1 -> -1
 buttonC = app.addControl('button', '$C = 0$', 3, NumControls, @update_C, ...
     'Default',0);
 buttonC.UserData.Value = 0;   
     function update_C(~,~)
-        % Switch between states
         if buttonC.UserData.Value == 0
             buttonC.UserData.Value = 1;
             buttonC.String = "$C = 1$";
@@ -279,7 +271,7 @@ buttonC.UserData.Value = 0;
 sliderD = app.addControl('slider', '$D = $', 4, NumControls, @update,...
     'Default',D,'Min',SliderMin,'Max',SliderMax);
 
-% Button to flip I
+% I flips between 1 and -1
 buttonI = app.addControl('button', '$I = 1$', 5, NumControls, @update_I, ...
     'Default',1);
 buttonI.UserData.Value = 1;
@@ -295,21 +287,17 @@ buttonI.UserData.Value = 1;
     end
 
 sliderJ = app.addControl('slider', '$J = $', 6, NumControls, @update,...
-    'Default',J,'Min',zrange(1)/2,'Max',zrange(2)/2); % force z lim to be nice
+    'Default',J,'Min',zrange(1)/2,'Max',zrange(2)/2);
 
-% Launch update function
 update();
-
-%% Functions for UI elements
 
 %% Main Draw update function.
     function update(~,~)
-        % Recompute data and plot
         coefficients = [sliderA.Value, sliderB.Value, buttonC.UserData.Value,...
             sliderD.Value, buttonI.UserData.Value, sliderJ.Value];
         [X, Y, Z, title_val] = quadric_surface_generator(coefficients,xrange, yrange, Resolution);
         set(Surface, 'XData',X, 'YData',Y, 'ZData',Z)
-        title(app.ax,[app.fig.Name title_val],'Interpreter','latex')
+        title(app.ax,[app.fig.Name title_val])
 
         if min(Z(:)) ~= max(Z(:))
             Pretty_Color_Centered(app.ax,Z,'colorbar','off');

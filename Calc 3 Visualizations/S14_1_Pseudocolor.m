@@ -30,9 +30,7 @@ view(app.ax, 0, 90)
 %% Optional math functions for plot computations
     function drawExample(idx)
         cla(app.ax)
-        % imshow (example 3) hides the axes and fixes the aspect ratio, and
-        % cla does not remove colorbars. Undo both so examples 1 and 2 look
-        % the same however they are reached.
+        % Undo what imshow (example 3) changes; cla keeps colorbars
         colorbar(app.ax, 'off');
         axis(app.ax, 'normal');
         app.ax.Visible = 'on';
@@ -48,7 +46,7 @@ view(app.ax, 0, 90)
             case 2  % peaks
                 [x,y,Z] = peaks(100);
                 pcolor(app.ax, x, y, Z)
-                Pretty_Color_Centered(app.ax,Z);   % also adds the colorbar
+                Pretty_Color_Centered(app.ax,Z);
                 axis(app.ax, 'xy')
 
             case 3  % Binary image from mat file
@@ -58,26 +56,17 @@ view(app.ax, 0, 90)
         end
 
         Pretty_Plot(app.ax)
-        title(app.ax, exampleNames{idx}, 'Interpreter', 'latex')
+        title(app.ax, exampleNames{idx})
         app.fig.Name = exampleNames{idx};
     end
 
 %% Make the initial plots
 drawExample(exampleIdx)
 
-%% Precompute math for updates
-% Light weight — skip
-
 %% Build UI
 NumControls = 2;
 
-% Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
 app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample,'colOrRow','row');
-app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
+app.galleryIdx = exampleIdx;
 
-%% Functions for UI elements
-% (Previous/Next handled by app.addPrevNext above)
-
-%% Main Draw update function.
-% (Handled directly by drawExample above)
 end

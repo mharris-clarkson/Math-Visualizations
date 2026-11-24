@@ -22,8 +22,7 @@ f  = @(x,y) 2*exp(1)*exp(1 ./ (r2(x,y)-1 + (r2(x,y)>=1)));
 f  = @(x,y) (r2(x,y)<1) .* f(x,y);
 
 N0 = 1; Nmax = 25;   % radial bins (angular bins = 4x radial bins)
-nFace = 8;           % arc resolution per wedge edge for the largest wedges
-                     % (small wedges use fewer points, see buildCells)
+nFace = 8;           % most points per wedge arc
 
 %% Region boundary: circle centered at (xc,yc), passing through the origin
 t = linspace(0, 2*pi, 400);
@@ -43,8 +42,7 @@ pad   = 0.25;
 xlims = [min(Xb)-pad, max(Xb)+pad];
 ylims = [min(Yb)-pad, max(Yb)+pad];
 
-% Which wedge centers lie in the region, remembered for every N_r already
-% visited (inpolygon is the slowest step of a slider move)
+% Wedge centres inside the region, cached per N_r
 insideCache = cell(1, Nmax);
 
 %% Run the shared engine
@@ -53,9 +51,7 @@ DoubleIntegralCurvyEngine('Polar Riemann Approximation', ...
     f, Xb, Yb, xlims, ylims, [150, 75], N0, Nmax, '$N_r = $', @buildCells, ...
     'DotsButton', true, 'MaskButton', true)
 
-%% Grid-specific cell builder: polar wedges, fully vectorized (no
-% per-cell loop -- the original looped over every candidate wedge; here
-% every inside wedge's polygon is built with one shot of array math).
+%% Cell builder: solid polar wedges whose centres are inside the region
 function [layers, X, Y, Z, titleStr] = buildCells(Nr, exactIntegral)
     Ntheta = 4*Nr;
     dr  = Rmax/Nr;
@@ -78,16 +74,12 @@ function [layers, X, Y, Z, titleStr] = buildCells(Nr, exactIntegral)
     X = Xs(linIdx); Y = Ys(linIdx); Z = Zs(linIdx);
     integral_approx = sum(Z.*RR(linIdx))*dr*dth;
 
-    % Each wedge's top face is a 2*nArc-gon: an inner arc at rIn followed
-    % by an outer arc at rOut (reversed), both spanning [th1,th1+dth].
-    % (Named rIn/rOut, not r1/r2: this is a nested function, so 'r2' here
-    % would overwrite the r2 function handle of the main function.)
+    % Top face: inner arc at rIn, then outer arc at rOut reversed
+    % (not named r2: that would overwrite the parent's r2 handle)
     rIn  = (iIdx-1)*dr;
     rOut = iIdx*dr;
     th1 = thetaLims(1) + (jIdx-1)*dth;
-    % Points per arc: about one per 6 degrees of arc, between 2 and nFace
-    % (a tiny wedge looks the same with 2 points as with 8, at a quarter
-    % of the vertices)
+    % About one point per 6 degrees of arc, between 2 and nFace
     nArc  = min(nFace, max(2, ceil(rad2deg(dth)/6) + 1));
     thLoc = th1 + dth*linspace(0, 1, nArc);    % n x nArc
 
@@ -97,8 +89,7 @@ function [layers, X, Y, Z, titleStr] = buildCells(Nr, exactIntegral)
     Yp = [Yin, fliplr(Yout)];
     Zp = repmat(Z, 1, 2*nArc);
 
-    % Solid wedges: the same outline at the top (height Z) and at the
-    % bottom (z = 0), joined by side walls, as in the Cartesian prisms
+    % Same outline at the top (height Z) and bottom (z = 0), joined by walls
     m = 2*nArc;                                % outline points per wedge
     M = m*n;                                   % top vertices in total
     Vtop = [reshape(Xp.', [], 1), reshape(Yp.', [], 1), reshape(Zp.', [], 1)];
@@ -113,8 +104,6 @@ function [layers, X, Y, Z, titleStr] = buildCells(Nr, exactIntegral)
                     'Vertices',  {V, V, V}, ...
                     'FaceAlpha', {0.25, 0.6, 0.85});
 
-    % splitlines: a newline inside one LaTeX string does not start a new
-    % line; '$|$' because a bare | in LaTeX text mode prints as a dash
     titleStr = splitlines(sprintf(['Polar Riemann Approximation\n' ...
         'Radial bins = %d   Wedges inside = %d\nApprox = %.6f   $|$   Exact = %.6f'], ...
         Nr, n, integral_approx, exactIntegral));

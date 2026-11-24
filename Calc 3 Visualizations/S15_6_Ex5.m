@@ -31,7 +31,7 @@ Xc = Xp;  Zc = Zp;  Yc = top*ones(size(Xc));
 figure
 hold on
 hPar = surf(Xp, Yp, Zp, 'FaceColor', 'c', 'FaceAlpha', 0.8, 'EdgeColor', 'none', 'DisplayName', 'y = x^2 + z^2');
-hCap = surf(Xc, Yc, Zc, 'FaceColor', 'm', 'FaceAlpha', 0.6, 'EdgeColor', 'none', 'DisplayName', sprintf('y = %g', top)); % follows top
+hCap = surf(Xc, Yc, Zc, 'FaceColor', 'm', 'FaceAlpha', 0.6, 'EdgeColor', 'none', 'DisplayName', sprintf('y = %g', top));
 xlabel('x'); ylabel('y'); zlabel('z')
 set(gca, 'FontSize', 18)
 legend([hPar hCap], 'Location', 'northeast')

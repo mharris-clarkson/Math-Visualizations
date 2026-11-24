@@ -17,7 +17,7 @@ rhomin = 0;  rhomax = 2;
 thetamin = 0;  thetamax = pi/2;
 phimin = 0;  phimax = pi/2;
 nrho = 40; nt = 60; np = 40;   % grid points per direction
-tol = 1e-6;                    % bounds closer than this to a degenerate case hide the surface
+tol = 1e-6;                    % hide surfaces this close to degenerate
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
 run('setup.m')
@@ -25,11 +25,11 @@ app = uiFigure('Spherical Coordinates', 1);
 ax = app.ax(1);
 
 Pretty_Plot(ax)
-axis(ax, 'equal')   % (Pretty_Plot labels the axes $x$, $y$, $z$)
+axis(ax, 'equal')
 view(ax, 3)
 colormap(ax, parula)
 
-%% Static graphics (created once; updated in place, shown/hidden as needed)
+%% Static graphics
 mk = @(varargin) surf(ax, NaN(2), NaN(2), NaN(2), NaN(2), 'EdgeColor', 'none', 'FaceColor', 'interp', varargin{:});
 hOut  = mk('FaceAlpha', 0.5);
 hIn   = mk();
@@ -46,7 +46,7 @@ s3 = app.addControl('slider', '$\theta_{min} = $', 3, nC, @updatePlot, 'Default'
 s4 = app.addControl('slider', '$\theta_{max} = $', 4, nC, @updatePlot, 'Default', thetamax, 'Min', 0, 'Max', 2*pi, 'Number_format', 'pi');
 s5 = app.addControl('slider', '$\phi_{min} = $',   5, nC, @updatePlot, 'Default', phimin,   'Min', 0, 'Max', pi,   'Number_format', 'pi');
 s6 = app.addControl('slider', '$\phi_{max} = $',   6, nC, @updatePlot, 'Default', phimax,   'Min', 0, 'Max', pi,   'Number_format', 'pi');
-% Keep each min slider at or below its max slider (region never turns inside out)
+% Keep each min slider at or below its max slider
 app.linkMinMax(s1, s2);
 app.linkMinMax(s3, s4);
 app.linkMinMax(s5, s6);
@@ -58,7 +58,7 @@ function updatePlot(~, ~)
     redraw(s1.Value, s2.Value, s3.Value, s4.Value, s5.Value, s6.Value)
 end
 
-%% Redraw: updates all six surfaces in place and toggles their visibility
+%% Main Draw update function.
 function redraw(rmin, rmax, thmin, thmax, pmin, pmax)
     rho = linspace(rmin, rmax, nrho);
     th  = linspace(thmin, thmax, nt);

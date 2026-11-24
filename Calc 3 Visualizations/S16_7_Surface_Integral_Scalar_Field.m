@@ -28,7 +28,7 @@ resHigh  = 150;   % resolution of the reference surface (drawing only)
 resLow0  = 1;     % initial N
 resMax   = 31;    % largest N on the slider
 arrowLen = 0.2;   % length of the normal / r_x / r_y arrows
-zLift    = 0.01;  % planes drawn this far above S so they do not flicker into it (drawing only)
+zLift    = 0.01;  % planes drawn this far above S
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -39,10 +39,10 @@ app = uiFigure('Surface integral of a scalar field', 1);
 ax  = app.ax(1);
 
 %% Optional math functions for plot computations
-% Surface element dS/dA = sqrt(1 + f_x^2 + f_y^2), with the helper derivatives
+% Surface element dS/dA = sqrt(1 + f_x^2 + f_y^2)
 dSdA = @(x,y) sqrt(1 + Diffx_f(f_surf,x,y).^2 + Diffy_f(f_surf,x,y).^2);
 
-% "Exact" values by adaptive quadrature (a uniform grid sum is biased low)
+% "Exact" values by adaptive quadrature
 IntegralTrue = integral2(@(x,y) f_color(x,y).*dSdA(x,y), ...
     xlims(1), xlims(2), ylims(1), ylims(2), 'AbsTol', 1e-8);
 AreaTrue     = integral2(dSdA, xlims(1), xlims(2), ylims(1), ylims(2), 'AbsTol', 1e-8);
@@ -55,13 +55,11 @@ ZH = f_surf(XH, YH);
 CH = f_color(XH, YH);
 surf(ax, XH, YH, ZH, CH, 'FaceAlpha', 0.8, 'EdgeColor', 'none');
 
-cb = Pretty_Color_Positive(ax, CH);   % planes share these color limits
+cb = Pretty_Color_Positive(ax, CH);
 cb.Label.String = '$f(x,y)$';
-cb.Label.Interpreter = 'latex';   % colorbar labels do not pick up the figure default
+cb.Label.Interpreter = 'latex';
 
-% Tangent-plane graphics: 5 objects total, created once, updated with set()
-% (The original made 5 objects per cell and deleted/recreated all of them
-% on every slider move: about 4800 graphics objects at N = 31.)
+% Tangent planes, centre dots and vectors
 c = computeCells(resLow0);
 planePatch = patch(ax, 'Faces', c.Faces, 'Vertices', c.Vertices, ...
     'FaceVertexCData', c.fc, 'FaceColor', 'flat', 'EdgeColor', 'k');
@@ -73,7 +71,7 @@ fxArrows = quiver3(ax, c.xc, c.yc, c.zc, c.tx(:,1), c.tx(:,2), c.tx(:,3), 0, ...
     'Color', 'g', 'LineWidth', 1.2);
 fyArrows = quiver3(ax, c.xc, c.yc, c.zc, c.ty(:,1), c.ty(:,2), c.ty(:,3), 0, ...
     'Color', 'g', 'LineWidth', 1.2);
-vectorHandles = [centerDots, normalArrows, fxArrows, fyArrows];   % toggled by the Vectors button
+vectorHandles = [centerDots, normalArrows, fxArrows, fyArrows];
 
 %% Plot elements are done - Make pretty
 axis(ax, 'equal')
@@ -82,7 +80,7 @@ view(ax, -38, 20)
 setTitle(resLow0, c)
 
 %% Precompute math for updates
-Ncurrent = resLow0;   % skip the redraw when the integer N has not changed
+Ncurrent = resLow0;
 
 %% Build UI
 NumControls = 2;
@@ -98,11 +96,10 @@ setSliderLabel(resLow0)
         showVec = ~btnVec.Value;
         set(vectorHandles, 'Visible', onoff(showVec))
         if showVec
-            updateArrows(c)   % dots and arrows are not updated while hidden
+            updateArrows(c)   % not updated while hidden
         end
     end
 
-    % Slider label shows the grid size and the number of planes it gives
     function setSliderLabel(N)
         sRes.UserData.label.String = sprintf('$N = %d$ (%d planes)', N, N^2);
     end
@@ -111,8 +108,7 @@ setSliderLabel(resLow0)
         title(ax, { ...
             sprintf('$\\int\\!\\!\\int_S f\\,dS$: exact $= %.5f$, sum $= %.5f$, planes $= %d$', ...
                 IntegralTrue, cc.Sf, N^2), ...
-            sprintf('Area of $S$: exact $= %.5f$, sum $= %.5f$', AreaTrue, cc.SA)}, ...
-            'Interpreter', 'latex')   % (MATLAB's LaTeX has no \iint, so it is written \int\!\!\int)
+            sprintf('Area of $S$: exact $= %.5f$, sum $= %.5f$', AreaTrue, cc.SA)})
         app.fig.Name = sprintf('Integral: exact = %.5f, approx = %.5f, planes = %d', ...
             IntegralTrue, cc.Sf, N^2);
     end
@@ -146,7 +142,7 @@ setSliderLabel(resLow0)
         drawnow limitrate
     end
 
-%% Vectorized geometry for an N x N grid of tangent planes (no per-cell loop)
+%% Geometry for an N x N grid of tangent planes
     function cc = computeCells(N)
         dx = (xlims(2)-xlims(1))/N;
         dy = (ylims(2)-ylims(1))/N;

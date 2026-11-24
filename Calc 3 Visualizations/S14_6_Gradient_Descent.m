@@ -30,13 +30,13 @@ f = @(x,y) 3*(1-x).^2.*exp(-(x.^2) - (y+1).^2) ...
 
 x0     = [-0.3; 0.2];  % initial point [x; y]
 Deltax = 0.05;         % step length for the fixed length rule
-alpha  = 0.02;         % step factor for the proportional rule (x_new = x -/+ alpha*grad f)
+alpha  = 0.02;         % step factor for the proportional rule
 nStepsMax  = 100;      % largest number of steps on the slider
-arrowScale = 10;       % the arrow is the next step drawn this many times longer
-nLevels    = 40;       % number of contour levels
+arrowScale = 10;       % next-step arrow drawn this many times longer
+nLevels    = 40;       % contour levels
 xlims  = [-3, 3];
 ylims  = [-3, 3];
-startMargin = 0.1;     % random starts stay this fraction of the domain away from its edges
+startMargin = 0.1;     % random starts keep this fraction away from the edges
 
 useAscent       = false;  % false = descent, true = ascent
 useProportional = false;  % false = fixed length steps, true = steps proportional to grad f
@@ -52,19 +52,18 @@ axis(app.ax, 'equal')
 xlim(app.ax, xlims); ylim(app.ax, ylims)
 
 %% Optional math functions for plot computations
-
-    % One step from the point xPoint with the current settings
+% One step from xPoint with the current settings
     function step = next_step(xPoint)
         grad = Grad_f(f, xPoint);
         dir  = 2*double(useAscent) - 1;       % +1 ascent, -1 descent
         if useProportional
-            step = dir * alpha * grad;                           % length shrinks with |grad f|
+            step = dir * alpha * grad;
         else
-            step = dir * Deltax * grad / max(norm(grad), eps);   % always length Deltax
+            step = dir * Deltax * grad / max(norm(grad), eps);
         end
     end
 
-    % All points of the path: column k+1 is the point after k steps
+% Whole path: column k+1 is the point after k steps
     function P = compute_path()
         P = zeros(2, nStepsMax + 1);
         P(:, 1) = x0;
@@ -84,8 +83,7 @@ clim(app.ax, max(abs(zGrid(:)))*[-1, 1])
 colorbar(app.ax)
 Pretty_Plot(app.ax)
 
-% Path taken so far, start point, current point and next-step arrow. All
-% are created once here and updated in place by redraw() below.
+% Path so far, start point, current point and next-step arrow
 hTrail = plot(app.ax, NaN, NaN, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 12);
 hStart = plot(app.ax, x0(1), x0(2), 'ks', 'MarkerFaceColor', 'w', 'MarkerSize', 9);
 hPoint = plot(app.ax, NaN, NaN, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
@@ -95,8 +93,6 @@ hArrow = quiver(app.ax, 0, 0, 0, 0, 0, ...
 xlim(app.ax, xlims); ylim(app.ax, ylims)
 
 %% Precompute math for updates
-% The whole path is computed once per setting. The slider then only looks
-% up how much of it to show.
 Path = compute_path();
 
 %% Build UI
@@ -105,7 +101,6 @@ NumControls = 4;
 nSlider = app.addControl('slider', 'Steps $=$ ', 1, NumControls, @updatePlot, ...
     'Default', 0, 'Min', 0, 'Max', nStepsMax, 'Number_format', '%d', 'colOrRow', 'row');
 
-% 'Toggle' swaps the button text with btn.Value (first entry = off)
 btnMode = app.addControl('button', '', 2, NumControls, ...
     @toggleMode, 'ColorChange', true, 'colOrRow', 'row', ...
     'Toggle', ["Gradient Descent", "Gradient Ascent"]);
@@ -121,17 +116,15 @@ redraw(0)
 
 %% Functions for UI elements
     function toggleMode(~, ~)
-        useAscent = logical(btnMode.Value);   % button text follows via 'Toggle'
+        useAscent = logical(btnMode.Value);
         restart()
     end
 
     function toggleRule(~, ~)
-        useProportional = logical(btnRule.Value);   % text follows via 'Toggle'
+        useProportional = logical(btnRule.Value);
         restart()
     end
 
-    % Pick a new starting point uniformly at random inside the domain
-    % (away from the edges by startMargin) and start over from it
     function randomStart(~, ~)
         mx = startMargin*diff(xlims);
         my = startMargin*diff(ylims);
@@ -141,7 +134,7 @@ redraw(0)
         restart()
     end
 
-    % New settings: recompute the path and go back to the start point
+    % Recompute the path and go back to the start point
     function restart()
         Path = compute_path();
         app.UpdateUISlider(nSlider, 0);
@@ -159,7 +152,6 @@ redraw(0)
         grad  = Grad_f(f, xCurr);
         step  = next_step(xCurr);
 
-        % Path from the start point up to the current point
         set(hTrail, 'XData', Path(1, 1:nSteps+1), 'YData', Path(2, 1:nSteps+1));
         set(hPoint, 'XData', xCurr(1), 'YData', xCurr(2));
         set(hArrow, 'XData', xCurr(1), 'YData', xCurr(2), ...
@@ -172,6 +164,6 @@ redraw(0)
         end
         title(app.ax, sprintf(['Gradient %s: $f(x,y) = %.4f$ and ' ...
             '$|\\nabla f| = %.4f$ after %d steps'], ...
-            modeStr, zVal, norm(grad), nSteps), 'Interpreter', 'latex')
+            modeStr, zVal, norm(grad), nSteps))
     end
 end

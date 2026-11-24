@@ -40,17 +40,10 @@ dx   = xvec(2) - xvec(1);
 [X, Y] = meshgrid(xvec, yvec);
 Z = f(X, Y);
 
-% Zint(j,i) = running integral along x, up to xvec(i), at height yvec(j)
-% (right-endpoint sum, starting from 0 in column 1).
+% Zint(j,i) = running integral along x up to xvec(i) at yvec(j)
 Zint = [zeros(Ny, 1), cumsum(Z(:, 2:end), 2)*dx];
 
-% High-resolution version along y, used for the red curve / green area at
-% the final x. Each column of Z already holds f at all of yvec for a
-% fixed x, so interp1 can resample every column (every x) in one call
-% instead of looping over Nx columns. Only the full inner integral is
-% needed, with the same sum as Zint, so the red curve meets the ends of
-% the black curves for any f (summing all Nx columns counted one extra
-% interval).
+% Full inner integral g(y) on a fine y grid (same sum as Zint)
 yvecHigh    = linspace(ylims(1), ylims(2), NyHighRes);
 fInterpAll  = interp1(yvec, Z, yvecHigh, 'spline');   % NyHighRes x Nx
 gHigh       = sum(fInterpAll(:, 2:end), 2)*dx;
@@ -65,8 +58,7 @@ ypoints = [ylims(1), ylims(1), ylims(2), ylims(2)];
 zpoints = [0, zPlaneMax, zPlaneMax, 0];
 hPlane  = patch(app.ax, NaN, NaN, NaN, 'k', 'FaceAlpha', 0.25, 'EdgeColor', 'k');
 
-% All Ny integral curves as ONE line object, with NaN separators between
-% curves -- one object and one set() call per update instead of Ny.
+% All Ny running-integral curves as one NaN-separated line
 hCurves = plot3(app.ax, NaN, NaN, NaN, 'k', 'LineWidth', 1.5);
 
 hRedCurve = plot3(app.ax, xvec(end)*ones(size(yvecHigh)), yvecHigh, gHigh, ...
@@ -126,7 +118,7 @@ function toggleGreenArea(~, ~)
 end
 
 function rotateToSideView(~, ~)
-    Animate_View(app.ax, 90, 0)   % smooth turn to the side view
+    Animate_View(app.ax, 90, 0)
 end
 
 end

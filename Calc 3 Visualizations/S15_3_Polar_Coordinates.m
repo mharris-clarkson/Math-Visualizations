@@ -29,8 +29,8 @@ axis(app.ax, 'equal')
 view(app.ax, 2)
 Pretty_Plot(app.ax)
 grid(app.ax, 'on')
-%% Static graphics (created once; updated in place, never recreated/cla'd)
-% x and y axes first, slightly below z = 0, so they sit underneath the region
+%% Static graphics
+% x and y axes just below z = 0, underneath the region
 L = max(rLims);
 plot3(app.ax, [-L, L], [0, 0], -0.01*[1, 1], 'Color', axisColor, 'LineWidth', 1)
 plot3(app.ax, [0, 0], [-L, L], -0.01*[1, 1], 'Color', axisColor, 'LineWidth', 1)
@@ -41,7 +41,7 @@ hInner    = plot(app.ax, NaN, NaN, 'k', 'LineWidth', 2);
 hOuter    = plot(app.ax, NaN, NaN, 'k', 'LineWidth', 2);
 hThetaMin = plot(app.ax, NaN, NaN, 'k', 'LineWidth', 2);
 hThetaMax = plot(app.ax, NaN, NaN, 'k', 'LineWidth', 2);
-% Set axis: same whole-number ticks (and grid lines) on x and y
+% Same whole-number ticks on x and y
 axis(app.ax, 'tight')
 xlim(app.ax, L*[-1,1])
 ylim(app.ax, L*[-1,1])
@@ -58,16 +58,16 @@ sThMin = app.addControl('slider', '$\theta_{\min} = $', 3, NumControls, @updateP
     'Default', thetamin0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', 'pi');
 sThMax = app.addControl('slider', '$\theta_{\max} = $', 4, NumControls, @updatePlot, ...
     'Default', thetamax0, 'Min', thetaLims(1), 'Max', thetaLims(2), 'Number_format', 'pi');
-% Keep each min slider at or below its max slider (region never turns inside out)
+% Keep each min slider at or below its max slider
 app.linkMinMax(sRmin, sRmax);
 app.linkMinMax(sThMin, sThMax);
-% Lift the plot a little so the x label is not cut off at the bottom
+% Room for the x label
 app.ax.Position(2) = app.ax.Position(2) + 0.03;
 %% Callback
     function updatePlot(~, ~)
         redraw(sRmin.Value, sRmax.Value, sThMin.Value, sThMax.Value)
     end
-%% Redraw function: updates the existing graphics objects in place
+%% Main Draw update function.
     function redraw(rmin, rmax, thetamin, thetamax)
         theta = linspace(thetamin, thetamax, res);
         r     = [rmin, rmax];   
@@ -81,8 +81,7 @@ app.ax.Position(2) = app.ax.Position(2) + 0.03;
         set(hOuter,    'XData', rmax*cos(thline), 'YData', rmax*sin(thline))
         set(hThetaMin, 'XData', rline*cos(thetamin), 'YData', rline*sin(thetamin))
         set(hThetaMax, 'XData', rline*cos(thetamax), 'YData', rline*sin(thetamax))
-        % Full circle: the two radial edges sit on top of each other and draw a
-        % seam across the disk, so hide them (small tolerance for round-off)
+        % Full circle: hide the radial edges so no seam is drawn
         fullCircle = (thetamax - thetamin) >= 2*pi - 1e-9;
         set([hThetaMin, hThetaMax], 'Visible', onoff(~fullCircle))
     end

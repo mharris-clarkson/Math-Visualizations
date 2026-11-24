@@ -51,15 +51,14 @@ T = (t(end)-t(1));
 w0 = 2*pi/T;
 k  = (1:Max_N).';
 
-% Per-function data, computed the first time a function is shown and
-% then kept (so flipping back and forth is instant)
+% Per-function data, computed the first time a function is shown
 nF   = size(funcs, 1);
 data = cell(1, nF);
 
     function D = functionData(iF)
         if ~isempty(data{iF}), D = data{iF}; return, end
         f  = funcs{iF, 2};
-        fT = f(t) + 0*t;                       % +0*t lets f be a constant
+        fT = f(t) + 0*t;
 
         % Fourier coefficients - FFT would be faster but this is more
         % insightful for students
@@ -72,16 +71,13 @@ data = cell(1, nF);
         end
 
         % All partial sums at once: row n is a0/2 + sum_{k<=n} (a_k cos + b_k sin).
-        % The constant term is a0/2 because a0 = (2/T) int f dt (with a0 alone the
-        % offset of any f with non-zero mean was doubled). Precomputing makes each
-        % slider move a table look-up instead of an N-term loop.
         D.fT = fT;
         D.Partial_Sums = a0/2 + cumsum(a.'.*cos(k*w0*t) + b.'.*sin(k*w0*t), 1);
 
         % The limit N -> infinity (pointwise): f where it is continuous, the
         % average of the one-sided limits at a jump. The periodic extension also
         % jumps from f(t(end)) to f(t(1)) at the ends of the period.
-        jumpTol = 0.05*max(max(fT) - min(fT), eps);   % a change this big between samples is a jump
+        jumpTol = 0.05*max(max(fT) - min(fT), eps);   % jump threshold between samples
         jIdx    = find(abs(diff(fT)) > jumpTol);
         tJump   = (t(jIdx) + t(jIdx+1))/2;
         yJump   = (fT(jIdx) + fT(jIdx+1))/2;
@@ -90,7 +86,7 @@ data = cell(1, nF);
             tJump = [t(1), tJump, t(end)];
             yJump = [yEnd, yJump, yEnd];
         end
-        % Limit curve with a break (NaN) at each jump, so no vertical line is drawn
+        % Limit curve with a NaN break at each jump
         tLim = t;  yLim = fT;
         for jj = fliplr(jIdx)
             tLim = [tLim(1:jj), NaN, tLim(jj+1:end)];
@@ -119,7 +115,7 @@ leg = legend(app.ax(1), [hF, f_approx], ...
 
 
 Pretty_Plot(app.ax)
-xlabel(app.ax(1), '$t$')   % the variable is t, not x
+xlabel(app.ax(1), '$t$')
 set(app.ax(1), 'FontSize', 24)
 xlim(app.ax(1), [t(1) t(end)])
 
@@ -128,7 +124,7 @@ xlim(app.ax(1), [t(1) t(end)])
 numGUI = 3;
 NSlider = app.addControl('slider', '$N = $', 1, numGUI, @changeN,...
                 'Number_format','%d','default', 1,'Min', 1, 'Max',Max_N,...
-                'colOrRow','Row','Step',1,... % arrow click = one more mode
+                'colOrRow','Row','Step',1,...
     'LimitLabel', '$N \to \infty$');
 
 % Previous / Next function (the gallery index is app.galleryIdx)

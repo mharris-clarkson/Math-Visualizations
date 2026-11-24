@@ -24,17 +24,14 @@ C2_xy   = @(t) [0*t; t;   zfun(0, t)];
 run('setup.m')
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure('Tangent Plane Definition', 1);
-hold(app.ax, 'on')
 view(app.ax, 3)
-title(app.ax, app.fig.Name, 'Interpreter', 'latex')
+title(app.ax, app.fig.Name)
 %% Make the initial plots
 [xg, yg] = meshgrid(-1:0.05:1);
 surf(app.ax, xg, yg, zfun(xg, yg), 'EdgeColor', 'none');
 colormap(app.ax, Pretty_Colormap('amp'))
 Pretty_Plot(app.ax)
-% Base point
 plot3(app.ax, 0, 0, zfun(0,0), 'ko', 'MarkerSize', 12, 'MarkerFaceColor', 'g')
-% Placeholders for curves, tangent lines, and tangent plane
 t   = linspace(-1, 1, 400);
 hC1 = plot3(app.ax, nan, nan, nan, 'r', 'LineWidth', 2);
 hC2 = plot3(app.ax, nan, nan, nan, 'b', 'LineWidth', 2);
@@ -45,10 +42,14 @@ Zp0    = Yp0;
 hPlane = surf(app.ax, Xp0, Yp0, Zp0, ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', [0 0.6 0]);
 %% Precompute math for updates
-% Base point and its partial derivatives (tangent lines and plane go
-% through (0,0,f(0,0)), so changing zfun above keeps them correct)
+% Tangent lines and plane through (0,0,f(0,0))
 z0       = zfun(0,0);
 [fx, fy] = Grad_f(zfun, 0, 0);
+s        = [-1 1];
+T_rand   = {s.*Diff_f_unit(C1_rand, 0), s.*Diff_f_unit(C2_rand, 0)};
+T_xy     = {s.*Diff_f_unit(C1_xy, 0),   s.*Diff_f_unit(C2_xy, 0)};
+[xp, yp] = meshgrid([-1 1]);
+zp       = z0 + fx*xp + fy*yp;
 %% Build UI
 NumControls  = 4;
 btnCurveType = app.addControl('button', '', 1, NumControls, ...
@@ -59,18 +60,17 @@ btnTangent   = app.addControl('button', 'Show Tangent Lines', 3, NumControls, ..
     @updatePlot, 'ColorChange', true);
 btnPlane     = app.addControl('button', 'Show Tangent Plane', 4, NumControls, ...
     @updatePlot, 'ColorChange', true);
-%% Functions for UI elements
 %% Main Draw update function.
     function updatePlot(~, ~)
-        % Select curve family (the button text follows its Value via 'Toggle')
         if btnCurveType.Value
             C1 = C1_xy;
             C2 = C2_xy;
+            Tl = T_xy;
         else
             C1 = C1_rand;
             C2 = C2_rand;
+            Tl = T_rand;
         end
-        % Curves
         if btnCurve.Value
             C1p = C1(t);
             C2p = C2(t);
@@ -79,20 +79,14 @@ btnPlane     = app.addControl('button', 'Show Tangent Plane', 4, NumControls, ..
         else
             set([hC1 hC2], 'XData', nan, 'YData', nan, 'ZData', nan)
         end
-        % Tangent lines through the base point (0,0,z0)
         if btnTangent.Value
-            p1 = Diff_f_unit(C1, 0);
-            p2 = Diff_f_unit(C2, 0);
-            s  = [-1 1];
-            set(hT1, 'XData', s*p1(1), 'YData', s*p1(2), 'ZData', z0 + s*p1(3));
-            set(hT2, 'XData', s*p2(1), 'YData', s*p2(2), 'ZData', z0 + s*p2(3));
+            set(hT1, 'XData', Tl{1}(1,:), 'YData', Tl{1}(2,:), 'ZData', z0 + Tl{1}(3,:));
+            set(hT2, 'XData', Tl{2}(1,:), 'YData', Tl{2}(2,:), 'ZData', z0 + Tl{2}(3,:));
         else
             set([hT1 hT2], 'XData', nan, 'YData', nan, 'ZData', nan)
         end
         % Tangent plane z = z0 + f_x x + f_y y
         if btnPlane.Value
-            [xp, yp] = meshgrid([-1 1]);
-            zp = z0 + fx*xp + fy*yp;
             set(hPlane, 'XData', xp, 'YData', yp, 'ZData', zp)
         else
             set(hPlane, 'XData', Xp0, 'YData', Yp0, 'ZData', Zp0)

@@ -30,13 +30,9 @@ res = 500;   % grid points per side
 Z = z(X, Y);
 Z(Y > X) = NaN;
 
-%% Other bounding surfaces of E (each is a ruled sheet: t = 0..1 scales z from 0 up to the top)
+%% Side walls x = 1 and y = x, from z = 0 up to the top surface
 [s, t] = meshgrid(linspace(0, 1, 40));
-
-% Plane x = 1: y = s, z from 0 to 12*1*y
 Xr = ones(size(s));  Yr = s;  Zr = t .* z(1, s);
-
-% Plane y = x: x = s, z from 0 to 12*x*x
 Xd = s;  Yd = s;  Zd = t .* z(s, s);
 
 %% Plot

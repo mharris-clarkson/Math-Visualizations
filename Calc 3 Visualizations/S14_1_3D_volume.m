@@ -25,10 +25,9 @@ app = uiFigure(titleStr, 1);
 axis(app.ax, [-maxRadius maxRadius -maxRadius maxRadius -maxRadius maxRadius])
 axis(app.ax, 'equal')
 view(app.ax, 3)
-title(app.ax, titleStr, 'Interpreter', 'latex')
+title(app.ax, titleStr)
 
 %% Precompute math for updates
-% Build the 3D grid once — expensive to recompute
 [X, Y, Z] = meshgrid(-maxRadius:0.1:maxRadius, ...
                      -maxRadius:0.1:maxRadius, ...
                      -maxRadius:0.1:maxRadius);
@@ -50,10 +49,4 @@ Pretty_Plot(app.ax)
 xlim(app.ax, [-maxRadius, maxRadius])
 ylim(app.ax, [-maxRadius, maxRadius])
 zlim(app.ax, [-maxRadius, maxRadius])
-
-%% Build UI
-% No interactive controls needed — static visualization
-
-%% Main Draw update function.
-% Static — no updates required.
 end

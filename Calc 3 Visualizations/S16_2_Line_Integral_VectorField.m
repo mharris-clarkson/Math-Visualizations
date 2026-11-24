@@ -44,8 +44,8 @@ Fy = @(x,y) x.^2;
 n0    = 1;      % initial number of chords
 n_max = 50;     % largest finite n on the slider. One step past it is "infinity"
 N_inf = 1000;   % number of chords used to represent n -> infinity
-nCols     = 9;    % black field arrows across the plot (the rows are spaced to match on screen)
-arrowFrac = 0.9;  % longest black arrow as a fraction of the grid spacing on screen (< 1 so arrows never touch)
+nCols     = 9;    % field arrows across the plot
+arrowFrac = 0.9;  % longest arrow / grid spacing on screen
 
 % Plot window (the control points are kept inside it)
 xLims = [-1.5 1.7];
@@ -60,7 +60,7 @@ colorNeg = [0.6 0 0];    % dark red   -- negative dot product
 run('setup.m')
 
 %% Build an applet that holds the figure, plots and all UI elements
-app = uiFigure('Line Integral of a Vector Field along a Spline', 2); % Left: path and field. Right: signed terms
+app = uiFigure('Line Integral of a Vector Field along a Spline', 2);
 axXY  = app.ax(1);
 axBar = app.ax(2);
 
@@ -76,8 +76,8 @@ reversed = false; % orientation of C. false = A to B (first to last control poin
         y = ppval(ppy, t);
     end
 
-% Rebuild the spline through the control points, its arc length table and
-% the exact line integral (default orientation; reversing only flips the sign)
+% Spline through the control points, its arc length and the exact integral
+% (for the default orientation)
     function updateCurve()
         d   = max(hypot(diff(px), diff(py)), 1e-6);  % avoid repeated knots
         tp  = [0, cumsum(d)]/sum(d);                 % chord-length parameter
@@ -89,7 +89,7 @@ reversed = false; % orientation of C. false = A to B (first to last control poin
         sArc = [0, cumsum(hypot(diff(xArc), diff(yArc)))];
         L    = sArc(end);
 
-        % Exact value: the same sum on a very fine partition (5000 chords)
+        % "Exact" value: the same sum with 5000 chords
         xm = 0.5*(xArc(1:end-1) + xArc(2:end));
         ym = 0.5*(yArc(1:end-1) + yArc(2:end));
         I_default = sum(Fx(xm,ym).*diff(xArc) + Fy(xm,ym).*diff(yArc));
@@ -98,8 +98,7 @@ reversed = false; % orientation of C. false = A to B (first to last control poin
         set(hCP,   'XData', px, 'YData', py);
     end
 
-% Move the existing quiver h to the entries selected by mask (NaN when
-% nothing is selected), so the arrows are updated in place, not re-created
+% Move quiver h to the entries selected by mask (NaN when none)
     function setArrows(h, x, y, u, v, mask)
         if any(mask)
             set(h, 'XData', x(mask), 'YData', y(mask), 'UData', u(mask), 'VData', v(mask));
@@ -118,15 +117,12 @@ reversed = false; % orientation of C. false = A to B (first to last control poin
     end
 
 %% ============== Make the initial plots =================================
-% Background vector field. Drawn by buildField once the panel size is known.
-hField = gobjects(0);
+hField = gobjects(0);   % background field, drawn by buildField
 
-% Smooth curve C (on top of field) and its control points
 tFine = linspace(0, 1, 400);
 hPath = plot(axXY, NaN, NaN, 'k', 'LineWidth', 2.5);
 
-% Chord arrows Delta_r_k and field arrows F(r_k^*), one quiver per sign,
-% created once and updated in place
+% Chord arrows Delta_r_k and field arrows F(r_k^*), one quiver per sign
 quivOpts = {0, 'AutoScale', 'off'};
 hChordPos = quiver(axXY, NaN, NaN, NaN, NaN, quivOpts{:}, 'Color', colorPos, 'LineWidth', 2.8, 'MaxHeadSize', 0.6);
 hChordNeg = quiver(axXY, NaN, NaN, NaN, NaN, quivOpts{:}, 'Color', colorNeg, 'LineWidth', 2.8, 'MaxHeadSize', 0.6);
@@ -134,7 +130,7 @@ hFPos     = quiver(axXY, NaN, NaN, NaN, NaN, quivOpts{:}, 'Color', colorPos, 'Li
 hFNeg     = quiver(axXY, NaN, NaN, NaN, NaN, quivOpts{:}, 'Color', colorNeg, 'LineWidth', 2.0, 'MaxHeadSize', 0.8);
 hMid      = plot(axXY, NaN, NaN, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 3);
 
-% Start / end markers and labels. These move when the orientation flips.
+% Start / end markers and labels
 hStart = plot(axXY, nan, nan, 'ks', 'MarkerFaceColor', 'k', 'MarkerSize', 10);
 hEnd   = plot(axXY, nan, nan, 'k^', 'MarkerFaceColor', 'k', 'MarkerSize', 10);
 hLabA  = text(axXY, nan, nan, '$A$', 'FontSize', 20);
@@ -144,7 +140,7 @@ hLabB  = text(axXY, nan, nan, '$B$', 'FontSize', 20);
 hCP = plot(axXY, px, py, 'd', 'Color', cpColor, 'MarkerFaceColor', cpColor, ...
     'MarkerEdgeColor', 'k', 'MarkerSize', 12, 'LineWidth', 1);
 
-% Bars, one patch per sign, updated in place
+% Bars, one patch per sign
 yline(axBar, 0, 'k-', 'LineWidth', 1.2);
 hBarPos = patch(axBar, NaN(4,1), NaN(4,1), colorPos, 'FaceAlpha', 0.55, 'LineWidth', 0.6);
 hBarNeg = patch(axBar, NaN(4,1), NaN(4,1), colorNeg, 'FaceAlpha', 0.55, 'LineWidth', 0.6);
@@ -153,48 +149,39 @@ hBarNeg = patch(axBar, NaN(4,1), NaN(4,1), colorNeg, 'FaceAlpha', 0.55, 'LineWid
 Pretty_Plot(axXY);
 Pretty_Plot(axBar);
 
-% Fixed limits so the picture does not jump while dragging. The aspect
-% ratio is not preserved so the panels can fill the space.
 xlim(axXY, xLims)
 ylim(axXY, yLims)
 
 xlabel(axBar, 'Arc length $s$ along $C$')
-% Titles and the bar plot y label depend on n (discrete or n -> infinity),
-% so they are set in updatePlot
 
 %% Precompute math for updates
-% Fine parameter grid for the arc length s(t) (horizontal axis of the bar
-% plot) and the exact integral. updateCurve fills in the spline data.
+% Fine parameter grid for the arc length and the exact integral
 tArc = linspace(0, 1, 5001);
 ppx = []; ppy = []; sArc = []; L = []; I_default = [];
 updateCurve();
 
 %% Dragging: clicks in the left axes grab the nearest control point
-% (the plotted objects ignore clicks so they reach the axes' ButtonDownFcn)
 set(axXY.Children, 'HitTest', 'off', 'PickableParts', 'none')
 axXY.ButtonDownFcn = @startDrag;
 dragIdx = [];
 
 %% Build UI
-NumControls = 2; % maximum number of controls
+NumControls = 2;
 
-% Number of chords. The last slider value stands in for n -> infinity
-% ('Step' snaps to whole chords, 'LimitLabel' writes n -> infinity at the end)
+% Number of chords; the last value stands for n -> infinity
 nSlider = app.addControl('slider', '$n = $', 1, NumControls, @updatePlot, ...
     'Default', n0, 'Min', 1, 'Max', n_max + 1, 'Number_format', '%d', 'colOrRow', 'row', ...
     'Step', 1, 'LimitLabel', '$n \to \infty$');
 
-% Button to reverse the orientation of C
 btnOrient = app.addControl('button', '', 2, NumControls, @toggleOrientation, ...
     'ColorChange', true, 'colOrRow', 'row', ...
     'Toggle', ["Direction: $A$ to $B$", "Direction: $B$ to $A$"]);
 
-% Use the width of the figure. Both panels get the same size.
+% Two equal panels across the figure
 axXY.Position([1 3])  = [0.07 0.40];
 axBar.Position([1 3]) = [0.58 0.40];
 
-% Draw the black field now that the panel size is known, and redraw it when
-% the window is resized so the arrows keep pointing the right way on screen.
+% The field depends on the panel's pixel size, so redraw it on resize
 app.fig.SizeChangedFcn = @(~,~) buildField();
 drawnow
 buildField();
@@ -202,10 +189,8 @@ buildField();
 updatePlot()
 
 %% Functions for UI elements
-% Black field arrows on a grid that is even ON SCREEN. The axes do not keep
-% the aspect ratio, so the vectors are converted to pixels first. That way
-% each arrow points the way F really points on screen, and the longest arrow
-% is arrowFrac of the grid spacing so no arrow reaches its neighbors.
+% Field arrows on a grid that is even on screen, scaled in pixels so they
+% point the way F does on screen and never touch
     function buildField()
         delete(hField(isgraphics(hField)))
         pos  = getpixelposition(axXY);
@@ -225,16 +210,15 @@ updatePlot()
         hField = quiver(axXY, xg, yg, k*u/ppuX, k*v/ppuY, 0, 'k', ...
             'LineWidth', 1.3, 'MaxHeadSize', 0.6, 'AutoScale', 'off', ...
             'HitTest', 'off', 'PickableParts', 'none');
-        uistack(hField, 'bottom') % keep the path and chords on top
+        uistack(hField, 'bottom')
     end
 
     function toggleOrientation(~, ~)
-        reversed = logical(btnOrient.Value);   % label follows Value ('Toggle')
+        reversed = logical(btnOrient.Value);
         updatePlot()
     end
 
-% Grab the control point nearest the click (distance measured in plot
-% fractions, since the two axes have different scales)
+% Grab the control point nearest the click (distance in plot fractions)
     function startDrag(~, ~)
         P = axXY.CurrentPoint(1, 1:2);
         d = hypot((px - P(1))/diff(xLims), (py - P(2))/diff(yLims));
@@ -265,7 +249,7 @@ updatePlot()
     function updatePlot(~, ~)
         %% Number of chords from the slider
         sVal = round(nSlider.Value);
-        isInf = app.isAtLimit(nSlider); % last slider step = n -> infinity (label set by uiFigure)
+        isInf = app.isAtLimit(nSlider);
         if isInf
             n = N_inf;
         else
@@ -273,7 +257,6 @@ updatePlot()
         end
 
         %% Update data
-        % Partition and midpoints
         tEdges = linspace(0, 1, n+1);
         tMid   = 0.5*(tEdges(1:n) + tEdges(2:n+1));
 
@@ -296,16 +279,14 @@ updatePlot()
         end
         isPos = dotProds >= 0;
 
-        Fscale = min(0.32, 1/n); % keep the field arrows visible at any n
+        Fscale = min(0.32, 1/n); % field arrow scale
 
         %% Update plots
-        % Chord arrows Delta_r_k, colored by sign. In the limit they blend into a
-        % path colored by the sign of F . dr.
+        % Chord arrows colored by the sign of F . dr
         setArrows(hChordPos, xEdge(1:n), yEdge(1:n), DeltaX, DeltaY, isPos);
         setArrows(hChordNeg, xEdge(1:n), yEdge(1:n), DeltaX, DeltaY, ~isPos);
 
-        % Field arrows and dots are only drawn for a finite number of chords.
-        % In the limit they would just crowd the path.
+        % Field arrows and dots only for finite n
         if isInf
             noArrow = false(1, n);
             setArrows(hFPos, xMid, yMid, Fmx, Fmy, noArrow);
@@ -317,16 +298,13 @@ updatePlot()
             set(hMid, 'XData', xMid, 'YData', yMid)
         end
 
-        % One box per term over the arc length of its sub-interval. The box
-        % height is (F . Delta_r_k) / Delta_s_k, so its AREA is the term
-        % F . Delta_r_k and the total area is the sum. Outlines are dropped
-        % when there are too many boxes.
+        % One box per term over its arc length: box area = F . Delta_r_k
         edgeColor = 'k';
         if isInf
             edgeColor = 'none';
         end
         if reversed
-            tArcEdges = 1 - tEdges; % arc length is measured from the start of the path
+            tArcEdges = 1 - tEdges; % arc length from the start of the path
         else
             tArcEdges = tEdges;
         end
@@ -343,13 +321,11 @@ updatePlot()
         set(hLabA, 'Position', [xEdge(1)   - 0.08*sign(xEdge(1)),   yEdge(1)   - 0.13, 0])
         set(hLabB, 'Position', [xEdge(end) - 0.08*sign(xEdge(end)), yEdge(end) - 0.13, 0])
 
-        % Bar plot limits
         xlim(axBar, [0 L])
         hMax = max(max(abs(height)), eps);
         ylim(axBar, [-1.3*hMax, 1.3*hMax])
 
-        %% Titles and labels: discrete sums for finite n, continuous versions for n -> infinity
-        % (Built with [ ] instead of sprintf so the LaTeX backslashes stay literal.)
+        %% Titles and labels: discrete sums for finite n, continuous for n -> infinity
         valStr = [sprintf('%.5f', approx), '$,  Exact $= ', sprintf('%.5f', I_exact), '$'];
         if isInf
             leftTitle = {'Spline Path $C$ and Field $\mathbf{F}(\mathbf{r})$: drag the yellow diamonds', ...

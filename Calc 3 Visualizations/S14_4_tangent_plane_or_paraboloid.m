@@ -34,7 +34,7 @@ ylim(app.ax, max_val*[-1, 1])
 zlim(app.ax, [0, 0.6])
 
 %% Optional math functions for plot computations
-    % Point, unit tangent vectors and the local plane/paraboloid at (x,y)
+% Point, unit tangents and the local plane/paraboloid at (x,y)
     function [z, Tx, Ty, Xp, Yp, Zp] = geometry_at(x, y)
         z    = f(x, y);
         fx   = Diffx_f(f,x,y);
@@ -71,14 +71,12 @@ Z = f(X, Y);
 surf(app.ax, X, Y, Z,'FaceAlpha', 0.9)
 Pretty_Plot(app.ax);
 Pretty_Color_Positive(app.ax, Z,'colorbar','off');
-zlim(app.ax, [0, 0.6])   % Pretty_Plot's axis tight resets the zlim set above
+zlim(app.ax, [0, 0.6])
 
 %% Precompute math for updates
-% Local (u,v) patch for the plane/paraboloid, built once
 tp_size = 0.25;
 [u, v]  = meshgrid(linspace(-tp_size, tp_size, 12));
 
-% Point, tangent vectors and plane: created once, updated in place
 [z0, Tx, Ty, Xp, Yp, Zp] = geometry_at(x0, y0);
 hPt = plot3(app.ax, x0, y0, z0, 'ko', 'MarkerSize', 8, ...
     'LineWidth', 2, 'MarkerFaceColor', 'k');
@@ -91,20 +89,17 @@ hTp = surf(app.ax, Xp, Yp, Zp, ...
 uistack(hTp, 'top')
 updateTitle()
 
-% Current base point (moved by dragging)
-px = x0;  py = y0;
+px = x0;  py = y0;   % current base point
 
-%% Dragging: clicks in the axes move the point to the surface under the mouse
+%% Build UI: drag the point on the surface, toggle the approximation
 Drag_Point_On_Surface(app.ax, f, max_val*[-1 1], max_val*[-1 1], @movePoint);
 
-%% Build UI
 NumControls = 1;
-
 btnToggle = app.addControl('button', 'Showing: Tangent Plane', 1, NumControls, ...
-    @toggleApprox, 'ColorChange', true);
+    @toggleApprox, 'ColorChange', true, ...
+    'Toggle', ["Showing: Tangent Plane", "Showing: Tangent Paraboloid"]);
 
 %% Functions for UI elements
-    % Called by Drag_Point_On_Surface with the new base point
     function movePoint(x, y)
         px = x;  py = y;
         updatePlot()
@@ -112,11 +107,6 @@ btnToggle = app.addControl('button', 'Showing: Tangent Plane', 1, NumControls, .
 
     function toggleApprox(~, ~)
         useParaboloid = logical(btnToggle.Value);
-        if useParaboloid
-            btnToggle.String = 'Showing: Tangent Paraboloid';
-        else
-            btnToggle.String = 'Showing: Tangent Plane';
-        end
         updatePlot()
     end
 

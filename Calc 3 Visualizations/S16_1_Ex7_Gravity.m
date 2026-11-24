@@ -22,15 +22,14 @@ run('setup.m')
 app = uiFigure('Gravitational Vector Field', 1);
 ax = app.ax(1);
 
-% (uiFigure already applied Pretty_Plot, including the $x$, $y$, $z$ labels)
 axis(ax, 'equal')
 title(ax, 'Gravitational Vector Field')
 view(ax, 3)
 
-%% Force field on a 3D grid (the origin is skipped to avoid dividing by zero)
+%% Force field on a 3D grid
 [x, y, z] = meshgrid(gridPts, gridPts, gridPts);
 r3 = (x.^2 + y.^2 + z.^2).^(3/2);
-r3(r3 == 0) = Inf;          % F = 0 at the origin instead of NaN
+r3(r3 == 0) = Inf;          % F = 0 at the origin
 
 Fx = -G*M*m .* x ./ r3;
 Fy = -G*M*m .* y ./ r3;

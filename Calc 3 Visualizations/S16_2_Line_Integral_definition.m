@@ -3,10 +3,11 @@ function S16_2_Line_Integral_definition()
 % The curve C is a cubic spline through 6 draggable control points in the
 % xy-plane (parameterized by chord length). Drag any yellow diamond (a
 % control point) to reshape C; the Riemann sum panels, the arc-length plot
-% and the sum all update. The n slider ends at n -> infinity, where the panels become
-% the continuous curtain under f along C (the line integral itself). Arrows along C show its direction (start = green circle,
-% end = black square). A button rotates the view between the top view and
-% 3D (dragging works in both).
+% and the sum all update. The n slider ends at n -> infinity, where the
+% panels become the continuous curtain under f along C (the line integral
+% itself). Arrows along C show its direction (start = green circle, end =
+% black square). A button rotates the view between the top view and 3D
+% (dragging works in both).
 %
 %   Left  : 3D view (surface, curve, control points, curtain panels)
 %   Right : 2D "unrolled" Riemann sum on the arc-length axis (can be hidden)
@@ -33,14 +34,9 @@ bound = 1.5;                % control points are clamped to [-bound, bound]^2
 
 Nfine = 600;                % points used to draw the spline
 n0 = 0;  nMax = 50;          % initial / largest finite number of panels
-                             % (one slider step past nMax is n -> infinity)
 Show1D      = false;         % 1D (arc-length) plot initially hidden
-oneWidthFactor = 1.8;        % 3D axes width when the 1D plot is hidden, as a multiple of
-                             % its width in the two-pane layout (raise to widen, lower if it
-                             % touches the buttons)
-ax2ShiftFrac = 0.12;         % shift the 1D plot's left edge right by this fraction of its
-                             % width (right edge stays put, so the width shrinks to match);
-                             % raise it if the 1D plot's y label is still covered
+oneWidthFactor = 1.8;        % 3D axes width with the 1D plot hidden (x two-pane width)
+ax2ShiftFrac = 0.12;         % move the 1D plot's left edge right by this fraction
 
 color1 = [0.15 0.35 0.75];  % alternating panel colors (blue / orange)
 color2 = [0.95 0.55 0.15];
@@ -61,19 +57,15 @@ run('setup.m')
 app = uiFigure('Line Integral - Spline Curve', 2);
 ax3 = app.ax(1);
 ax2 = app.ax(2);
-% (uiFigure already applied Pretty_Plot to both axes)
 
-% Remember the 3D axes OuterPosition in the two-pane layout. For the one-pane
-% layout keep the same left edge, bottom and height, and set the width by hand
-% (oneWidthFactor above).
+% 3D axes positions for the two-pane and one-pane layouts
 drawnow
 ax3.PositionConstraint = 'outerposition';
 posSplit3 = ax3.OuterPosition;
 posFull3  = posSplit3;
 posFull3(3) = oneWidthFactor*posSplit3(3);
 
-% Two-pane layout: move the 1D axes' left edge right (keeping its right edge)
-% so the 3D axes no longer covers its y label
+% Two-pane layout: keep the 3D axes off the 1D plot's y label
 ax2.PositionConstraint = 'outerposition';
 posSplit2 = ax2.OuterPosition;
 posSplit2(1) = posSplit2(1) + ax2ShiftFrac*posSplit2(3);
@@ -92,11 +84,10 @@ xlim(ax3, bound*1.07*[-1 1]); ylim(ax3, bound*1.07*[-1 1])
 
 xlabel(ax2, 'Arc length  s'); ylabel(ax2, 'f(x(s), y(s))')
 
-%% Preallocated dynamic graphics: ONE object per kind, updated in place
-% (No object is ever deleted or recreated while dragging or sliding.)
+%% Dynamic graphics
 box3 = [1 2 3 4];  boxV = zeros(4,3);
 nanv = NaN(1, Nfine);
-% Line-integral curtain: a strip of quads (top row on the curve, bottom row on z = 0)
+% Line-integral curtain: strip of quads between the curve and z = 0
 qi = 1:Nfine-1;
 curtainFaces = [qi; qi+1; Nfine+qi+1; Nfine+qi].';
 hLine3 = patch(ax3, 'Faces', curtainFaces, 'Vertices', NaN(2*Nfine,3), ...
@@ -117,31 +108,28 @@ hDots2 = plot(ax2, NaN, NaN, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'Vis
 % Direction arrows along the curve + start/end markers
 nanA = NaN(1, nArr);
 hArrow3 = quiver3(ax3, nanA, nanA, nanA, nanA, nanA, nanA, 0, ...
-    'Color', 'k', 'LineWidth', 2, 'MaxHeadSize', 2.5);   % 0 = no autoscaling
+    'Color', 'k', 'LineWidth', 2, 'MaxHeadSize', 2.5);
 hStart3 = plot3(ax3, NaN, NaN, NaN, 'o', 'MarkerFaceColor', [0.1 0.7 0.2], ...
     'MarkerEdgeColor', 'k', 'MarkerSize', 9, 'LineWidth', 1.2);   % start
 hEnd3   = plot3(ax3, NaN, NaN, NaN, 's', 'MarkerFaceColor', 'k', ...
     'MarkerEdgeColor', 'k', 'MarkerSize', 8);                     % end
 
 %% Dragging: clicks in the 3D axes grab the nearest control point
-% (every 3D object ignores clicks so they all reach the axes' ButtonDownFcn)
 set(ax3.Children, 'HitTest', 'off', 'PickableParts', 'none')
 ax3.ButtonDownFcn = @startDrag;
 dragIdx = [];
 
 %% Build UI
-% Rows count upward from the bottom: row 3 is the top control
 NumControls = 3;
-% The last slider step (nMax + 1) stands for n -> infinity: 'LimitLabel'
-% writes it on the slider and redraw shows the continuous line integral
+% The last slider step (nMax + 1) stands for n -> infinity
 sN      = app.addControl('slider', '$n = $', 1, NumControls, @updatePlot, ...
     'Default', n0, 'Min', 0, 'Max', nMax + 1, 'Number_format', '%d', ...
     'Step', 1, 'LimitLabel', '$n \to \infty$');
-btn1D   = app.addControl('button', 'Show 1D Plot', 2, NumControls, @toggle1D, 'ColorChange', true);
+btn1D   = app.addControl('button', 'Show 1D Plot', 2, NumControls, @toggle1D, ...
+    'ColorChange', true, 'Toggle', ["Show 1D Plot", "Hide 1D Plot"]);
 btnView = app.addControl('button', '', 3, NumControls, @toggleView, ...
     'Toggle', ["Rotate to 3D view", "Rotate to top view"]);
 btn1D.Value   = Show1D;
-if Show1D, btn1D.String = 'Hide 1D Plot'; else, btn1D.String = 'Show 1D Plot'; end
 
 redraw(n0)
 applyLayout()
@@ -162,7 +150,6 @@ end
 
 function toggle1D(~, ~)
     Show1D = logical(btn1D.Value);
-    if Show1D, btn1D.String = 'Hide 1D Plot'; else, btn1D.String = 'Show 1D Plot'; end
     applyVisibility()
     applyLayout()
 end
@@ -197,26 +184,23 @@ function applyLayout()
     if Show1D
         ax3.OuterPosition = posSplit3;
         pick = 'all';
-        try, uistack(ax2, 'top'), catch, end      % undo the 3D-on-top stacking so
-                                                  % the 1D y label is not covered
+        try, uistack(ax2, 'top'), catch, end      % 1D y label on top
     else
         ax3.OuterPosition = posFull3;
         pick = 'none';
     end
-    % The hidden 1D axes still sits in the figure and would swallow clicks over
-    % the part of the 3D axes it overlaps, so make it unclickable while hidden
+    % The hidden 1D axes must not swallow clicks meant for the 3D axes
     ax2.HitTest = onoff(Show1D);
     ax2.PickableParts = pick;
     set(ax2.Children, 'HitTest', onoff(Show1D), 'PickableParts', pick)
     if ~Show1D
-        try, uistack(ax3, 'top'), catch, end      % 3D axes on top as well
+        try, uistack(ax3, 'top'), catch, end
     end
 end
 
-%% Visibility: one place that applies all toggle states
+%% Visibility for the current toggle states
 function applyVisibility()
-    % n -> infinity shows the continuous curtain (the line integral);
-    % finite n shows the panels
+    % n -> infinity shows the continuous curtain, finite n the panels
     isLimit = app.isAtLimit(sN);
     set(hLine3, 'Visible', onoff(isLimit))
     set([hPan3 hDots3], 'Visible', onoff(~isLimit))
@@ -227,7 +211,7 @@ function applyVisibility()
     set([ax2, ax2.Title, ax2.XLabel, ax2.YLabel], 'Visible', onoff(Show1D))
 end
 
-%% Redraw: re-evaluates the spline and updates every preallocated object in place
+%% Main Draw update function.
 function redraw(n)
     % Spline through the control points, chord-length parameterization
     cum = [0, cumsum(hypot(diff(px), diff(py)))];
@@ -241,14 +225,11 @@ function redraw(n)
     S_total = sFine(end);
     I_exact = sum(zFine(1:end-1).*ds);
 
-    % Curve, projection, control points, line-integral area (3D and 2D)
     set(hCurve3, 'XData', xFine, 'YData', yFine, 'ZData', zFine)
     set(hProj3,  'XData', xFine, 'YData', yFine, 'ZData', zeros(1,Nfine))
     set(hCP3,    'XData', px, 'YData', py)
 
-    % Direction arrows: drawn on the z = 0 projection of the curve, equally
-    % spaced in arc length, centered on the curve, pointing along the 2D
-    % unit tangent
+    % Direction arrows on the z = 0 projection, equally spaced in arc length
     sA = ((1:nArr) - 0.5)/nArr * S_total;
     xA = interp1(sFine, xFine, sA);
     yA = interp1(sFine, yFine, sA);
@@ -259,7 +240,6 @@ function redraw(n)
     set(hArrow3, 'XData', xA - U/2, 'YData', yA - V/2, 'ZData', zeros(1, nArr), ...
         'UData', U, 'VData', V, 'WData', W)
 
-    % Start / end markers also sit on the z = 0 projection
     set(hStart3, 'XData', xFine(1),   'YData', yFine(1),   'ZData', 0)
     set(hEnd3,   'XData', xFine(end), 'YData', yFine(end), 'ZData', 0)
 
@@ -288,7 +268,7 @@ function redraw(n)
               reshape([ye(1:n); ye(2:n+1); ye(2:n+1); ye(1:n)], [], 1), ...
               reshape([z0; z0; fm; fm], [], 1)];
         set(hPan3, 'Faces', faces, 'Vertices', V3, 'FaceVertexCData', cdata)
-        % Midpoint dots drawn on the z = 0 projection (the 2D dots stay at height fm)
+        % Midpoint dots on the z = 0 projection
         set(hDots3, 'XData', xm, 'YData', ym, 'ZData', z0)
 
         V2 = [reshape([sEdges(1:n); sEdges(2:n+1); sEdges(2:n+1); sEdges(1:n)], [], 1), ...
@@ -298,9 +278,8 @@ function redraw(n)
 
         title(ax2, splitlines(sprintf('Riemann Sum on Arc-Length Axis\nApprox = %.5f    Line integral = %.5f', approx, I_exact)))
     end
-    title(ax3, '$\int_C f(x,y)ds= \lim_{n\to\infty}\sum_{i=1}^n f(x_i^*,y_i^*)\Delta s_i$ $\\$ Drag the yellow diamonds to change $C$','Interpreter','latex')
+    title(ax3, '$\int_C f(x,y)ds= \lim_{n\to\infty}\sum_{i=1}^n f(x_i^*,y_i^*)\Delta s_i$ $\\$ Drag the yellow diamonds to change $C$')
 
-%
     applyVisibility()
     drawnow limitrate
 end

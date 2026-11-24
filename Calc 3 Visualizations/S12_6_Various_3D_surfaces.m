@@ -29,12 +29,10 @@ run('setup.m')
 %% Build an applet that holds the figure, plot and all UI elements
 app = uiFigure(exampleNames{exampleIdx}, 1);
 
-% Replace the single axes with two subplots positioned inside the figure
+% Two side-by-side panels, lifted to leave room for the controls
 delete(app.ax)
 ax_left  = subplot(1, 2, 1, 'Parent', app.fig);
 ax_right = subplot(1, 2, 2, 'Parent', app.fig);
-
-% Shift subplots up to leave room for controls
 ax_left.Position  = ax_left.Position  .* [1 1 1 1] + [0 0.08 0 -0.08];
 ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
 
@@ -56,12 +54,12 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 plot_xyz_axis(ax_left, 5, 5, 24)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)
-                title(ax_left, 'Surface: $z = x^2$', 'Interpreter', 'latex')
+                title(ax_left, 'Surface: $z = x^2$')
 
                 [C, hc] = contour(ax_right, X, Y, Z, levels, 'k', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'k')
                 Pretty_Plot(ax_right)
-                title(ax_right, 'Contour Plot', 'Interpreter', 'latex')
+                title(ax_right, 'Contour Plot')
 
             case 2  % Paraboloid z = x^2 + 4y^2
                 [X, Y] = meshgrid(-3:0.1:3);
@@ -75,12 +73,12 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 view(ax_left, -72, 20)
                 plot_xyz_axis(ax_left, 2, 2, 25)
                 Pretty_Plot(ax_left)
-                title(ax_left, 'Surface: $z = x^2 + 4y^2$', 'Interpreter', 'latex')
+                title(ax_left, 'Surface: $z = x^2 + 4y^2$')
 
                 [C, hc] = contour(ax_right, X, Y, Z, levels, 'k', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'k')
                 Pretty_Plot(ax_right)
-                title(ax_right, 'Contour Plot', 'Interpreter', 'latex')
+                title(ax_right, 'Contour Plot')
 
             case 3  % Saddle z = x^2 - y^2
                 [X, Y] = meshgrid(-10:0.1:10);
@@ -94,7 +92,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 plot_xyz_axis(ax_left, 5, 5, 24)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)
-                title(ax_left, 'Surface: $z = x^2 - y^2$', 'Interpreter', 'latex')
+                title(ax_left, 'Surface: $z = x^2 - y^2$')
 
                 [C, hc] = contour(ax_right, X, Y, Z, levels(levels > 0),  'r', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'r')
@@ -103,7 +101,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 [C, hc] = contour(ax_right, X, Y, Z, levels(levels < 0),  'b', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'b')
                 Pretty_Plot(ax_right)
-                title(ax_right, 'Contour Plot', 'Interpreter', 'latex')
+                title(ax_right, 'Contour Plot')
 
             case 4  % Hyperboloid x^2 + y^2 - z^2 = 4
                 [u, v] = meshgrid(linspace(-8, 8, 50), linspace(0, 2*pi, 50));
@@ -119,7 +117,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 plot_xyz_axis(ax_left, 5, 5, 5)
                 view(ax_left, -25, 15)
                 Pretty_Plot(ax_left)
-                title(ax_left, 'Surface: $x^2 + y^2 - z^2 = 4$', 'Interpreter', 'latex')
+                title(ax_left, 'Surface: $x^2 + y^2 - z^2 = 4$')
 
                 [C, hc] = contour(ax_right, X, Y, Z, levels(levels >  1), 'r', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'r')
@@ -128,7 +126,7 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
                 [C, hc] = contour(ax_right, X, Y, Z, levels(levels < -1), 'b', 'LineWidth', 1.5);
                 clabel(C, hc, 'FontSize', 14, 'Color', 'b')
                 Pretty_Plot(ax_right)
-                title(ax_right, 'Contour Plot', 'Interpreter', 'latex')
+                title(ax_right, 'Contour Plot')
         end
 
         app.fig.Name = exampleNames{idx};
@@ -137,19 +135,8 @@ ax_right.Position = ax_right.Position .* [1 1 1 1] + [0 0.08 0 -0.08];
 %% Make the initial plots
 drawExample(exampleIdx)
 
-%% Precompute math for updates
-% Light weight — skip
-
 %% Build UI
 NumControls = 2;
-
-% Previous/Next pair from uiFigure (wraps around the examples)
 app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
-app.galleryIdx = exampleIdx; % start the gallery on the chosen example
-
-%% Functions for UI elements
-% (Previous/Next handled by app.addPrevNext)
-
-%% Main Draw update function.
-% (Handled directly by drawExample above)
+app.galleryIdx = exampleIdx;
 end

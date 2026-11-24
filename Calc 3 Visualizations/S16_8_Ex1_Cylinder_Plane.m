@@ -29,7 +29,7 @@ rC = @(t) [cos(t(:)), sin(t(:)), 2 - sin(t(:))];   % boundary C, 0 <= t <= 2 pi
 zCyl     = [-1 3];             % height range of the cylinder drawn
 planeBox = 1.5;                % plane drawn over [-planeBox, planeBox]^2
 nGrid    = 60;                 % grid points per side for the surfaces
-nTheta   = 121;                % points around the circle (120 steps: hits the square's corners)
+nTheta   = 121;                % points around the circle
 nArrowC  = 12;                 % arrows along C
 arrowLen = 0.4;                % length of the n and curl F arrows
 
@@ -62,18 +62,15 @@ surfInt = integral2(@curlDotN, 0, 1, 0, 2*pi, 'AbsTol', 1e-10);
 [Th, Zc] = meshgrid(linspace(0, 2*pi, nTheta), linspace(zCyl(1), zCyl(2), 2));
 hCyl = surf(ax, cos(Th), sin(Th), Zc, 'FaceColor', 'b', 'FaceAlpha', 0.15, 'EdgeColor', 'none');
 
-% Plane y + z = 2, outside the cylinder only. The grid runs from the unit
-% circle (rho = 0) straight out to the square edge (rho = 1), so the hole is
-% a clean circle instead of the staircase left by NaN-ing a square grid.
+% Plane y + z = 2 outside the cylinder, on a grid from the circle out to the square
 thGrid = linspace(0, 2*pi, nTheta);
-[Rho, Th] = meshgrid(linspace(0, 1, 6), thGrid);   % the plane is flat: few radial points needed
+[Rho, Th] = meshgrid(linspace(0, 1, 6), thGrid);
 edgeR = planeBox ./ max(abs(cos(Th)), abs(sin(Th)));   % distance to the square at angle Th
 Rp = (1 - Rho) + Rho .* edgeR;
 Xp = Rp.*cos(Th);  Yp = Rp.*sin(Th);
 hPlane = surf(ax, Xp, Yp, zS(Xp, Yp), 'FaceColor', 'r', 'FaceAlpha', 0.4, 'EdgeColor', 'none');
 
-% Surface S: the plane inside the cylinder (polar grid, same angles as the
-% plane so the two meet exactly on C)
+% Surface S: the plane inside the cylinder
 [R, Th] = meshgrid(linspace(0, 1, nGrid/2), thGrid);
 Xs = R.*cos(Th);  Ys = R.*sin(Th);  Zs = zS(Xs, Ys);
 surf(ax, Xs, Ys, Zs, 'FaceColor', [0.2 0.8 0.2], 'FaceAlpha', 0.7, 'EdgeColor', 'none');
@@ -94,7 +91,7 @@ hFC = quiver3(ax, PA(:,1), PA(:,2), PA(:,3), FA(:,1), FA(:,2), FA(:,3), 0, ...
 
 % curl F and unit normals on S (hidden at start)
 [Rq, Tq] = meshgrid([0 0.45 0.85], linspace(0, 2*pi, 9));
-Rq = Rq(:);  Tq = Tq(:);  keep = [true; Rq(2:end) > 0];   % one point at the center
+Rq = Rq(:);  Tq = Tq(:);  keep = [true; Rq(2:end) > 0];
 xq = Rq(keep).*cos(Tq(keep));  yq = Rq(keep).*sin(Tq(keep));  zq = zS(xq, yq);
 [c1, c2, c3] = curl_f(F1, F2, F3, xq, yq, zq);
 Nq = [-Diffx_f(zS,xq,yq), -Diffy_f(zS,xq,yq), ones(size(xq))];
@@ -111,10 +108,8 @@ box(ax, 'on')
 camlight(ax); lighting(ax, 'gouraud')
 title(ax, {'$C$: $x^2 + y^2 = 1$ meets $y + z = 2$, \quad $\mathbf{F} = \langle -y^2, x, z^2 \rangle$', ...
     sprintf('$\\oint_C \\mathbf{F}\\cdot d\\mathbf{r} = %.4f$, \\quad $\\int\\!\\!\\int_S (\\nabla\\times\\mathbf{F})\\cdot d\\mathbf{S} = %.4f$', ...
-        lineInt, surfInt)}, 'Interpreter', 'latex')
+        lineInt, surfInt)})
 
-%% Precompute math for updates
-% Everything above is fixed; the buttons only change visibility.
 
 %% Build UI
 NumControls = 4;
@@ -127,9 +122,6 @@ btnF     = app.addControl('button', '', 3, NumControls, @updatePlot, ...
 btnCurl  = app.addControl('button', '', 4, NumControls, @updatePlot, ...
     'Toggle', ["Show $\nabla\times\mathbf{F}$ on $S$", "Hide $\nabla\times\mathbf{F}$ on $S$"], ...
     'ColorChange', true);
-
-%% Functions for UI elements
-% (All buttons call updatePlot directly.)
 
 %% Main Draw update function.
     function updatePlot(~, ~)

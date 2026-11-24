@@ -47,12 +47,11 @@ ax  = app.ax(1);
 nW = size(pts, 1);                   % number of wheels
 ang = zeros(nW, 1);                  % current angle of each wheel
 
-% Curl heat map (no transparency, so the colors match the colorbar)
+% Curl heat map
 xvec = linspace(lims(1), lims(2), 300);
 yvec = linspace(lims(1), lims(2), 300);
 [Xg, Yg] = meshgrid(xvec, yvec);
-% One color range shared by all fields: 1.125 times the largest curl of any field.
-% A field with a weaker curl (like the rotation) then shows undersaturated colors.
+% One color range for all fields: 1.125 times the largest curl of any field
 climAll = 0;
 for j = 1:numel(fieldsCurl)
     climAll = max(climAll, max(abs(reshape(fieldsCurl{j}(Xg, Yg), [], 1))));
@@ -80,14 +79,13 @@ for i = 1:nW
     hArm(i,1) = plot(ax, [NaN NaN], [NaN NaN], 'k-', 'LineWidth', 3);
     hArm(i,2) = plot(ax, [NaN NaN], [NaN NaN], 'k-', 'LineWidth', 3);
     hHub(i)   = plot(ax, NaN, NaN, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 5);
-    hTxt(i)   = text(ax, 0, 0, '', 'Interpreter', 'latex', 'FontSize', 16, ...
+    hTxt(i)   = text(ax, 0, 0, '', 'FontSize', 16, ...
         'HorizontalAlignment', 'center', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 end
-lastTxt = repmat({''}, nW, 1);       % cache so the slow latex text only changes when the value does
+lastTxt = repmat({''}, nW, 1);       % last label text of each wheel
 
-% Per-frame work is kept small for slow computers: the pixel scale is only
-% measured again after a resize or field change (layoutDirty), and a
-% wheel's hub, ring of arrows and label are only moved when it was dragged.
+% The pixel scale is measured again only after a resize or field change,
+% and a wheel's hub, ring and label only move when it is dragged
 pxX = 1; pxY = 1; pxL = 1;           % pixels per data unit in x, y and wheel arm length
 layoutDirty = true;
 drawnPts = NaN(nW, 2);               % wheel centers at the last full redraw
@@ -96,11 +94,8 @@ dwPhi = (0:nRing-1)'*2*pi/nRing;     % ring arrow angles
 %% Plot elements are done - Make pretty
 Pretty_Plot(ax);
 grid(ax, 'off')
-xlim(ax, lims); ylim(ax, lims)       % fills the panel, aspect ratio is not preserved
-xlabel(ax, '$x$', 'Interpreter', 'latex')
-ylabel(ax, '$y$', 'Interpreter', 'latex')
-title(ax, 'Curl of $\vec{F}$ and local rotation (drag the wheels)', ...
-    'Interpreter', 'latex', 'FontSize', 15)
+xlim(ax, lims); ylim(ax, lims)
+title(ax, 'Curl of $\vec{F}$ and local rotation (drag the wheels)', 'FontSize', 15)
 
 %% Build UI
 NumControls = numel(fieldNames);
@@ -109,7 +104,7 @@ for j = 1:NumControls
     btns{j} = app.addControl('button', fieldNames{j}, j, NumControls, @(~,~) setField(j), 'ColorChange', true, 'colOrRow', 'row');
 end
 
-ax.Position = [0.07, 0.22, 0.78, 0.68]; % the colorbar follows the axes
+ax.Position = [0.07, 0.22, 0.78, 0.68];
 
 %% Dragging state
 dragging = false;
@@ -132,15 +127,15 @@ while ishghandle(app.fig)
 end
 
 %% Functions for UI elements
-% Switch to field number idx: new curl map, new colorbar range, new arrows.
+% Switch to field number idx
     function setField(idx)
         fP = fieldsP{idx};
         fQ = fieldsQ{idx};
         fCurl = fieldsCurl{idx};
         curlGrid = fCurl(Xg, Yg);
         set(hImg, 'CData', curlGrid);
-        clim(ax, climAll*[-1 1]); % same symmetric range for every field, so white is zero curl
-        % Only the active button is highlighted (the class's ColorChange look)
+        clim(ax, climAll*[-1 1]);
+        % Only the active button is highlighted
         for b = 1:numel(btns)
             btns{b}.Value = (b == idx);
             btns{b}.UserData.setColor(b == idx);
@@ -149,11 +144,10 @@ end
         drawWheels();
     end
 
-% Background field on a grid that is even ON SCREEN. The vectors are
-% converted to pixels first so each arrow points the way F really points on
-% screen even though the aspect ratio is not preserved.
+% Background field on a grid that is even on screen, scaled in pixels so
+% each arrow points the way F does on screen
     function buildField()
-        layoutDirty = true;              % size or field changed: redraw wheels fully
+        layoutDirty = true;
         delete(hField(isgraphics(hField)))
         if isempty(fP)
             return
@@ -174,7 +168,7 @@ end
         kF = arrowFrac*bfhp/max(max(hypot(bfu(:), bfv(:))), eps); % pixels per unit of F
         hField = quiver(ax, bfxq, bfyq, kF*bfu/bfX, kF*bfv/bfY, 0, ...
             'Color', [0.3 0.3 0.3], 'LineWidth', 1.1, 'MaxHeadSize', 0.6, 'AutoScale', 'off');
-        % keep the heat map at the bottom, then the field, then the wheels
+        % Heat map at the bottom, then the field, then the wheels
         uistack(hField, 'bottom')
         uistack(hImg, 'bottom')
         uistack(hRing, 'top')
@@ -183,8 +177,7 @@ end
         uistack(hTxt, 'top')
     end
 
-% Turn the wheels a little and place all wheel graphics. Sizes are set in
-% pixels so a wheel stays round even though the axes are not equal.
+% Turn the wheels a little and place them (sized in pixels so they stay round)
     function drawWheels()
         if isempty(fCurl) || ~ishghandle(ax)
             return
@@ -200,7 +193,7 @@ end
             cx = pts(i,1);
             cy = pts(i,2);
             curlHere = fCurl(cx, cy);
-            ang(i) = mod(ang(i) + spin*curlHere/2, 2*pi); % a wheel spins at half the curl
+            ang(i) = mod(ang(i) + spin*curlHere/2, 2*pi); % spins at half the curl
             wc = cos(ang(i));
             ws = sin(ang(i));
 
@@ -208,7 +201,7 @@ end
             set(hArm(i,1), 'XData', cx + dwL*wc*[-1 1]/dwX, 'YData', cy + dwL*ws*[-1 1]/dwY);
             set(hArm(i,2), 'XData', cx - dwL*ws*[-1 1]/dwX, 'YData', cy + dwL*wc*[-1 1]/dwY);
 
-            % Everything below only changes when the wheel moved
+            % The rest only changes when the wheel moved
             if ~layoutDirty && isequal(pts(i,:), drawnPts(i,:))
                 continue
             end
@@ -221,7 +214,6 @@ end
             rv = fQ(rx, ry);
             set(hRing(i), 'XData', rx, 'YData', ry, 'UData', kF*ru/dwX, 'VData', kF*rv/dwY);
 
-            % Live value of the curl at the wheel
             str = ['$\mathrm{curl}=', sprintf('%.2f', curlHere), '$'];
             if ~strcmp(str, lastTxt{i})
                 set(hTxt(i), 'String', str);
@@ -230,10 +222,10 @@ end
             set(hTxt(i), 'Position', [cx, cy + (ringFrac+1.2)*dwL/dwY + 0.02, 0]);
         end
         drawnPts = pts;
-        layoutDirty = ~(pxX > 0 && pxY > 0); % measure again if the axes had no size yet
+        layoutDirty = ~(pxX > 0 && pxY > 0);
     end
 
-% Click detection is in pixels so it works for any axes shape
+% Click detection in pixels
     function mouseDown(~, ~)
         cp = ax.CurrentPoint(1, 1:2);
         if cp(1) < lims(1) || cp(1) > lims(2) || cp(2) < lims(1) || cp(2) > lims(2)
@@ -258,7 +250,7 @@ end
     function mouseMove(~, ~)
         if dragging
             cp = ax.CurrentPoint(1, 1:2);
-            pts(dragIdx, :) = min(max(cp, lims(1)), lims(2)); % stay inside the axes
+            pts(dragIdx, :) = min(max(cp, lims(1)), lims(2));
         end
     end
 end

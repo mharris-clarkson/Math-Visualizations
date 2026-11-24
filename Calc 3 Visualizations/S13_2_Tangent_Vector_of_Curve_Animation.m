@@ -67,7 +67,7 @@ hLine           = plot3(app.ax, x, y, z, 'b', 'LineWidth', 2);
 hpoint          = plot3(app.ax, x(1), y(1), z(1),'.r','MarkerSize',40);
 hArrow          = quiver3(app.ax, x(1), y(1), z(1), dx(1), dy(1), dz(1), ...
     0, 'r', 'LineWidth', 2);
-title(app.ax, curveNames{curveIdx}, 'Interpreter', 'latex')
+title(app.ax, curveNames{curveIdx})
 
 %% Animation state
 frameIdx  = 1;
@@ -78,12 +78,7 @@ animTimer = timer('ExecutionMode', 'fixedRate', ...
     'TimerFcn',     @timerStep, ...
     'StopFcn',      @timerStopped);
 
-% Stop AND delete the timer when the figure is closed. Without the delete,
-% every run leaves an orphan timer behind (see timerfindall).
 app.fig.DeleteFcn = @(~,~) cleanupTimer();
-
-%% Precompute math for updates
-% (curves are fast to compute on demand)
 
 %% Build UI
 NumControls = 2;
@@ -117,7 +112,7 @@ btnCurve = app.addControl('button', ...
         set(hpoint, 'XData', x(1), 'YData', y(1), 'ZData', z(1));
         set(hArrow, 'XData', x(1), 'YData', y(1), 'ZData', z(1), ...
             'UData', dx(1), 'VData', dy(1), 'WData', dz(1));
-        title(app.ax, curveNames{curveIdx}, 'Interpreter', 'latex')
+        title(app.ax, curveNames{curveIdx})
         btnCurve.String = ['Curve: ' curveNames{curveIdx}];
 
         if wasPlaying && isvalid(animTimer)
@@ -139,8 +134,6 @@ btnCurve = app.addControl('button', ...
         isPlaying = false;
     end
 
-    % The timer may already be gone (e.g. a test teardown ran
-    % delete(timerfindall) before closing the figure), so check isvalid first.
     function stopTimer()
         if isvalid(animTimer) && strcmp(animTimer.Running, 'on')
             stop(animTimer);
@@ -155,7 +148,4 @@ btnCurve = app.addControl('button', ...
         end
         isPlaying = false;
     end
-
-%% Main Draw update function.
-% (Handled by timerStep and nextCurve above)
 end

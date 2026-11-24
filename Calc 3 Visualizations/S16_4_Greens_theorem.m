@@ -71,9 +71,9 @@ cDot   = [1   0.6 0  ];   % orange -- the moving dot
 curlMap = '-balance';
 
 % Field arrows in the middle plot
-nCols      = 15;                   % arrows across the plot (the rows are spaced to match on screen)
-arrowFrac  = 0.9;                  % longest arrow as a fraction of the grid spacing on screen (< 1 so arrows never touch)
-arrowReach = 1.4;                  % arrows are drawn where x^2 + y^2 <= arrowReach
+nCols      = 15;                   % arrows across the plot
+arrowFrac  = 0.9;                  % longest arrow / grid spacing on screen
+arrowReach = 1.4;                  % arrows drawn where x^2 + y^2 <= arrowReach
 fieldColor = [0.3 0.3 0.3];
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
@@ -81,14 +81,13 @@ fieldColor = [0.3 0.3 0.3];
 run('setup.m')
 
 %% Build an applet that holds the figure, plots and all UI elements
-app = uiFigure('Green''s Theorem', 3); % axes are re-positioned below: Left: boundary and field. Middle: curl. Right: boxes and running total
+app = uiFigure('Green''s Theorem', 3);   % repositioned below
 axC = app.ax(1); % curl heat map
 axM = app.ax(2); % boundary and field
 axR = app.ax(3); % boxes and running total
 
 %% Optional math functions for plot computations
-% Move the existing quiver h to the entries selected by mask (NaN when
-% nothing is selected), so the arrows are updated in place, not re-created
+% Move quiver h to the entries selected by mask (NaN when none)
     function setArrows(h, x, y, u, v, mask, lw, head)
         if any(mask)
             x = x(mask); y = y(mask); u = u(mask); v = v(mask);
@@ -108,7 +107,7 @@ axR = app.ax(3); % boxes and running total
         end
     end
 
-% A lighter version of a color, used for the chords the dot has not reached yet
+% Lighter color for the chords the dot has not reached yet
     function c = tint(c)
         c = 0.35*c + 0.65*[1 1 1];
     end
@@ -124,7 +123,7 @@ tFine = linspace(0, tEnd, 500);
 xBnd  = xC(tFine);
 yBnd  = yC(tFine);
 
-% F . T along C on a fine partition. Only used to fix the y limits of the right plot.
+% max |F . T| along C, for the y limits of the right plot
 dxF = diff(xC(tArc));
 dyF = diff(yC(tArc));
 mxF = 0.5*(xC(tArc(1:end-1)) + xC(tArc(2:end)));
@@ -135,12 +134,12 @@ ftMax = max(abs((P(mxF,myF).*dxF + Q(mxF,myF).*dyF)./hypot(dxF,dyF)));
 xvec = linspace(lims(1), lims(2), 300);
 yvec = linspace(lims(1), lims(2), 300);
 [Xg, Yg] = meshgrid(xvec, yvec);
-Curl_grid = curl(Xg, Yg); % no mask, the curl exists everywhere
+Curl_grid = curl(Xg, Yg);
 imagesc(axC, xvec, yvec, Curl_grid);
 set(axC, 'YDir', 'normal');
 
-% Diverging cmocean map centered on zero (white = zero curl)
-colormap(axC, Pretty_Colormap(curlMap));   % cached cmocean map
+% Diverging map centred on zero
+colormap(axC, Pretty_Colormap(curlMap));
 clim(axC, max(abs(Curl_grid(:)))*[-1 1]);
 cb = colorbar(axC, 'Location', 'eastoutside');
 cb.Label.String = '$\mathrm{curl}\,\vec{F}$';
@@ -149,22 +148,19 @@ cb.Label.FontSize = 18;
 
 % The boundary of D and the label for D
 plot(axC, xBnd([1:end 1]), yBnd([1:end 1]), 'k-', 'LineWidth', 2.5);
-text(axC, 0.1, 0, '$D$', 'Interpreter', 'latex', 'FontSize', 26, 'HorizontalAlignment', 'center');
+text(axC, 0.1, 0, '$D$', 'FontSize', 26, 'HorizontalAlignment', 'center');
 
 %% ---- Middle panel: boundary, field and the moving dot ----
-hField = gobjects(0); % drawn by buildField once the panel size is known
+hField = gobjects(0); % drawn by buildField
 plot(axM, xBnd([1:end 1]), yBnd([1:end 1]), 'k-', 'LineWidth', 1.2);
 hTrail = plot(axM, NaN, NaN, '-', 'Color', cTrail, 'LineWidth', 3);
-% Colored chords for n -> infinity (one line object per color, pieces split by NaN).
-% They are created after the black curve so they are drawn on top of it.
+% Colored chords for n -> infinity, one NaN-separated line per color
 chordCol = {cPos, tint(cPos), cNeg, tint(cNeg)}; % passed+, ahead+, passed-, ahead-
 hChord = gobjects(1,4);
 for g = 1:4
     hChord(g) = plot(axM, NaN, NaN, '-', 'Color', chordCol{g}, 'LineWidth', 3);
 end
-% Chord arrows: one quiver per color group, created once and updated in
-% place by setArrows (deleting and re-creating them on every slider move
-% was the slowest part of an update)
+% Chord arrows, one quiver per color group
 hArr = gobjects(1,4);
 for g = 1:4
     hArr(g) = quiver(axM, NaN, NaN, NaN, NaN, 0, 'Color', chordCol{g}, 'AutoScale', 'off');
@@ -172,7 +168,7 @@ end
 hDot   = plot(axM, NaN, NaN, 'o', 'MarkerSize', 8, ...
     'MarkerFaceColor', cDot, 'MarkerEdgeColor', 'k', 'LineWidth', 1.2);
 
-lastInf = []; % remembers the last n mode so the slow label updates run only on a change
+lastInf = []; % last n mode, so the labels change only when it changes
 
 %% ---- Right panel: boxes over arc length and the running total ----
 yline(axR, 0, 'k-', 'LineWidth', 1.2);
@@ -183,7 +179,7 @@ for g = 1:4
     hBox(g) = patch(axR, NaN(4,1), NaN(4,1), chordCol{1 + 2*(g > 2)}, ...
         'FaceAlpha', boxAlpha(g), 'EdgeColor', 'k', 'LineWidth', 0.6);
 end
-hBoxLeg = patch(axR, NaN, NaN, [0.55 0.55 0.55], 'FaceAlpha', 0.5, 'EdgeColor', 'k'); % legend entry for the boxes
+hBoxLeg = patch(axR, NaN, NaN, [0.55 0.55 0.55], 'FaceAlpha', 0.5, 'EdgeColor', 'k'); % legend entry
 hCum    = plot(axR, NaN, NaN, 'k-o', 'LineWidth', 1.8, 'MarkerSize', 4, 'MarkerFaceColor', 'k');
 hCumDot = plot(axR, NaN, NaN, 'o', 'MarkerSize', 8, ...
     'MarkerFaceColor', cDot, 'MarkerEdgeColor', 'k', 'LineWidth', 1.2);
@@ -194,64 +190,46 @@ Pretty_Plot(axM);
 Pretty_Plot(axR);
 grid(axC, 'off')
 
-% Limits. The two xy plots fill their panels, so the aspect ratio is not preserved.
 xlim(axC, lims); ylim(axC, lims)
 xlim(axM, lims); ylim(axM, lims)
 
-% The right plot has a fixed arc length axis. The y range has room below for the legend.
+% Fixed arc length axis, with room below for the legend
 yHi = 1.3*max(exact, ftMax);
 yLo = -1.1*ftMax;
 xlim(axR, [0 L])
 ylim(axR, [yLo - 0.35*(yHi - yLo), yHi])
 
-% Labels
-xlabel(axC, '$x$', 'Interpreter', 'latex')
-ylabel(axC, '$y$', 'Interpreter', 'latex')
-xlabel(axM, '$x$', 'Interpreter', 'latex')
-ylabel(axM, '$y$', 'Interpreter', 'latex')
-xlabel(axR, 'Arc length $s$ along $C$', 'Interpreter', 'latex')
+xlabel(axR, 'Arc length $s$ along $C$')
 
-% Titles. The middle and right ones are set in updatePlot.
-title(axC, 'Curl of $\vec{F}$', 'Interpreter', 'latex', 'FontSize', 15)
+title(axC, 'Curl of $\vec{F}$', 'FontSize', 15)
 title(axR, {'Green''s Theorem: Line Integral $=$ Double Integral', ...
-    '$\int_C \vec{F}\cdot d\vec{r}=\int\int_D \mathrm{curl}\,\vec{F}\,dA=\pi$'}, ...
-    'Interpreter', 'latex', 'FontSize', 15)
+    '$\int_C \vec{F}\cdot d\vec{r}=\int\int_D \mathrm{curl}\,\vec{F}\,dA=\pi$'}, 'FontSize', 15)
 
-% Legend for the right plot. Its strings change with n.
-leg = legend(axR, [hBoxLeg, hCum, hExact], {'', '', ''}, ...
-    'Interpreter', 'latex', 'Location', 'southeast', 'FontSize', 13, 'AutoUpdate', 'off');
-
-%% Precompute math for updates
-% Light weight so skip
+% Legend strings change with n
+leg = legend(axR, [hBoxLeg, hCum, hExact], {'', '', ''}, 'Location', 'southeast', 'FontSize', 13, 'AutoUpdate', 'off');
 
 %% Build UI
-NumControls = 2; % maximum number of controls
+NumControls = 2;
 
-% Number of chords. The last slider value stands in for n -> infinity
-% ('Step',1: one click = one chord; 'LimitLabel' writes n -> infinity there)
+% Number of chords; the last value stands for n -> infinity
 nSlider = app.addControl('slider', '$n = $', 1, NumControls, @updatePlot, ...
     'Default', n0, 'Min', n_min, 'Max', n_max + 1, 'Number_format', '%d', 'colOrRow', 'row', ...
     'Step', 1, 'LimitLabel', '$n \to \infty$');
 
-% Arc length traveled by the dot, from the start of C to its end. The
-% slider holds s/pi, so its label reads as a decimal multiple of pi
-% ('$s = $' + '1.25' + '$\pi$' -> s = 1.25 pi).
+% Arc length traveled by the dot; the slider holds s/pi
 sSlider = app.addControl('slider', '$s = $', 2, NumControls, @updatePlot, ...
     'Default', L/pi, 'Min', 0, 'Max', L/pi, 'Number_format', '%.2f', ...
     'AddToEnd', '$\pi$', 'colOrRow', 'row');
 
-% All three panels get exactly the same size. The gaps leave room for the
-% colorbar (and its label) between the left and middle plots, and for the
-% tick labels and y label of each plot, so nothing runs into its neighbor.
+% Three equal panels, with room for the colorbar and labels between them
 panelW = 0.235;
 panelH = 0.62;
 panelB = 0.22;
-axM.Position = [0.045, panelB, panelW, panelH]; % boundary and field first
-axC.Position = [0.340, panelB, panelW, panelH]; % curl second, its colorbar follows the axes
+axM.Position = [0.045, panelB, panelW, panelH];
+axC.Position = [0.340, panelB, panelW, panelH];
 axR.Position = [0.730, panelB, panelW, panelH];
 
-% Draw the field now that the panel size is known, and redraw it when the
-% window is resized so the arrows keep pointing the right way on screen.
+% The field depends on the panel's pixel size, so redraw it on resize
 app.fig.SizeChangedFcn = @(~,~) buildField();
 drawnow
 buildField();
@@ -259,10 +237,8 @@ buildField();
 updatePlot()
 
 %% Functions for UI elements
-% Field arrows on a grid that is even ON SCREEN. The axes do not keep the
-% aspect ratio, so the vectors are converted to pixels first. That way each
-% arrow points the way F really points on screen, and the longest arrow is
-% arrowFrac of the grid spacing so no arrow reaches its neighbors.
+% Field arrows on a grid that is even on screen, scaled in pixels so they
+% point the way F does on screen and never touch
     function buildField()
         delete(hField(isgraphics(hField)))
         pos  = getpixelposition(axM);
@@ -284,7 +260,7 @@ updatePlot()
         k = arrowFrac*hp/max(hypot(u, v)); % pixels per unit of F
         hField = quiver(axM, xq, yq, k*u/ppuX, k*v/ppuY, 0, ...
             'Color', fieldColor, 'LineWidth', 1.3, 'MaxHeadSize', 0.6, 'AutoScale', 'off');
-        uistack(hField, 'bottom') % keep the chords and the dot on top
+        uistack(hField, 'bottom')
     end
 
 %% Main Draw update function. All initial plot functions are updated below.
@@ -296,17 +272,15 @@ updatePlot()
         end
         isInf = nVal > n_max;
         if isInf
-            n = N_inf;   % (label shows n -> infinity via 'LimitLabel')
+            n = N_inf;
         else
             n = nVal;
         end
 
-        % Arc length traveled by the dot (the slider holds s/pi)
-        % (min: pi*(L/pi) can round to just above L, and interp1 would give NaN)
+        % min: pi*(L/pi) can round to just above L
         s = min(pi*sSlider.Value, L);
 
         %% Update data
-        % Partition of C into n chords
         tEdges = linspace(0, tEnd, n+1);
         tMid   = 0.5*(tEdges(1:n) + tEdges(2:n+1));
 
@@ -318,18 +292,18 @@ updatePlot()
         % Arc length of each chord and the terms F(r_k^*) . Delta_r_k
         sEdge   = interp1(tArc, sArc, tEdges);
         dots    = P(xMid,yMid).*dX + Q(xMid,yMid).*dY;
-        height  = dots./diff(sEdge);  % box height: area of the box is the term
+        height  = dots./diff(sEdge);  % box area is the term
         cumDots = cumsum(dots);
 
         isPos  = dots >= 0;
         isDone = sEdge(2:end) <= s + 1e-9; % chords the dot has passed
 
-        % Running total up to s (linear inside a chord, since its box has constant height)
+        % Running total up to s
         sCum = unique([sEdge(sEdge <= s + 1e-9), s]);
         vCum = interp1(sEdge, [0, cumDots], sCum);
 
         %% Update plots: middle panel
-        tS = interp1(sArc, tArc, s);           % parameter value at arc length s
+        tS = interp1(sArc, tArc, s);
         tTrail = linspace(0, tS, 200);
         set(hTrail, 'XData', xC(tTrail), 'YData', yC(tTrail));
         set(hDot,   'XData', xC(tS),     'YData', yC(tS));
@@ -342,10 +316,9 @@ updatePlot()
             for g = 1:4
                 set(hChord(g), 'XData', reshape(Xs(:,mk{g}),[],1), 'YData', reshape(Ys(:,mk{g}),[],1));
             end
-            % A few arrows along the path so the direction is still clear.
-            % Each is centered on a point of C and follows the tangent there.
+            % A few arrows along the path to show the direction
             kk   = round(linspace(1, n, nHeads + 1));
-            kk   = kk(1:end-1) + round(n/(2*nHeads));  % spread evenly around C
+            kk   = kk(1:end-1) + round(n/(2*nHeads));
             tlen = hypot(dX(kk), dY(kk));
             ux   = headLen*dX(kk)./tlen;
             uy   = headLen*dY(kk)./tlen;
@@ -361,12 +334,10 @@ updatePlot()
         uistack(hDot, 'top')
 
         title(axM, ['Line integral so far: $\int_{C_s}\vec{F}\cdot d\vec{r}=', ...
-            sprintf('%.4f', vCum(end)), '$'], 'Interpreter', 'latex', 'FontSize', 15)
+            sprintf('%.4f', vCum(end)), '$'], 'FontSize', 15)
 
         %% Update plots: right panel
-        % One box per chord over its arc length. The box height is
-        % (F . Delta_r_k) / Delta_s_k, so its AREA is the term F . Delta_r_k.
-        % Outlines are dropped when there are too many boxes.
+        % One box per chord over its arc length; no outlines for n -> infinity
         edgeColor = 'k';
         if isInf
             edgeColor = 'none';
@@ -377,7 +348,6 @@ updatePlot()
             set(hBox(g), 'XData', pick(Xb, mk{g}), 'YData', pick(Yb, mk{g}), 'EdgeColor', edgeColor)
         end
 
-        % Running total and the current value
         if isInf
             set(hCum, 'XData', sCum, 'YData', vCum, 'Marker', 'none')
         else
@@ -385,7 +355,7 @@ updatePlot()
         end
         set(hCumDot, 'XData', s, 'YData', vCum(end))
 
-        %% Discrete labels for finite n, continuous ones for n -> infinity (only on a mode change)
+        %% Discrete labels for finite n, continuous ones for n -> infinity
         if isequal(lastInf, isInf)
             drawnow limitrate
             return
@@ -395,12 +365,12 @@ updatePlot()
             leg.String = {'Box: height $\vec{F}\cdot\vec{T}$, area $\vec{F}\cdot d\vec{r}$', ...
                           'Running total of the areas', ...
                           'Double integral $=\pi$'};
-            ylabel(axR, '$\vec{F}\cdot\vec{T}$', 'Interpreter', 'latex')
+            ylabel(axR, '$\vec{F}\cdot\vec{T}$')
         else
             leg.String = {'Box: area $\vec{F}(\vec{r}_k^*)\cdot\Delta\vec{r}_k$', ...
                           'Running total of the areas', ...
                           'Double integral $=\pi$'};
-            ylabel(axR, '$\vec{F}(\vec{r}_k^*)\cdot\Delta\vec{r}_k\,/\,\Delta s_k$', 'Interpreter', 'latex')
+            ylabel(axR, '$\vec{F}(\vec{r}_k^*)\cdot\Delta\vec{r}_k\,/\,\Delta s_k$')
         end
 
         drawnow limitrate

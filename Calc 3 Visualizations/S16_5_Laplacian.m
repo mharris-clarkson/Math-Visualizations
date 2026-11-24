@@ -43,10 +43,9 @@ icIdx = 2;      % starting choice
 
 % Arrows and level curves in the middle plot
 nArrows   = 12;   % arrows per side
-arrowFrac = 0.9;  % longest arrow (just after t = 0) as a fraction of the arrow spacing
+arrowFrac = 0.9;  % longest arrow (just after t = 0) / arrow spacing
 nLevels   = 12;   % level curves of T
-tRef      = 0.005;% time used to fix the arrow and Laplacian scales (the hot
-                  % square has infinite slope exactly at t = 0)
+tRef      = 0.005;% time that fixes the arrow and Laplacian scales
 
 %% ==== Below this we build the UI, compute the needed math functions for future updates ================
 %% Load libraries
@@ -72,14 +71,14 @@ ax3 = app.ax(3); % Laplacian
 % New starting temperature: series coefficients and fixed plot scales
     function setIC(iIC)
         f0 = ICs{iIC}(xg, yg);
-        A  = (Cb' * f0 * Cb) ./ (w(:) * w);   % orthogonality of the cosine basis
-        Tmean  = A(1,1);                      % the constant term = the average
+        A  = (Cb' * f0 * Cb) ./ (w(:) * w);
+        Tmean  = A(1,1);                      % the average
 
         Trange = [min(f0(:)) max(f0(:))];
         [~, Tx0, Ty0, Lap0] = solution(tRef);
         arrowScale = arrowFrac * spacing / max(hypot(Tx0(:), Ty0(:)));
         lapScale   = max(abs(Lap0(:)));
-        if lapScale>40 % catch for hot square
+        if lapScale>40 % hot square
             lapScale = 5;
         end
 
@@ -89,7 +88,7 @@ ax3 = app.ax(3); % Laplacian
     end
 
 %% Precompute math for updates
-% Cell-centred grid: makes the cosine basis exactly orthogonal on the grid
+% Cell-centred grid, so the cosine basis is orthogonal on the grid
 h  = 2*L/N;
 x  = -L + h*((1:N) - 0.5);
 y  = x;
@@ -103,12 +102,12 @@ Sb  = -sin(((1:N)' - 0.5) * m*pi/N) .* k;  % its x derivative
 w   = [N, (N/2)*ones(1, N-1)];             % sum over the grid of Cb(:,m+1).^2
 Lam = k(:).^2 + k.^2;                      % eigenvalues lambda_nm = k_n^2 + k_m^2
 
-% Arrow points (evenly spaced, away from the edges)
+% Arrow points, away from the edges
 iq = round(linspace(1, N, nArrows + 2));
 iq = iq(2:end-1);
 spacing = x(iq(2)) - x(iq(1));
 
-% Starting temperature for the first plots (setIC fills in the rest)
+% Starting temperature for the first plots
 f0init = ICs{icIdx}(xg, yg);
 A = []; Tmean = []; arrowScale = []; lapScale = [];
 
@@ -131,7 +130,6 @@ colormap(ax3, Pretty_Colormap('balance'))
 cb3 = colorbar(ax3);
 cb3.Label.String = '$\frac{\partial T}{\partial t}$';
 
-% Colorbar labels are not covered by the figure's LaTeX defaults
 for cbk = [cb1 cb3]
     cbk.Label.Interpreter = 'latex';
     cbk.Label.FontSize    = ax1.FontSize;
@@ -153,10 +151,8 @@ hTitle1 = title(ax1, '');
 title(ax2, {'Heat flow $-\nabla T$', 'from hot to cold, across level curves'})
 title(ax3, {'$\frac{\partial T}{\partial t} = \nabla^2 T$', 'red: warming, blue: cooling'})
 
-% What is being solved, over all three plots
 sgtitle(app.fig, ['Solving the heat equation  $\frac{\partial T}{\partial t} = \nabla^2 T$' ...
-    '  on a square with insulated edges'], ...
-    'Interpreter', 'latex', 'FontSize', 22);
+    '  on a square with insulated edges'], 'FontSize', 22);
 
 %% Build UI
 NumControls = 2;
@@ -167,8 +163,7 @@ tSlider = app.addControl('slider', '$t = $', 1, NumControls, @updatePlot, ...
 btnIC = app.addControl('button', ['Start: ' ICnames{icIdx}], 2, NumControls, @nextIC, ...
     'colOrRow', 'row');
 
-% Equal panels below the overall title. The gaps leave room for the
-% colorbars of the left and right plots.
+% Equal panels below the overall title, with room for the colorbars
 panelW = 0.22;
 panelH = 0.56;
 panelB = 0.22;

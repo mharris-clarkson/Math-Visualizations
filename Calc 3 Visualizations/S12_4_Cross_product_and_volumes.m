@@ -26,7 +26,7 @@ run('setup.m')
 app = uiFigure('Cross Products, Parallelogram, and Parallelepiped', 1);
 axis(app.ax, 'equal')
 view(app.ax, 3)
-title(app.ax, 'Cross Products, Parallelogram, and Parallelepiped', 'Interpreter', 'latex')
+title(app.ax, 'Cross Products, Parallelogram, and Parallelepiped')
 
 %% Make the initial plots
 [s, t] = meshgrid(linspace(0, 1, 10));
@@ -43,9 +43,9 @@ n  = cross(v1, v2);
 hN = quiver3(app.ax, 0,0,0, n(1),n(2),n(3), 0, 'k', 'LineWidth',2, 'MaxHeadSize',0.5);
 
 offset   = 0.05;
-hLabelV1 = text(app.ax, v1(1)+offset, v1(2)+offset, v1(3)+offset, '$\mathbf{u}$', 'Interpreter','latex', 'FontSize',18, 'Color','r');
-hLabelV2 = text(app.ax, v2(1)+offset, v2(2)+offset, v2(3)+offset, '$\mathbf{v}$', 'Interpreter','latex', 'FontSize',18, 'Color','b');
-hLabelN  = text(app.ax, n(1)+offset,  n(2)+offset,  n(3)+offset,  '$\mathbf{n}=\mathbf{u}\times\mathbf{v}$', 'Interpreter','latex', 'FontSize',18, 'Color','k');
+hLabelV1 = text(app.ax, v1(1)+offset, v1(2)+offset, v1(3)+offset, '$\mathbf{u}$', 'FontSize',18, 'Color','r');
+hLabelV2 = text(app.ax, v2(1)+offset, v2(2)+offset, v2(3)+offset, '$\mathbf{v}$', 'FontSize',18, 'Color','b');
+hLabelN  = text(app.ax, n(1)+offset,  n(2)+offset,  n(3)+offset,  '$\mathbf{n}=\mathbf{u}\times\mathbf{v}$', 'FontSize',18, 'Color','k');
 
 mid   = (v1+v2)/2;
 hText = text(app.ax, mid(1),mid(2),mid(3), sprintf('Area = %.2f', norm(n)), ...
@@ -58,14 +58,11 @@ hVolText = text(app.ax, 0,0,0, '', 'FontSize',18, 'FontWeight','bold', ...
 
 Pretty_Plot(app.ax)
 
-% Force set plot limits
 minaxis = 5;
 set(app.ax,'XLim', minaxis*[-1,1], ...
     'YLim', minaxis*[-1,1], ...
     'ZLim', minaxis*[-1,1])
 
-%% Precompute math for updates
-% Light weight — skip
 
 %% Build UI
 NumControls = 11;
@@ -91,14 +88,9 @@ btnPara = app.addControl('button', 'Show Parallelepiped', 11, NumControls, @togg
     end
 
     function togglePara(~, ~)
-        % Show/hide w sliders with the parallelepiped
-        vis = onoff(btnPara.Value);
-        set(s_v3x, 'Visible', vis);
-        set(s_v3y, 'Visible', vis);
-        set(s_v3z, 'Visible', vis);   % the slider labels follow automatically
+        set([s_v3x s_v3y s_v3z], 'Visible', onoff(btnPara.Value));
         updatePlot()
     end
-
 
 %% Main Draw update function.
     function updatePlot(~, ~)
@@ -123,7 +115,6 @@ btnPara = app.addControl('button', 'Show Parallelepiped', 11, NumControls, @togg
         set(hLabelV2, 'Position', v+offset)
         set(hLabelN,  'Position', n+offset)
 
-        % Update plot limits
         axislim =  max(abs([minaxis,v,u,w,n]));
         set(app.ax,'XLim', axislim*[-1,1], ...
             'YLim', axislim*[-1,1], ...

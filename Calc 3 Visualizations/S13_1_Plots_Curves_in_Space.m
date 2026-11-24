@@ -37,8 +37,6 @@ run('setup.m')
 app = uiFigure(exampleNames{exampleIdx}, 1);
 
 %% Optional math functions for plot computations
-% Draws example idx from scratch. Every example is light enough to redraw
-% on a click, so nothing is kept between examples.
     function drawExample(idx)
         cla(app.ax)
         legend(app.ax, 'off')
@@ -50,9 +48,6 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
                 R = r(t);
                 plot3(app.ax, R(1,:), R(2,:), R(3,:), 'b', 'LineWidth', 2)
 
-                % Diff_f_unit must see the whole vector r(t): calling it on
-                % each component separately normalises each one to +-1 (or
-                % 0), which is neither unit length nor the tangent direction.
                 tp = t(end);
                 P  = r(tp);
                 T  = Diff_f_unit(r, tp);
@@ -76,15 +71,11 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
                 view(app.ax, 3)
 
             case 3  % z^2 = 4y - x^2 meets y = x
-                % Paraboloid y = (x^2 + z^2)/4
-                % (150 x 150 looks the same as 500 x 500 with no edges drawn,
-                %  and a transparent surface with 250,000 faces is very slow
-                %  on weak laptops)
+                % Paraboloid y = (x^2 + z^2)/4 and plane y = x
                 [x, z] = meshgrid(linspace(-3,5,150));
                 surf(app.ax, x, (x.^2 + z.^2)/4, z, ...
                     'FaceAlpha', 0.3, 'FaceColor', surfColor, 'EdgeColor', 'none')
 
-                % Plane y = x (a flat plane only needs a 2 x 2 grid)
                 [y, z] = meshgrid(linspace(-1,5,2), linspace(-3,3,2));
                 surf(app.ax, y, y, z, ...
                     'FaceAlpha', 0.5, 'FaceColor', planeColor, 'EdgeColor', 'none')
@@ -115,8 +106,7 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
                 plot3(app.ax, 16*sin(t).^3, ...
                               13*cos(t) - 5*cos(2*t) - 2*cos(3*t) - cos(4*t), ...
                               2.5*sin(t), 'r', 'LineWidth', 2)
-                % Viewing angle that hides what it is to start
-                view(app.ax, 45, 25)
+                view(app.ax, 45, 25)   % hides what it is to start
         end
 
         Pretty_Plot(app.ax)
@@ -127,18 +117,8 @@ app = uiFigure(exampleNames{exampleIdx}, 1);
 %% Make the initial plots
 drawExample(exampleIdx)
 
-%% Precompute math for updates
-% Light weight — skip
-
 %% Build UI
 NumControls = 2;
-
 app.addPrevNext(1, NumControls, numel(exampleNames), @drawExample);
-app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
-
-%% Functions for UI elements
-% (Handled by addPrevNext, which calls drawExample)
-
-%% Main Draw update function.
-% (drawExample above)
+app.galleryIdx = exampleIdx;
 end

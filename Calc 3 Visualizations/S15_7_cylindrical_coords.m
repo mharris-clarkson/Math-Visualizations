@@ -23,10 +23,9 @@ app = uiFigure('Cylindrical Coordinates', 1);
 ax = app.ax(1);
 Pretty_Plot(ax)
 axis(ax, 'equal')
-xlabel(ax, '$x$'); ylabel(ax, '$y$'); zlabel(ax, '$z$')
 view(ax, 3)
 colormap(ax, parula)
-%% Static graphics (created once; updated in place)
+%% Static graphics
 mk = @() surf(ax, NaN(2), NaN(2), NaN(2), NaN(2), 'EdgeColor', 'none', ...
     'FaceColor', 'interp', 'FaceAlpha', opacity);
 hBot = mk(); hTop = mk(); hOut = mk(); hIn = mk(); hTmin = mk(); hTmax = mk();
@@ -40,7 +39,7 @@ s3 = app.addControl('slider', '$\theta_{min} = $',  3, nC, @updatePlot, 'Default
 s4 = app.addControl('slider', '$\theta_{max} = $',  4, nC, @updatePlot, 'Default', thetamax, 'Min', 0,  'Max', 2*pi, 'Number_format', 'pi');
 s5 = app.addControl('slider', '$z_{min} = $',       5, nC, @updatePlot, 'Default', zmin,     'Min', -5, 'Max', 5,    'Number_format', '%.2f');
 s6 = app.addControl('slider', '$z_{max} = $',       6, nC, @updatePlot, 'Default', zmax,     'Min', -5, 'Max', 5,    'Number_format', '%.2f');
-% Keep each min slider at or below its max slider (region never turns inside out)
+% Keep each min slider at or below its max slider
 app.linkMinMax(s1, s2);
 app.linkMinMax(s3, s4);
 app.linkMinMax(s5, s6);
@@ -49,7 +48,7 @@ redraw(rmin, rmax, thetamin, thetamax, zmin, zmax)
     function updatePlot(~, ~)
         redraw(s1.Value, s2.Value, s3.Value, s4.Value, s5.Value, s6.Value)
     end
-%% Redraw: updates all six surfaces in place
+%% Main Draw update function.
     function redraw(rmin, rmax, thmin, thmax, zmin, zmax)
         r  = linspace(rmin, rmax, nr);
         th = linspace(thmin, thmax, nt);

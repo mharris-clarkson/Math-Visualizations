@@ -32,9 +32,8 @@ f = @(x) x.^5/5 - x.^4 + 2*x.^3/3 + 2*x.^2 - 3*x;
 xWin   = [-1.8 4.0];   % window where f is drawn and critical points are searched
 a      = -1.6;         % the closed interval [a, b]
 b      =  3.8;
-fpYLim = 6;            % f' plot shows -fpYLim..fpYLim (f' is large near the window ends)
+fpYLim = 6;            % f' plot shows -fpYLim..fpYLim
 
-% (Derivatives come from the Diff_f / Diff2_f helpers, which set their own steps)
 nS    = 2001;          % samples when searching for f' = 0
 nPlot = 600;           % plot resolution
 tanHalf = 0.6;         % half length of the horizontal tangent drawn at a critical point
@@ -50,9 +49,8 @@ colFaint  = [0.75 0.75 0.75];   % f outside [a, b]
 xp  = linspace(xWin(1), xWin(2), nPlot);
 fpl = f(xp);
 dpl = Diff_f(f, xp);
-inAB   = xp >= a & xp <= b;                 % y range from [a, b] only, so the
-fRange = [min(fpl(inAB)), max(fpl(inAB))];  % interval fills the plot (the faint
-                                             % curve outside may run off the top)
+inAB   = xp >= a & xp <= b;                 % y range from [a, b] only
+fRange = [min(fpl(inAB)), max(fpl(inAB))];
 padF   = 0.08*diff(fRange);
 
 %% ==== Below this we build the UI, compute math, and wire up controls ====
@@ -98,8 +96,7 @@ btnMaxMin = app.addControl('button', 'Jump to Absolute Min', 1, NumControls, @ju
 app.addControl('button', 'Next Candidate (by value)', 2, NumControls, @nextCandidate, ...
     'colOrRow', 'row');
 
-% The f' plot has no title, so stretch it up to just below the tick labels
-% of the f plot (TightInset(2) = the space those labels need below it)
+% Stretch the f' plot up to just below the f plot's tick labels
 drawnow limitrate
 posF = axF.Position;
 posD = axD.Position;
@@ -112,7 +109,6 @@ setupCandidates()
 % Draw the bold part of f on [a, b], find and rank the candidates, and
 % select the absolute max
 function setupCandidates()
-    % Bold f on [a, b]
     in  = xp >= a & xp <= b;
     xin = [a, xp(in), b];
     set(hF, 'XData', xin, 'YData', f(xin))
@@ -153,8 +149,7 @@ function selectCandidate(k)
     set(selD, 'XData', cx(k), 'YData', min(max(Diff_f(f, cx(k)), -fpYLim), fpYLim))
     set(hSelD, 'Value', cx(k), 'Visible', 'on')
 
-    % Horizontal tangent line at a critical point (it crosses the graph at
-    % an inflection point, and stays on one side at a max or min)
+    % Horizontal tangent line at a critical point
     if strcmp(ctype{k}, 'critical')
         set(hTan, 'XData', cx(k) + tanHalf*[-1 1], 'YData', cf(k)*[1 1])
     else
@@ -200,7 +195,7 @@ for i = find(dd(1:end-1).*dd(2:end) < 0)
     end
 end
 xc = sort(xc);
-xc(abs(xc) < 1e-7) = 0;   % so a root at 0 prints as 0.000, not -0.000
+xc(abs(xc) < 1e-7) = 0;   % avoid printing -0.000
 
 % First derivative test: the sign of f' just left and right of each point
 notes = cell(1, numel(xc));

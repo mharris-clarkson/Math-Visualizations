@@ -45,10 +45,10 @@ axLim2 = [-1 2];  Nvf2 = 40;  vfLim2 = [-2 2];  arrowFrac2 = 0.03;
 % 3D view: plot limits (= vector-field grid extent) and grid points (x, y, z)
 vfX = [-1 2]; vfY = [-1 2]; vfZ = [-0.5 0.5];  vfN3 = [20 20 10];  arrowFrac3 = 0.02;
 
-%% Solve both simulations once, on the same uniform time grid
+%% Each simulation is solved the first time its view is shown (see redraw)
 tUniform = tspan(1):timeStep:tspan(end);
-[bx2, by2, bz2] = simulateBodies(pos2, vel2, masses, G, tspan, tUniform);
-[bx3, by3, bz3] = simulateBodies(pos3, vel3, masses, G, tspan, tUniform);
+bx2 = []; by2 = []; bz2 = [];
+bx3 = []; by3 = []; bz3 = [];
 
 [xg2, yg2] = meshgrid(linspace(vfLim2(1), vfLim2(2), Nvf2));
 [xg3, yg3, zg3] = meshgrid(linspace(vfX(1), vfX(2), vfN3(1)), ...
@@ -62,9 +62,8 @@ ax = app.ax(1);
 
 Pretty_Plot(ax)
 axis(ax, 'equal')
-xlabel(ax, '$x$'); ylabel(ax, '$y$'); zlabel(ax, '$z$')
 
-%% Static graphics (created once; updated in place)
+%% Static graphics
 colors = 'rgb';
 for k = 1:3
     trail(k) = plot3(ax, NaN, NaN, NaN, [colors(k) '-'], 'LineWidth', 1);
@@ -75,7 +74,7 @@ quiver2D = quiver(ax, xg2, yg2, zeros(size(xg2)), zeros(size(yg2)), 'k', ...
 quiver3D = quiver3(ax, xg3, yg3, zg3, zeros(size(xg3)), zeros(size(yg3)), zeros(size(zg3)), ...
     'k', 'AutoScale', 'off', 'Visible', 'off');
 
-%% Build UI (one row along the bottom)
+%% Build UI
 NumControls = 3;
 sTime = app.addControl('slider', '$t = $', 1, NumControls, @updatePlot, ...
     'Default', tUniform(1), 'Min', tUniform(1), 'Max', tUniform(end), ...
@@ -94,7 +93,7 @@ function updatePlot(~, ~)
 end
 
 function switchView(~, ~)
-    sTime.Value = tUniform(1);   % start the new view from t = 0 (label updates itself)
+    sTime.Value = tUniform(1);   % restart from t = 0
     setView()
 end
 
@@ -110,12 +109,18 @@ function setView()
     redraw(sTime.Value)
 end
 
-%% Redraw: moves bodies, extends trails, and (if on) recomputes the vector field
+%% Main Draw update function.
 function redraw(tval)
     is3D = logical(btnView.Value);
     if is3D
+        if isempty(bx3)
+            [bx3, by3, bz3] = simulateBodies(pos3, vel3, masses, G, tspan, tUniform);
+        end
         bx = bx3; by = by3; bz = bz3;
     else
+        if isempty(bx2)
+            [bx2, by2, bz2] = simulateBodies(pos2, vel2, masses, G, tspan, tUniform);
+        end
         bx = bx2; by = by2; bz = bz2;
     end
 
@@ -162,15 +167,12 @@ end
 
 %% Stateless helpers
 function [bx, by, bz] = simulateBodies(pos, vel, m, G, tspan, tUniform)
-% Solve the three-body problem in 2D or 3D (size(pos,2)) with ode45 and
-% return each body's coordinates on tUniform: one row per time, one column
-% per body. In 2D, bz is all zeros so the same plot objects work for both.
+% Three-body problem in 2D or 3D with ode45; coordinates on tUniform with
+% one row per time and one column per body (bz = 0 in 2D)
 d  = size(pos, 2);
 y0 = reshape([pos vel].', [], 1);          % [pos1 vel1 pos2 vel2 pos3 vel3]
 opts = odeset('RelTol', 1e-9, 'AbsTol', 1e-9);
 sol  = ode45(@(t,y) threeBodyODE(y, G, m, d), tspan, y0, opts);
-% deval uses the solver's own interpolant (smooth trails, unlike a straight
-% line between the solver's steps with interp1)
 Y  = deval(sol, tUniform).';
 S  = reshape(Y, numel(tUniform), 2*d, 3);   % time x coord x body
 bx = squeeze(S(:, 1, :));

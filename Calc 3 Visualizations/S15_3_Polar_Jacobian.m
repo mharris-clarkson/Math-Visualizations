@@ -22,7 +22,7 @@ run('setup.m')
 app = uiFigure('Cartesian vs Polar (Draggable)', 1);
 ax = app.ax(1);
 axis(ax, 'equal')
-Pretty_Plot(app.ax)   % also labels the axes $x$ and $y$
+Pretty_Plot(app.ax)
 xlim(ax, [-4 4]); ylim(ax, [-4 4]);
 title(ax, 'Cartesian vs Polar (Draggable)')
 
@@ -32,11 +32,9 @@ yC = [y0 y0 y0+dy y0+dy];
 hCart = patch(ax, xC, yC, 'b', 'FaceAlpha', 0.4, 'ButtonDownFcn', @startDragCartesian);
 hCartText = text(ax, 0, 0, '', 'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold', ...
-    'PickableParts', 'none');   % clicks on the number reach the patch below
+    'PickableParts', 'none');   % clicks pass through to the patch
 
 %% Polar patch
-% Polar coordinates of the corner (x0,y0): theta = atan2(y, x)
-% (atan(x0/y0) is the angle from the y-axis; equal only when x0 = y0)
 [theta0, r0] = cart2pol(x0, y0);
 
 theta = linspace(theta0, theta0+dtheta, 200);
@@ -46,7 +44,7 @@ theta = linspace(theta0, theta0+dtheta, 200);
 hPolar = patch(ax, [xt1 xt2], [yt1 yt2], 'r', 'FaceAlpha', 0.4, 'ButtonDownFcn', @startDragPolar);
 hPolarText = text(ax, 0, 0, '', 'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'middle', 'FontSize', 14, 'FontWeight', 'bold', ...
-    'PickableParts', 'none');   % clicks on the number reach the patch below
+    'PickableParts', 'none');
 
 updateAreaText()
 
@@ -104,7 +102,7 @@ function stopDrag(~, ~)
     dragging = '';
 end
 
-%% Area/centroid update -- recomputes both areas and repositions their labels
+%% Both areas, written at the centroid of each element
 function updateAreaText()
     A_cart  = dx*dy;
     A_polar = 0.5*((r0+dr)^2 - r0^2)*dtheta;

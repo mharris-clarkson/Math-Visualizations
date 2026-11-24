@@ -18,14 +18,9 @@ s0 = 0;
 
 %% Build app
 app = uiFigure('Definition of Curvature ($\kappa$) in 2D',1);
-title(app.ax,app.fig.Name,'Interpreter','latex')
-hold(app.ax,'on')
+title(app.ax,app.fig.Name)
 
-%% ================= Precompute =====================
-
-% Numerical derivatives (updated dynamically when curve switches). The
-% Diff_f / Diff2_f helpers use step sizes tuned for accuracy; a 1e-6 step
-% in a second difference gives ~1e-4 rounding noise in kappa.
+% Derivatives (replaced when the curve switches)
 r_prime  = @(t) Diff_f(r_fun,t);
 r_double = @(t) Diff2_f(r_fun,t);
 
@@ -43,30 +38,28 @@ hCurve = plot(app.ax, r(1,:), r(2,:),'b','LineWidth',2);
 
 hPoint = plot(app.ax,r0(1), r0(2), '.r', 'MarkerSize', 24);
 hT = quiver(app.ax,r0(1), r0(2), T(1), T(2), 0, 'r','LineWidth',2);
-hN = quiver(app.ax,r0(1), r0(2), abs(kappa)*N(1), abs(kappa)*N(2), 0, 'm','LineWidth',2); % dT/ds = kappa*N
+hN = quiver(app.ax,r0(1), r0(2), abs(kappa)*N(1), abs(kappa)*N(2), 0, 'm','LineWidth',2);   % dT/ds = kappa*N
 
 theta = linspace(0,2*pi,200);
 xCircle = C(1) + R*cos(theta);
 yCircle = C(2) + R*sin(theta);
 hCircle = plot(app.ax,xCircle, yCircle, 'k--','LineWidth',1.5);
 
-legend(app.ax,[hT,hN,hCircle], {'$\vec{T}$','$d\vec{T}/ds$','Osculating Circle'}, ...
-       'Interpreter','latex','FontSize',16);
+legend(app.ax,[hT,hN,hCircle], {'$\vec{T}$','$d\vec{T}/ds$','Osculating Circle'},'FontSize',16);
 
 Pretty_Plot(app.ax);
 xlim(app.ax,[-5,5])
 ylim(app.ax,[-5,5])
-daspect(app.ax,[1 1 1])   % equal scaling, so the osculating circle looks round
+daspect(app.ax,[1 1 1])
 
 %% ================= UI =====================
 NumControls = 2;
 
-% Slider
 sSlider = app.addControl('slider', 'Arc Length: $s = $', 1, NumControls, @updatePlot_s,...
-    'default', s0,'Min', 0, 'Max',sMax);
+    'Default', s0,'Min', 0, 'Max',sMax);
 
-% Button
-btn_Swap_curve = app.addControl('button','Switch to Mr. Polar Face',2,NumControls,@updatePlot_switchCurve);
+app.addControl('button','Switch to Mr. Polar Face',2,NumControls,@updatePlot_switchCurve, ...
+    'Toggle', ["Switch to Mr. Polar Face", "Switch to Ellipse"]);
 
 %% Initial draw
 updatePlot_s();
@@ -96,50 +89,38 @@ function updatePlot_s(~,~)
 
     set(hPoint,'XData',r0(1),'YData',r0(2));
     set(hT,'XData',r0(1),'YData',r0(2),'UData',T(1),'VData',T(2));
-    % dT/ds = kappa*N: the unit normal scaled by the curvature (it was
-    % drawn as the unit vector N while labelled dT/ds)
     set(hN,'XData',r0(1),'YData',r0(2),'UData',abs(kappa)*N(1),'VData',abs(kappa)*N(2));
 
     xCircle = C(1) + R*cos(theta);
     yCircle = C(2) + R*sin(theta);
     set(hCircle,'XData',xCircle,'YData',yCircle);
 
-    % Curvature is |dT/ds| >= 0 (kappa above is the signed 2D curvature,
-    % used only to pick the side of the normal)
-    title(app.ax, [app.fig.Name, ': $\kappa = |d\vec{T}/ds| = $', num2str(abs(kappa),'%.3f')], 'Interpreter','latex');
-    % (Pretty_Plot and the axis limits are set once at start-up)
+    % kappa is the signed 2D curvature; the title shows |dT/ds|
+    title(app.ax, [app.fig.Name, ': $\kappa = |d\vec{T}/ds| = $', num2str(abs(kappa),'%.3f')]);
 end
 
-function updatePlot_switchCurve(~,~)
-    if strcmp(func2str(r_fun), func2str(curve1))
+function updatePlot_switchCurve(src,~)
+    if src.Value
         r_fun = curve2;
-        btn_Swap_curve.String = 'Switch to Ellipse';
     else
         r_fun = curve1;
-        btn_Swap_curve.String = 'Switch to Mr. Polar Face';
     end
-
-    % Update derivatives
-    % Swap over
-    r_prime  = @(t) Diff_f(r_fun,t);%r_fun(t+1e-6)-r_fun(t-1e-6))/(2e-6);
+    r_prime  = @(t) Diff_f(r_fun,t);
     r_double = @(t) Diff2_f(r_fun,t);
 
-    % Recompute arc-length
     [s_samples, sMax] = arclength_param(r_fun, t_samples);
     t_of_s = @(s) interp1(s_samples, t_samples, s, 'linear', 'extrap');
 
-    % Update curve
     r = r_fun(t_samples);
     set(hCurve,'XData',r(1,:),'YData',r(2,:));
 
-    % Update slider
     app.UpdateUISlider(sSlider,0,'Max',sMax);
   
     updatePlot_s();
 end
 
+% Arc length s(t) on the samples t
 function [s, sMax] = arclength_param(r_fun,t_samples)
-    % Compute arc length parameterization
     r_prime_squared = Diff_f(r_fun,t_samples).^2;
     ds = sqrt(r_prime_squared(1,:) + r_prime_squared(2,:));
     s = cumtrapz(t_samples, ds);

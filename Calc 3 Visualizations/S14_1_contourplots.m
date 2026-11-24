@@ -26,14 +26,14 @@ view(app.ax, 0, 90)
 NumFigs = 4;
     function drawExample(idx)
         cla(app.ax)
-        axis(app.ax, 'normal')   % undo axis equal from example 2 (cla keeps it)
+        axis(app.ax, 'normal')   % cla keeps axis equal from example 2
         switch idx
             case 1
                 [x, y] = meshgrid(linspace(-5, 5, 40));
                 Z = -3*y ./ (x.^2 + y.^2 + 1);
                 [C, h] = contour(app.ax, x, y, Z, 11, 'k');
                 clabel(C, h, 'FontSize', 14, 'Color', 'r')
-                title(app.ax, '$f(x,y) = -3y/(x^2+y^2+1)$', 'Interpreter', 'latex')
+                title(app.ax, '$f(x,y) = -3y/(x^2+y^2+1)$')
 
             case 2
                 [r, theta] = meshgrid(linspace(0, 0.98, 40), linspace(0, 2*pi, 40));
@@ -43,42 +43,33 @@ NumFigs = 4;
                 [C, h] = contour(app.ax, x, y, Z, 'k');
                 clabel(C, h, 'FontSize', 14, 'Color', 'r')
                 axis(app.ax, 'equal')
-                title(app.ax, '$h(x,y) = e^{-1/(1-\sqrt{x^2+y^2})}$', 'Interpreter', 'latex')
+                title(app.ax, '$h(x,y) = e^{-1/(1-\sqrt{x^2+y^2})}$')
 
             case 3
                 [x, y] = meshgrid(linspace(0, 1, 40));
                 Z = (sinh(pi*y) / sinh(pi)) .* sin(pi*x);
                 [C, h] = contour(app.ax, x, y, Z, 20, 'k');
                 clabel(C, h, 'FontSize', 14, 'Color', 'r')
-                title(app.ax, '$T(x,y) = \frac{\sinh(\pi y)}{\sinh(\pi)}\sin(\pi x)$', 'Interpreter', 'latex')
+                title(app.ax, '$T(x,y) = \frac{\sinh(\pi y)}{\sinh(\pi)}\sin(\pi x)$')
 
             case 4
                 [x, y, z] = peaks(100);
                 [C, h] = contour(app.ax, x, y, z, -10:1:10, 'k');
                 clabel(C, h, 'FontSize', 14, 'Color', 'r')
-                title(app.ax, '$\ell(x,y) = \mathrm{peaks}(x,y)$', 'Interpreter', 'latex')
+                title(app.ax, '$\ell(x,y) = \mathrm{peaks}(x,y)$')
         end
-        xlabel(app.ax, '$x$', 'Interpreter', 'latex')
-        ylabel(app.ax, '$y$', 'Interpreter', 'latex')
+        xlabel(app.ax, '$x$')
+        ylabel(app.ax, '$y$')
         set(app.ax, 'FontSize', 18)
     end
 
 %% Make the initial plots
 drawExample(exampleIdx)
 
-%% Precompute math for updates
-% Light weight — skip
-
 %% Build UI
 NumControls = 2;
 
-% Previous/Next pair from uiFigure: wraps around and calls drawExample(k)
 app.addPrevNext(1, NumControls, NumFigs, @drawExample, 'colOrRow', 'row');
-app.galleryIdx = exampleIdx;   % start the gallery on the chosen example
+app.galleryIdx = exampleIdx;
 
-%% Functions for UI elements
-% (Previous/Next handled by app.addPrevNext above)
-
-%% Main Draw update function.
-% (Handled directly by drawExample above)
 end

@@ -33,26 +33,16 @@ degenTol = 1e-1; % |z0| below this counts as a plane through the vertex
 app = uiFigure('Conic Sections: Cone and Plane Intersection',1);
 
 %% Axes
-title(app.ax, app.fig.Name,'Interpreter','latex');
-hold(app.ax, 'on')
-
-%% UI layout and updates
+title(app.ax, app.fig.Name);
 Num_GUI = 8;
 
-% Slider for angle and update to add the circ
-thetaSlider = app.addControl('slider', '$\theta = $ ', 1, Num_GUI, @updatePlot_angle,...
+thetaSlider = app.addControl('slider', '$\theta = $ ', 1, Num_GUI, @updatePlot,...
     'Number_format','%d','AddToEnd','$^\circ$','Min',-90,'Max',90,'Default',0);
-    function updatePlot_angle(~,~)
-        updatePlot();
-    end
 
-% Slider for z0
 ZSlider = app.addControl('slider', '$z_0 = $ ', 2, Num_GUI, @updatePlot,...
     'Min',-10,'Max',10,'Default',z0);
 
-%% Buttons for preset angles
-% Angle for computing buttons for particular conic sections
-
+%% Buttons for preset conic sections
 btn_point = app.addControl('button', "Point", 3, Num_GUI,  @update_point,...
     'ColorChange',true);
     function update_point(~,~)
@@ -128,7 +118,7 @@ Z_plane = z0*ones(size(X_plane));
 
 planeSurf = surf(app.ax,X_plane,Y_plane,Z_plane,'FaceAlpha',0.9,'FaceColor',[1 0.4 0],'EdgeColor','none');
 
-%% Intersection: use parametric intersection
+%% Intersection curve
 phi = [linspace(0, 2*pi, 10000-1) 2*pi];
 [x, y, z] = Compute_intersection(theta, z0);
 
@@ -144,14 +134,13 @@ updatePlot();
 
 %% Callback
     function updatePlot(~,~)
-        % Grab theta and z0 values with catch for vertical planes
+        % A vertical plane is drawn at 89 degrees
         theta = round(thetaSlider.Value) * pi/180;
-        if abs(theta) > pi/2 - 1e-3 % avoid singualrity in 90 deg case.
-            theta = sign(theta)*89*pi/180; % keep the sign (-90 stays negative)
+        if abs(theta) > pi/2 - 1e-3
+            theta = sign(theta)*89*pi/180;
         end
         z0    = ZSlider.Value;
 
-        % Compute and update the normal plane
         n = [0 sin(theta) cos(theta)];
 
         if n(3) < 1e-9
@@ -164,10 +153,7 @@ updatePlot();
         [x, y, z] = Compute_intersection(theta, z0);
         set(Intersect, 'XData', x, 'YData', y, 'ZData', z);
 
-        % Classify type based on |theta| and z0 (a negative angle tilts the
-        % plane the other way and gives the same conic). Uses the same
-        % tolerance for z0 as the degenerate cases in Compute_intersection,
-        % so the label always matches the curve that is drawn.
+        % Classify by |theta| and z0 (same z0 tolerance as Compute_intersection)
         turn_off_Buttons()
         if abs(z0) < degenTol % plane through the vertex: degenerate conics
             if abs(abs(theta) - alpha) < 1e-3
@@ -196,7 +182,6 @@ updatePlot();
             end
         end
 
-        % Update title and plot view
         title(app.ax,sprintf('Cone and Plane Intersection: %s',conicType),'FontSize',18);
 
         zlim(app.ax,[-z_max z_max]);
@@ -205,7 +190,6 @@ updatePlot();
 %% ========================================================================
 % Helper functions
     function [x, y, z] = Compute_intersection(theta, z0)
-        % This uses the geometry to find the intersection
         r = r_ratio;
         m = tan(theta);
 

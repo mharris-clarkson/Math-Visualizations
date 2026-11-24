@@ -19,7 +19,6 @@ r2 = @(x,y) x.^2 + y.^2;
 fRaw = @(x,y) 2*exp(1)*exp(1 ./ (r2(x,y)-1 + (r2(x,y)>=1)));
 f  = @(x,y) (r2(x,y)<1) .* fRaw(x,y);
 
-% Partial derivatives by central differences (shared Helper functions)
 fx = @(x,y) Diffx_f(f, x, y);
 fy = @(x,y) Diffy_f(f, x, y);
 
@@ -34,12 +33,12 @@ run('setup.m')
 app = uiFigure('Surface Area Approximation', 1);
 ax = app.ax(1);
 
-Pretty_Plot(ax)   % also labels the axes $x$, $y$, $z$
+Pretty_Plot(ax)
 axis(ax, 'equal')
 xlim(ax, xlims); ylim(ax, ylims)
 view(ax, -38, 20)
 
-%% Reference surface and "true" surface area (fully vectorized, no loops)
+%% Reference surface and "true" surface area
 [XH, YH] = meshgrid(linspace(xlims(1), xlims(2), resHigh), ...
                     linspace(ylims(1), ylims(2), resHigh));
 ZH = f(XH, YH);
@@ -51,9 +50,7 @@ xcH = movmean(movmean(XH, 2, 1, 'Endpoints', 'discard'), 2, 2, 'Endpoints', 'dis
 ycH = movmean(movmean(YH, 2, 1, 'Endpoints', 'discard'), 2, 2, 'Endpoints', 'discard');
 SurfaceAreaTrue = sum(dxH*dyH*sqrt(1 + fx(xcH,ycH).^2 + fy(xcH,ycH).^2), 'all');
 
-%% Tangent-plane graphics: 5 objects total, created once, updated via set()
-% (The original created 5 objects per cell and deleted/recreated all of
-% them on every slider move -- thousands of graphics objects at N = 31.)
+%% Tangent planes, centre dots and vectors
 c = computeCells(resLow0);
 planePatch = patch(ax, 'Faces', c.Faces, 'Vertices', c.Vertices, ...
     'FaceColor', 'r', 'EdgeColor', 'k');
@@ -71,7 +68,7 @@ setTitle(resLow0, c.SA)
 NumControls = 2;
 sRes = app.addControl('slider', '$N = $', 1, NumControls, @updateResolution, ...
     'Default', resLow0, 'Min', 1, 'Max', resMax, 'Number_format', '%d', ...
-    'Step', 1, 'colOrRow', 'row');                  % whole numbers only: N x N grid of planes
+    'Step', 1, 'colOrRow', 'row');
 btnVec = app.addControl('button', '', 2, NumControls, @toggleVectors, ...
     'colOrRow', 'row', ...
     'Toggle', ["Hide vectors and dots", "Show vectors and dots"]);
@@ -83,7 +80,6 @@ function toggleVectors(~, ~)
     set([centerDots, normalArrows, fxArrows, fyArrows], 'Visible', onoff(~btnVec.Value))
 end
 
-% Recompute all cells in one shot and update the 5 objects in place
 function updateResolution(~, ~)
     N = max(1, round(sRes.Value));
     c = computeCells(N);
@@ -112,7 +108,7 @@ function setTitle(N, SA)
     app.fig.Name = t;
 end
 
-%% Vectorized geometry for an N x N grid of tangent planes (no per-cell loop)
+%% Geometry for an N x N grid of tangent planes
 function c = computeCells(N)
     dx = (xlims(2)-xlims(1))/N;
     dy = (ylims(2)-ylims(1))/N;

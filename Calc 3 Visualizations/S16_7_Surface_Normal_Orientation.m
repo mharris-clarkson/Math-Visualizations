@@ -37,7 +37,7 @@ app = uiFigure('Surface normal and orientation', 1);
 ax  = app.ax(1);
 
 %% Optional math functions for plot computations
-% Unit normal from the helper gradient: n = <-f_x, -f_y, 1>/|.|
+% Unit normal n = <-f_x, -f_y, 1>/|.|
     function nv = computeNormal(x, y)
         g  = Grad_f(f, [x; y]);
         nv = [-g(1), -g(2), 1];
@@ -121,15 +121,12 @@ updatePlot()
         end
         x0 = xNew;
         y0 = yNew;
-        sX.Value = x0;   % sliders (and their labels) follow the mouse
+        sX.Value = x0;   % sliders follow the mouse
         sY.Value = y0;
         updatePlot()
     end
 
-    % The mouse gives a line through the scene (front and back points).
-    % Walk along it and return the first place it crosses z = f(x,y).
-    % (The original used the front point's x and y, which is only right
-    % when looking straight down.)
+% First place the mouse ray crosses z = f(x,y)
     function [xh, yh, ok] = rayHitsSurface(cp)
         P = cp(1,:) + tRay .* (cp(2,:) - cp(1,:));
         inside = P(:,1) >= xlims(1) & P(:,1) <= xlims(2) & ...
@@ -142,7 +139,7 @@ updatePlot()
             xh = []; yh = [];
             return
         end
-        s  = gap(k) / (gap(k) - gap(k+1));            % linear interpolation
+        s  = gap(k) / (gap(k) - gap(k+1));
         if ~isfinite(s), s = 0; end
         Ph = P(k,:) + s*(P(k+1,:) - P(k,:));
         xh = Ph(1); yh = Ph(2);

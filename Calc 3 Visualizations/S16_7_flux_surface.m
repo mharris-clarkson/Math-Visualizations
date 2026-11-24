@@ -74,27 +74,23 @@ ax  = app.ax(1);
 [x, y] = meshgrid(linspace(xlims(1), xlims(2), nGrid), linspace(ylims(1), ylims(2), nGrid));
 z = gSurf(x, y);
 
-% While flattening, the surface is z = (1 - lam) g(x,y), so its normal is
-% N_lam = <-(1-lam) g_x, -(1-lam) g_y, 1>. |N_lam| = dS_lam/dA goes from |N|
-% (lam = 0, the surface S) down to 1 (lam = 1, the flat region D).
+% While flattening, z = (1 - lam) g(x,y) and |N_lam| = dS_lam/dA goes from
+% |N| (lam = 0, the surface S) down to 1 (lam = 1, the flat region D)
 Nxy2 = NxF(x,y).^2 + NyF(x,y).^2;
 NlenLam = @(lam) sqrt((1 - lam)^2 * Nxy2 + 1);
 
-% Flux through each patch is f F . (r_u x r_v) dA whatever its shape, so the
-% flux per unit area of the moving surface is f F . (r_u x r_v) / |N_lam|:
-% f F . n on S and f F . (r_u x r_v) on D.
+% Flux per unit area of the moving surface is f F . (r_u x r_v) / |N_lam|
 nFields = numel(damp);
-FN   = cell(1, nFields);    % f F . (r_u x r_v): density per unit area of D (dA)
+FN   = cell(1, nFields);    % f F . (r_u x r_v): density per unit area of D
 flux = zeros(1, nFields);
-cMax = zeros(1, nFields);   % fixed color range per field, so the color deepens as S flattens
+cMax = zeros(1, nFields);   % fixed color range per field
 for k = 1:nFields
     FN{k}   = FdotN(k, x, y);
     flux(k) = integral2(@(xx,yy) FdotN(k, xx, yy), xlims(1), xlims(2), ylims(1), ylims(2));
     cMax(k) = max(abs(FN{k}(:)));
 end
 
-% Arrow positions and vectors. One length scale for both fields (set by
-% f = 1), so the weighted field really looks weaker.
+% Arrows: one length scale for both fields (set by f = 1)
 iq = 1:skip:nGrid;
 xq = x(iq,iq);  yq = y(iq,iq);  zq = z(iq,iq);
 spacing = skip * diff(xlims)/(nGrid - 1);
@@ -112,13 +108,13 @@ nxq = nLenArrow * NxF(xq,yq) ./ NlenQ;
 nyq = nLenArrow * NyF(xq,yq) ./ NlenQ;
 nzq = nLenArrow ./ NlenQ;
 
-% Outline of the sample patch (enough points per side to follow the curved surface)
+% Outline of the sample patch
 sideT = linspace(-h, h, 15);
 px = x0 + [sideT,  h*ones(1,15), fliplr(sideT), -h*ones(1,15)];
 py = y0 + [-h*ones(1,15), sideT,  h*ones(1,15), fliplr(sideT)];
 pz = gSurf(px, py);
 NlenP = sqrt(NxF(x0,y0)^2 + NyF(x0,y0)^2 + 1);   % stretch factor at the patch
-lift  = 0.03;   % raise the outline a little so the surface does not hide it
+lift  = 0.03;   % outline raised slightly above the surface
 
 % Animation state: lam = 0 is the surface S, lam = 1 the flat region D
 lam = 0;
@@ -126,18 +122,15 @@ isAnimating = false;
 
 %% Make the initial plots
 % Surface colored by the flux density
-% (slightly see-through so the shadow dA below it stays visible)
 surfH = surf(ax, x, y, z, FN{1}./NlenLam(0), 'EdgeColor', 'none', 'FaceColor', 'interp', ...
     'FaceAlpha', 0.85);
 
-% Diverging colormap centered on zero: white = no flux through S
 cb = Pretty_Color_Centered(ax, FN{1});
-% Colorbar labels are not covered by the figure's LaTeX defaults
 cb.Label.Interpreter    = 'latex';
 cb.TickLabelInterpreter = 'latex';
 cb.Label.FontSize       = ax.FontSize;
 
-% Field F and the unit normals (normals start hidden to keep the picture clean)
+% Field and unit normals (normals start hidden)
 hField  = quiver3(ax, xq, yq, zq, U{1}, V{1}, W{1}, 0, 'k', ...
     'LineWidth', 1.2, 'MaxHeadSize', 0.5);
 hNormal = quiver3(ax, xq, yq, zq, nxq, nyq, nzq, 0, 'b', ...
@@ -151,8 +144,6 @@ tdS = text(ax, x0, y0, gSurf(x0,y0) + 0.5, '$dS$', 'Color', patchColor, ...
 tdA = text(ax, x0 + h, y0 - h, 0, ' $dA$', 'FontSize', ax.FontSize, ...
     'HorizontalAlignment', 'left', 'VerticalAlignment', 'top');
 
-% (F itself is written here, so the title only needs the two-line definition;
-%  the value of f is shown on its button)
 leg = legend(ax, [hField, hdS, hdA], ...
     {'$f\vec{F}$, $\vec{F} = \langle -2y,\, 2x,\, 1 \rangle$', 'patch $dS$ on $S$', ...
      sprintf('shadow $dA$: $dS \\approx |\\vec{r}_u\\times\\vec{r}_v|\\,dA = %.2f\\,dA$', NlenP)}, ...
@@ -162,9 +153,9 @@ leg = legend(ax, [hField, hdS, hdA], ...
 Pretty_Plot(ax);
 grid(ax, 'on')
 view(ax, 3)
-axis(ax, [xlims ylims -4 4])   % the saddle reaches z = +-4 at the corners
+axis(ax, [xlims ylims -4 4])
 axis(ax, 'vis3d')
-hTitle = title(ax, '', 'Interpreter', 'latex');
+hTitle = title(ax, '');
 
 %% Build UI
 NumControls = 3;
@@ -181,16 +172,12 @@ btnNormals = app.addControl('button', '', 3, NumControls, @toggleNormals, ...
     'colOrRow', 'row', ...
     'Toggle', ["Show normals $\vec{n}$", "Hide normals $\vec{n}$"]);
 
-% The plot sits above the row of controls, with room for the colorbar on
-% the right, so nothing overlaps.
-% Layout (figure fractions): the plot with room above for the two-line
-% title, the colorbar right next to it, and the legend in one row between
-% the plot and the buttons, so it never covers the surface.
+% Layout: plot, colorbar beside it, legend in one row below the plot
 ax.Position = [0.08, 0.18, 0.72, 0.66];
 cb.Position = [0.82, 0.24, 0.015, 0.54];
 leg.Orientation = 'horizontal';
-drawnow limitrate                       % legend size after the change
-leg.Position(1:2) = [0.45 - leg.Position(3)/2, 0.085];   % centered under the plot
+drawnow limitrate
+leg.Position(1:2) = [0.45 - leg.Position(3)/2, 0.085];
 
 updatePlot();
 
@@ -199,10 +186,8 @@ updatePlot();
         hNormal.Visible = onoff(btnNormals.Value);
     end
 
-% Move lam toward the button's target (1 = flat, 0 = surface) at a rate of
-% one full change per flattenTime seconds. Steps are timed, so slow
-% computers show fewer frames but still finish in flattenTime. A click
-% during the animation only flips the target; the running loop reverses.
+% Move lam toward the button's target (1 = flat, 0 = surface) over
+% flattenTime seconds; a click during the animation reverses it
     function animateFlatten(~, ~)
         if isAnimating, return, end
         isAnimating = true;
@@ -230,22 +215,16 @@ updatePlot();
         if ~isvalid(app.fig), return, end
         iF = 1 + btnField.Value;          % which weight f
 
-        % Flux per unit area of the current (partly flattened) surface
         C = FN{iF} ./ NlenLam(lam);
 
-        % Lower the surface, arrows and patch together
         set(surfH,   'ZData', (1 - lam)*z, 'CData', C);
         set(hField,  'ZData', (1 - lam)*zq, 'UData', U{iF}, 'VData', V{iF}, 'WData', W{iF});
         set(hNormal, 'ZData', (1 - lam)*zq);
         set(hdS,     'ZData', (1 - lam)*pz + lift);
         tdS.Position(3) = (1 - lam)*gSurf(x0, y0) + 0.5;
 
-        % Fixed, symmetric color range (the flat range): zero stays
-        % white and the colors deepen as the patches shrink to dA
         clim(ax, cMax(iF)*[-1 1]);
 
-        % Labels: on S the density is f F . n, on D it is f F . (r_u x r_v), and the patch
-        % dS has become dA (its shadow, so the shadow label is hidden)
         if lam == 1
             cb.Label.String = '$f\vec{F}\cdot(\vec{r}_u\times\vec{r}_v)$ per unit area of $D$';
             tdS.String  = '$dA$';
@@ -260,7 +239,6 @@ updatePlot();
             tdA.Visible = 'on';
         end
 
-        % The field and the total flux (the same before and after flattening)
         hTitle.String = { ...
             '$\int\int_S (f\vec{F})\cdot d\vec{S} = \int\int_S f\vec{F}\cdot\vec{n}\,dS$', ...
             ['$= \int\int_D f\vec{F}\cdot(\vec{r}_u\times\vec{r}_v)\,dA = ' sprintf('%.3f', flux(iF)) '$']};

@@ -12,8 +12,8 @@
 %    B1 : symmetric about the midlines, ANTI-symmetric about the diagonals.
 %         Nodal diagonals through the centre, zero centre motion: the driver
 %         mass does not touch them.  A perfectly centred point drive does not
-%         excite them, but an imperfect/off-centre mount does -- your 2.61 kHz
-%         diamond-lattice photo is one of these.
+%         excite them, but an imperfect/off-centre mount does (e.g. the
+%         2.61 kHz diamond-lattice pattern).
 %
 %  Rayleigh-Ritz, tensor Legendre basis w = sum c_ij P_i(x) P_j(y):
 %        K c = omega^2 (M + mu*mPlate*c0*c0') c
@@ -92,8 +92,6 @@ end
 sigma = 0.05;                        % sand "width" around nodal lines
 sand  = @(W) exp(-(W/sigma).^2);
 
-
-
 figure()
 for k = 1:30
     subplot(5,6,k)
@@ -110,9 +108,7 @@ for k = 1:30
 end
 sgtitle('B1 modes (nodal diagonals, no centre motion), sand view')
 
-
-
-%% loop through plots
+%% Step through the modes one at a time (uncomment to use)
 % figure
 % for k = 1:30
 %          imagesc(x, x, sand(PhiA(:,:,k))); axis xy equal tight off; colormap(gray)
@@ -143,24 +139,19 @@ else
     modeFrequency = freqB(mode_number);
 end
 
-% Initial plot
 figure
 ax = axes;
-% plot wave object
 ani_wave_plot = surf(ax, x, x, modeShape);
 view(ax, -20, 25)
 set(ax, 'CLim', [-1 1])
 set(ax, 'ZLim', [-1.5 1.5])
 shading(ax, 'interp')
-colormap(ax, Pretty_Colormap('balance'))   % cached copy of cmocean('balance')
+colormap(ax, Pretty_Colormap('balance'))
 
-
-
-% Animation (the title does not change, so it is set once here)
 title(ax, sprintf('mode %d | %.0f Hz (shown at %.1f Hz)', ...
     mode_number, modeFrequency, playbackHz))
 t0 = tic;
-pause(1);% pause to let things plot
+pause(1);   % let the figure draw first
 while ishandle(ani_wave_plot) && toc(t0) < duration
     phase = 2*pi*playbackHz*toc(t0);
     set(ani_wave_plot, 'ZData', modeShape*cos(phase))
